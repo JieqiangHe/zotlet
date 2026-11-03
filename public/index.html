@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="zotlet-token" content="__ZOTLET_TOKEN__">
+  <title>zotlet</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script src="/theme.js"></script>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><img src="/favicon.svg" alt="" width="16" height="16">zotlet</div>
+    <button id="btn-new" class="btn primary" title="Add references (N)">
+      <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>New
+    </button>
+    <label class="search">
+      <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+      <input id="search" type="search" placeholder="Search title, author, journal, DOI…" aria-label="Search references" autocomplete="off" spellcheck="false">
+      <kbd>/</kbd>
+    </label>
+    <select id="style-select" class="select" aria-label="Citation style" title="Citation style"></select>
+    <button id="btn-bib" class="btn" title="Format citations and bibliography">Bibliography</button>
+    <div class="dropdown">
+      <button id="btn-export" class="btn" aria-haspopup="menu" aria-expanded="false">
+        Export<svg class="i caret" viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg>
+      </button>
+      <div id="export-menu" class="menu align-right" role="menu" hidden>
+        <div id="export-scope" class="menu-label"></div>
+        <button role="menuitem" data-format="json">CSL JSON <span class="muted">.json</span></button>
+        <button role="menuitem" data-format="bibtex">BibTeX <span class="muted">.bib</span></button>
+        <button role="menuitem" data-format="ris">RIS <span class="muted">.ris</span></button>
+      </div>
+    </div>
+    <span class="grow"></span>
+    <button id="btn-theme" class="btn icon" title="Toggle dark mode" aria-label="Toggle dark mode">
+      <svg class="i only-light" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.6A5.5 5.5 0 0 1 6.4 2.5a5.5 5.5 0 1 0 7.1 7.1Z"/></svg>
+      <svg class="i only-dark" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="Projects">
+      <nav class="nav">
+        <div class="nav-section">Library</div>
+        <button class="nav-item" data-project="">
+          <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2.5h7.5L13 5v8.5H3z"/><path d="M5.5 7h5M5.5 9.5h5"/></svg>
+          <span class="nav-name">All references</span><span class="count" id="count-all">0</span>
+        </button>
+        <div class="nav-section">Projects</div>
+        <div id="project-list" class="project-list"></div>
+        <p id="projects-empty" class="nav-empty" hidden>No projects yet.</p>
+      </nav>
+      <div class="sidebar-actions">
+        <button id="project-new" class="btn sm">
+          <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg>New
+        </button>
+        <button id="project-rename" class="btn sm">Rename</button>
+        <button id="project-delete" class="btn sm danger">Delete</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="panel">
+        <div class="listbar">
+          <div class="listbar-title">
+            <h1 id="view-title">All references</h1>
+            <span id="view-count" class="muted"></span>
+          </div>
+          <div id="selection-actions" class="listbar-actions" hidden>
+            <span id="selection-count" class="muted"></span>
+            <div class="dropdown">
+              <button id="btn-add-to" class="btn sm" aria-haspopup="menu" aria-expanded="false">
+                Add to project<svg class="i caret" viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg>
+              </button>
+              <div id="add-to-menu" class="menu align-right" role="menu" hidden></div>
+            </div>
+            <button id="btn-remove-from" class="btn sm" hidden>Remove from project</button>
+            <button id="btn-edit" class="btn sm">Edit</button>
+            <button id="btn-delete" class="btn sm danger">Delete</button>
+            <button id="btn-clear" class="btn sm ghost" title="Clear selection (Esc)">Clear</button>
+          </div>
+          <div id="list-hint" class="listbar-actions muted">Double-click a reference to edit it</div>
+        </div>
+        <div class="table" role="grid" aria-labelledby="view-title">
+          <div class="row head" role="row">
+            <span class="cell check"><input id="check-all" type="checkbox" aria-label="Select all"></span>
+            <button class="cell sort" data-sort="title" role="columnheader">Title<span class="arrow"></span></button>
+            <button class="cell sort" data-sort="author" role="columnheader">Authors<span class="arrow"></span></button>
+            <button class="cell sort num" data-sort="year" role="columnheader">Year<span class="arrow"></span></button>
+            <button class="cell sort" data-sort="journal" role="columnheader">Journal<span class="arrow"></span></button>
+          </div>
+          <div id="rows" class="rows"></div>
+          <div id="empty" class="empty" hidden></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="statusbar">
+    <span id="status-path" class="truncate"></span>
+    <span id="status-text"></span>
+  </footer>
+
+  <!-- Add / edit reference -->
+  <dialog id="ref-dialog" class="dialog wide" aria-labelledby="ref-dialog-title">
+    <header class="dialog-head">
+      <h2 id="ref-dialog-title">Add references</h2>
+      <button class="btn icon ghost" data-close aria-label="Close">
+        <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg>
+      </button>
+    </header>
+    <nav id="ref-tabs" class="tabs" role="tablist">
+      <button role="tab" data-tab="import" class="active">DOI / PMID</button>
+      <button role="tab" data-tab="manual">Manual entry</button>
+    </nav>
+
+    <form id="import-form" class="dialog-body" data-panel="import">
+      <label class="field">
+        <span>Identifiers</span>
+        <textarea id="import-text" rows="5" spellcheck="false" placeholder="10.1016/j.plaphy.2026.111729&#10;PMID: 31452104&#10;https://doi.org/10.1038/…"></textarea>
+        <small class="muted">Paste any number of DOIs, DOI links, PMIDs or PubMed links — separated by new lines, spaces or commas.</small>
+      </label>
+      <p id="import-target" class="note" hidden></p>
+      <ul id="import-results" class="results" hidden></ul>
+      <p class="error" data-error hidden role="alert"></p>
+      <footer class="dialog-foot">
+        <span class="muted"></span>
+        <button type="button" class="btn" data-close>Close</button>
+        <button id="import-submit" type="submit" class="btn primary">Import</button>
+      </footer>
+    </form>
+
+    <form id="manual-form" class="dialog-body" data-panel="manual" hidden novalidate>
+      <p id="manual-key" class="note" hidden></p>
+      <div class="grid">
+        <label class="field span-2"><span>Title <b class="req">*</b></span><textarea name="title" rows="2" required></textarea></label>
+        <label class="field span-2"><span>Authors <small class="muted">one per line · Family, Given · {Organisation}</small></span><textarea name="author" rows="3" spellcheck="false"></textarea></label>
+        <label class="field"><span>Type</span>
+          <select name="type" class="select">
+            <option value="article-journal">Journal article</option>
+            <option value="article">Preprint / article</option>
+            <option value="book">Book</option>
+            <option value="chapter">Book chapter</option>
+            <option value="paper-conference">Conference paper</option>
+            <option value="report">Report</option>
+            <option value="thesis">Thesis</option>
+            <option value="dataset">Dataset</option>
+            <option value="webpage">Web page</option>
+            <option value="software">Software</option>
+          </select>
+        </label>
+        <label class="field"><span>Date <small class="muted">YYYY, YYYY-MM or YYYY-MM-DD</small></span><input name="issued" inputmode="numeric" placeholder="2026"></label>
+        <label class="field span-2"><span>Journal / book / container</span><input name="container-title"></label>
+        <div class="grid three span-2">
+          <label class="field"><span>Volume</span><input name="volume"></label>
+          <label class="field"><span>Issue</span><input name="issue"></label>
+          <label class="field"><span>Pages</span><input name="page"></label>
+        </div>
+        <label class="field"><span>DOI</span><input name="DOI" spellcheck="false" placeholder="10.xxxx/…"></label>
+        <label class="field"><span>PMID</span><input name="PMID" inputmode="numeric" spellcheck="false"></label>
+        <label class="field"><span>Publisher</span><input name="publisher"></label>
+        <label class="field"><span>URL</span><input name="URL" type="url" spellcheck="false"></label>
+        <label class="field span-2"><span>Abstract</span><textarea name="abstract" rows="3"></textarea></label>
+      </div>
+      <p class="error" data-error hidden role="alert"></p>
+      <footer class="dialog-foot">
+        <span class="muted" id="manual-hint"></span>
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button id="manual-submit" type="submit" class="btn primary">Add reference</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Bibliography -->
+  <dialog id="bib-dialog" class="dialog wide" aria-labelledby="bib-title">
+    <header class="dialog-head">
+      <h2 id="bib-title">Bibliography</h2>
+      <select id="bib-style" class="select" aria-label="Citation style"></select>
+      <button class="btn icon ghost" data-close aria-label="Close">
+        <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg>
+      </button>
+    </header>
+    <div class="dialog-body">
+      <p id="bib-scope" class="muted"></p>
+      <section class="out">
+        <div class="out-head"><span>In-text citation</span><button class="btn sm ghost" data-copy="citation">Copy</button></div>
+        <div id="bib-citation" class="out-box citation"></div>
+      </section>
+      <section class="out">
+        <div class="out-head"><span>Reference list</span><button class="btn sm ghost" data-copy="bibliography">Copy</button></div>
+        <div id="bib-output" class="out-box bibliography"></div>
+      </section>
+      <p class="error" data-error hidden role="alert"></p>
+    </div>
+    <footer class="dialog-foot">
+      <span class="muted">Copy keeps italics and bold when pasted into Word or Google Docs.</span>
+      <button id="bib-download" class="btn">Download .txt</button>
+      <button class="btn primary" data-close>Done</button>
+    </footer>
+  </dialog>
+
+  <!-- Name prompt (new / rename project) -->
+  <dialog id="name-dialog" class="dialog narrow" aria-labelledby="name-title">
+    <form id="name-form">
+      <header class="dialog-head"><h2 id="name-title">New project</h2></header>
+      <div class="dialog-body">
+        <label class="field"><span>Name</span><input id="name-input" maxlength="120" required autocomplete="off"></label>
+        <p class="error" data-error hidden role="alert"></p>
+      </div>
+      <footer class="dialog-foot">
+        <span></span>
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button id="name-submit" type="submit" class="btn primary">Create</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Confirm -->
+  <dialog id="confirm-dialog" class="dialog narrow" aria-labelledby="confirm-title">
+    <header class="dialog-head"><h2 id="confirm-title">Are you sure?</h2></header>
+    <div class="dialog-body"><p id="confirm-text"></p></div>
+    <footer class="dialog-foot">
+      <span></span>
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button id="confirm-ok" type="button" class="btn danger-solid">Delete</button>
+    </footer>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" popover="manual" hidden></div>
+</body>
+</html>

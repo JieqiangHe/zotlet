@@ -1,0 +1,839 @@
+// zotlet frontend. Plain ES module, no build step.
+
+const $ = (id) => document.getElementById(id)
+const TOKEN = document.querySelector('meta[name="zotlet-token"]').content
+const store = {
+  get(key) { try { return localStorage.getItem(key) } catch { return null } },
+  set(key, value) { try { localStorage.setItem(key, value) } catch { /* private mode */ } },
+}
+
+// ---------- state ----------
+
+const state = {
+  items: [],
+  projects: [],
+  styles: [],
+  paths: {},
+  project: store.get('zotlet-project') || '',
+  query: '',
+  sort: { key: '', dir: 1 },
+  selected: new Set(),
+  anchor: null, // start of a shift-range
+  cursor: null, // row moved by the arrow keys
+  visible: [],
+}
+
+// ---------- api ----------
+
+async function api(path, body) {
+  const init = body === undefined
+    ? { headers: { 'X-Zotlet-Token': TOKEN } }
+    : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Zotlet-Token': TOKEN }, body: JSON.stringify(body) }
+  let res
+  try { res = await fetch(`/api/${path}`, init) } catch { throw new Error('Cannot reach zotlet. Is the server still running?') }
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`)
+  return data
+}
+
+async function refresh() {
+  const data = await api('state')
+  state.items = data.items
+  state.projects = data.projects
+  state.paths = data.paths
+  if (!state.styles.length) { state.styles = data.styles; renderStyles() }
+  if (state.project && !state.projects.some((p) => p.id === state.project)) setProject('')
+  render()
+}
+
+// ---------- helpers ----------
+
+const el = (tag, props = {}, ...children) => {
+  const node = document.createElement(tag)
+  for (const [k, v] of Object.entries(props)) {
+    if (v === undefined || v === null || v === false) continue
+    if (k === 'class') node.className = v
+    else if (k === 'dataset') Object.assign(node.dataset, v)
+    else if (k.startsWith('on')) node.addEventListener(k.slice(2), v)
+    else if (k in node && typeof v !== 'string') node[k] = v
+    else node.setAttribute(k, v === true ? '' : v)
+  }
+  node.append(...children.flat().filter((c) => c !== null && c !== undefined && c !== false))
+  return node
+}
+const icon = (paths) => {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('viewBox', '0 0 16 16'); svg.setAttribute('class', 'i'); svg.setAttribute('aria-hidden', 'true')
+  svg.innerHTML = paths
+  return svg
+}
+const ICONS = {
+  folder: '<path d="M2 4.5V12.5h12V6H8L6.5 4.5z"/>',
+  book: '<path d="M3 2.5h7.5L13 5v8.5H3z"/><path d="M5.5 7h5M5.5 9.5h5"/>',
+  search: '<circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/>',
+}
+
+const plain = (s) => String(s ?? '').replace(/<[^>]+>/g, '')
+const yearOf = (i) => i.issued?.['date-parts']?.[0]?.[0] ?? ''
+const nameOf = (n) => n.literal || [n['non-dropping-particle'], n.family].filter(Boolean).join(' ')
+function authorsShort(item) {
+  const a = item.author || item.editor || []
+  if (!a.length) return ''
+  if (a.length === 1) return nameOf(a[0])
+  if (a.length === 2) return `${nameOf(a[0])} & ${nameOf(a[1])}`
+  return `${nameOf(a[0])} et al.`
+}
+const authorsFull = (item) => (item.author || item.editor || []).map((n) => n.literal || [n.given, nameOf(n)].filter(Boolean).join(' ')).join(', ')
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
+
+// Restricted rich-text: only <i>, <b>, <sub>, <sup> survive, everything else is text.
+function richTitle(value) {
+  const frag = document.createDocumentFragment()
+  const re = /<(\/?)(i|b|sub|sup)>/gi
+  const stack = [frag]
+  let last = 0, m
+  const text = String(value ?? '')
+  while ((m = re.exec(text))) {
+    stack.at(-1).append(text.slice(last, m.index))
+    if (m[1]) { if (stack.length > 1) stack.pop() } else { const n = document.createElement(m[2].toLowerCase()); stack.at(-1).append(n); stack.push(n) }
+    last = re.lastIndex
+  }
+  stack.at(-1).append(text.slice(last))
+  return frag
+}
+
+let toastTimer
+function toast(message, kind = '') {
+  const t = $('toast')
+  t.textContent = message
+  t.className = `toast ${kind}`
+  t.hidden = false
+  // As a popover the toast sits in the top layer, above any open modal dialog.
+  if (t.showPopover) { try { t.hidePopover() } catch {} t.showPopover() }
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { t.hidden = true; try { t.hidePopover?.() } catch {} }, kind === 'error' ? 5000 : 2600)
+}
+const fail = (error) => toast(error.message || String(error), 'error')
+
+function downloadBlob(blob, name) {
+  const url = URL.createObjectURL(blob)
+  const a = el('a', { href: url, download: name })
+  document.body.append(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 2000)
+}
+
+// ---------- view ----------
+
+const currentProject = () => state.projects.find((p) => p.id === state.project) || null
+
+function setProject(id) {
+  state.project = id || ''
+  store.set('zotlet-project', state.project)
+  state.selected.clear()
+  state.anchor = null
+}
+
+function haystack(item) {
+  return [item.id, plain(item.title), item['container-title'], item['container-title-short'], yearOf(item), item.DOI, item.PMID,
+    ...(item.author || []).map((n) => `${n.given || ''} ${nameOf(n)}`), ...(item.editor || []).map(nameOf)].join(' ').toLowerCase()
+}
+
+function computeVisible() {
+  const project = currentProject()
+  let items = state.items
+  if (project) {
+    const ids = new Set(project.itemIds)
+    items = items.filter((i) => ids.has(i.id))
+  }
+  const words = state.query.toLowerCase().split(/\s+/).filter(Boolean)
+  if (words.length) items = items.filter((i) => { const h = haystack(i); return words.every((w) => h.includes(w)) })
+  const { key, dir } = state.sort
+  const order = new Map(state.items.map((i, n) => [i.id, n]))
+  const value = {
+    title: (i) => plain(i.title).toLowerCase(),
+    author: (i) => authorsShort(i).toLowerCase(),
+    year: (i) => Number(yearOf(i)) || 0,
+    journal: (i) => (i['container-title'] || '').toLowerCase(),
+  }[key]
+  items = [...items].sort((a, b) => {
+    if (value) {
+      const x = value(a), y = value(b)
+      // Empty values always sink to the bottom.
+      if (x === '' || x === 0) return (y === '' || y === 0) ? 0 : 1
+      if (y === '' || y === 0) return -1
+      if (x < y) return -dir
+      if (x > y) return dir
+    }
+    return order.get(b.id) - order.get(a.id) // newest first
+  })
+  return items
+}
+
+function render() {
+  state.visible = computeVisible()
+  const visibleIds = new Set(state.visible.map((i) => i.id))
+  for (const id of state.selected) if (!visibleIds.has(id)) state.selected.delete(id)
+  renderSidebar()
+  renderRows()
+  renderChrome()
+}
+
+function renderSidebar() {
+  const allBtn = document.querySelector('.nav-item[data-project=""]')
+  allBtn.classList.toggle('active', !state.project)
+  $('count-all').textContent = state.items.length
+  const list = $('project-list')
+  list.replaceChildren(...state.projects.map((p) => el('button', {
+    class: `nav-item${p.id === state.project ? ' active' : ''}`, dataset: { project: p.id }, title: p.name,
+  }, icon(ICONS.folder), el('span', { class: 'nav-name' }, p.name), el('span', { class: 'count' }, String(p.itemIds.length)))))
+  $('projects-empty').hidden = state.projects.length > 0
+  const has = !!currentProject()
+  $('project-rename').disabled = !has
+  $('project-delete').disabled = !has
+  $('project-rename').title = has ? `Rename “${currentProject().name}”` : 'Select a project first'
+  $('project-delete').title = has ? `Delete “${currentProject().name}”` : 'Select a project first'
+}
+
+function renderRows() {
+  const rows = state.visible.map((item) => {
+    const selected = state.selected.has(item.id)
+    const title = el('span', { class: 'cell title', title: plain(item.title) })
+    title.append(richTitle(item.title || '(untitled)'))
+    const journal = el('span', { class: 'cell journal', title: item['container-title'] || '' })
+    journal.append(richTitle(item['container-title'] || item.publisher || ''))
+    return el('div', { class: `row${selected ? ' selected' : ''}`, role: 'row', dataset: { id: item.id }, draggable: 'true', 'aria-selected': String(selected) },
+      el('span', { class: 'cell check' }, el('input', { type: 'checkbox', checked: selected, tabIndex: -1, 'aria-label': 'Select' })),
+      title,
+      el('span', { class: 'cell authors', title: authorsFull(item) }, authorsShort(item)),
+      el('span', { class: 'cell year num' }, String(yearOf(item))),
+      journal)
+  })
+  $('rows').replaceChildren(...rows)
+  $('rows').hidden = !rows.length
+  document.querySelector('.row.head').hidden = !rows.length
+  renderEmpty()
+}
+
+function renderEmpty() {
+  const empty = $('empty')
+  if (state.visible.length) { empty.hidden = true; return }
+  const project = currentProject()
+  let iconPaths = ICONS.book, title, text, action
+  if (state.query) {
+    iconPaths = ICONS.search
+    title = 'No matches'
+    text = `Nothing in ${project ? `“${project.name}”` : 'your library'} matches “${state.query}”.`
+    action = el('button', { class: 'btn', onclick: () => { $('search').value = ''; state.query = ''; render() } }, 'Clear search')
+  } else if (project) {
+    iconPaths = ICONS.folder
+    title = 'This project is empty'
+    text = 'Import references while this project is selected, or select references in All references and use “Add to project” (you can also drag them onto the project).'
+    action = el('button', { class: 'btn primary', onclick: () => openRefDialog() }, 'Add references')
+  } else {
+    title = 'Your library is empty'
+    text = 'Paste DOIs or PMIDs to import references, or enter one by hand.'
+    action = el('button', { class: 'btn primary', onclick: () => openRefDialog() }, 'Add references')
+  }
+  const svg = icon(iconPaths); svg.classList.add('empty-icon')
+  empty.replaceChildren(svg, el('strong', {}, title), el('p', {}, text), action)
+  empty.hidden = false
+}
+
+function renderChrome() {
+  const project = currentProject()
+  $('view-title').textContent = project ? project.name : 'All references'
+  const total = project ? project.itemIds.length : state.items.length
+  $('view-count').textContent = state.query ? `${state.visible.length} of ${total}` : String(total)
+  const n = state.selected.size
+  $('selection-actions').hidden = n === 0
+  $('list-hint').hidden = n > 0 || state.visible.length === 0
+  $('selection-count').textContent = `${n} selected`
+  $('btn-remove-from').hidden = !project
+  $('btn-edit').hidden = n !== 1
+  const all = $('check-all')
+  all.checked = n > 0 && n === state.visible.length
+  all.indeterminate = n > 0 && n < state.visible.length
+  all.disabled = state.visible.length === 0
+  for (const btn of document.querySelectorAll('.cell.sort')) {
+    const active = btn.dataset.sort === state.sort.key
+    btn.classList.toggle('active', active)
+    btn.querySelector('.arrow').textContent = active ? (state.sort.dir > 0 ? '▲' : '▼') : ''
+    btn.setAttribute('aria-sort', active ? (state.sort.dir > 0 ? 'ascending' : 'descending') : 'none')
+  }
+  $('status-path').textContent = state.paths.library || ''
+  $('status-path').title = state.paths.library || ''
+  $('status-text').textContent = `${plural(state.items.length, 'reference')} · ${plural(state.projects.length, 'project')}`
+  $('btn-bib').disabled = state.visible.length === 0
+  $('btn-export').disabled = state.visible.length === 0
+}
+
+function renderStyles() {
+  const saved = store.get('zotlet-style')
+  const options = () => state.styles.map((s) => el('option', { value: s.id, title: s.title }, s.label))
+  $('style-select').replaceChildren(...options())
+  $('bib-style').replaceChildren(...options())
+  const value = state.styles.some((s) => s.id === saved) ? saved : state.styles[0]?.id
+  $('style-select').value = value
+  $('bib-style').value = value
+}
+
+/** What Bibliography / Export act on: the selection, else everything visible. */
+function scope() {
+  const project = currentProject()
+  if (state.selected.size) {
+    const ids = state.visible.filter((i) => state.selected.has(i.id)).map((i) => i.id)
+    return { ids, label: `${plural(ids.length, 'selected reference')}`, name: project ? `${project.name} (selection)` : 'selection' }
+  }
+  const ids = state.visible.map((i) => i.id)
+  const where = project ? `project “${project.name}”` : 'whole library'
+  return { ids, label: state.query ? `${plural(ids.length, 'search result')} in ${where}` : `${where} · ${plural(ids.length, 'reference')}`, name: project ? project.name : 'library' }
+}
+
+// ---------- selection & list interaction ----------
+
+function select(id, { toggle = false, range = false } = {}) {
+  state.cursor = id
+  const ids = state.visible.map((i) => i.id)
+  if (range && state.anchor && ids.includes(state.anchor)) {
+    const [a, b] = [ids.indexOf(state.anchor), ids.indexOf(id)].sort((x, y) => x - y)
+    if (!toggle) state.selected.clear()
+    for (const x of ids.slice(a, b + 1)) state.selected.add(x)
+  } else if (toggle) {
+    state.selected.has(id) ? state.selected.delete(id) : state.selected.add(id)
+    state.anchor = id
+  } else {
+    state.selected = new Set([id])
+    state.anchor = id
+  }
+  syncSelection()
+}
+
+function syncSelection() {
+  for (const row of $('rows').children) {
+    const on = state.selected.has(row.dataset.id)
+    row.classList.toggle('selected', on)
+    row.setAttribute('aria-selected', String(on))
+    row.querySelector('input').checked = on
+  }
+  renderChrome()
+}
+
+$('rows').addEventListener('click', (e) => {
+  const row = e.target.closest('.row')
+  if (!row) return
+  const viaCheckbox = !!e.target.closest('.cell.check')
+  select(row.dataset.id, { toggle: viaCheckbox || e.metaKey || e.ctrlKey, range: e.shiftKey })
+})
+$('rows').addEventListener('dblclick', (e) => {
+  const row = e.target.closest('.row')
+  if (row && !e.target.closest('.cell.check')) openRefDialog(state.items.find((i) => i.id === row.dataset.id))
+})
+$('check-all').addEventListener('change', (e) => {
+  state.selected = e.target.checked ? new Set(state.visible.map((i) => i.id)) : new Set()
+  syncSelection()
+})
+for (const btn of document.querySelectorAll('.cell.sort')) {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.sort
+    if (state.sort.key !== key) state.sort = { key, dir: key === 'year' ? -1 : 1 }
+    else if (state.sort.dir === (key === 'year' ? -1 : 1)) state.sort.dir *= -1
+    else state.sort = { key: '', dir: 1 } // third click: back to "newest first"
+    render()
+  })
+}
+
+let searchTimer
+$('search').addEventListener('input', (e) => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => { state.query = e.target.value.trim(); render() }, 80)
+})
+$('search').addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { e.target.value = ''; state.query = ''; render(); e.target.blur() }
+})
+
+// Drag references onto a project.
+$('rows').addEventListener('dragstart', (e) => {
+  const row = e.target.closest('.row')
+  if (!row) return
+  if (!state.selected.has(row.dataset.id)) select(row.dataset.id)
+  e.dataTransfer.setData('application/x-zotlet-ids', JSON.stringify([...state.selected]))
+  e.dataTransfer.effectAllowed = 'copy'
+})
+const projectTarget = (e) => e.target.closest('#project-list .nav-item')
+$('project-list').addEventListener('dragover', (e) => {
+  const t = projectTarget(e)
+  if (!t || !e.dataTransfer.types.includes('application/x-zotlet-ids')) return
+  e.preventDefault()
+  e.dataTransfer.dropEffect = 'copy'
+  for (const n of document.querySelectorAll('.nav-item.drop')) if (n !== t) n.classList.remove('drop')
+  t.classList.add('drop')
+})
+$('project-list').addEventListener('dragleave', (e) => { const t = projectTarget(e); if (t && !t.contains(e.relatedTarget)) t.classList.remove('drop') })
+$('project-list').addEventListener('drop', (e) => {
+  const t = projectTarget(e)
+  if (!t) return
+  e.preventDefault()
+  t.classList.remove('drop')
+  const ids = JSON.parse(e.dataTransfer.getData('application/x-zotlet-ids') || '[]')
+  addToProject(t.dataset.project, ids)
+})
+document.addEventListener('dragend', () => { for (const n of document.querySelectorAll('.nav-item.drop')) n.classList.remove('drop') })
+
+// ---------- sidebar ----------
+
+document.querySelector('.nav').addEventListener('click', (e) => {
+  const item = e.target.closest('.nav-item')
+  if (!item) return
+  setProject(item.dataset.project)
+  render()
+  $('rows').scrollTop = 0
+})
+
+$('project-new').addEventListener('click', async () => {
+  const project = await promptName({ title: 'New project', submit: 'Create', action: (name) => api('projects/create', { name }) })
+  if (!project) return
+  setProject(project.id)
+  await refresh()
+  toast(`Created “${project.name}”`)
+})
+$('project-rename').addEventListener('click', async () => {
+  const project = currentProject()
+  if (!project) return
+  const renamed = await promptName({ title: 'Rename project', submit: 'Rename', value: project.name, action: (name) => api('projects/rename', { id: project.id, name }) })
+  if (!renamed) return
+  await refresh()
+  toast(`Renamed to “${renamed.name}”`)
+})
+$('project-delete').addEventListener('click', async () => {
+  const project = currentProject()
+  if (!project) return
+  const ok = await confirmAction({ title: 'Delete project', confirm: 'Delete project',
+    text: `Delete “${project.name}”? Its ${plural(project.itemIds.length, 'reference')} stay in your library.` })
+  if (!ok) return
+  try {
+    await api('projects/delete', { id: project.id })
+    setProject('')
+    await refresh()
+    toast(`Deleted “${project.name}”`)
+  } catch (error) { fail(error) }
+})
+
+// ---------- selection actions ----------
+
+async function addToProject(projectId, ids) {
+  const project = state.projects.find((p) => p.id === projectId)
+  if (!project || !ids.length) return
+  try {
+    const { added } = await api('projects/add', { id: projectId, itemIds: ids })
+    await refresh()
+    toast(added ? `Added ${plural(added, 'reference')} to “${project.name}”` : `Already in “${project.name}”`)
+  } catch (error) { fail(error) }
+}
+
+$('btn-add-to').addEventListener('click', (e) => {
+  e.stopPropagation()
+  const menu = $('add-to-menu')
+  const items = state.projects.filter((p) => p.id !== state.project)
+  menu.replaceChildren(...(items.length
+    ? items.map((p) => el('button', { role: 'menuitem', onclick: () => { closeMenus(); addToProject(p.id, [...state.selected]) } },
+      el('span', { class: 'truncate' }, p.name), el('span', { class: 'muted' }, String(p.itemIds.length))))
+    : [el('div', { class: 'menu-empty' }, 'No other projects yet')]),
+  el('button', { role: 'menuitem', onclick: async () => {
+    closeMenus()
+    const ids = [...state.selected]
+    const project = await promptName({ title: 'New project', submit: 'Create', action: (name) => api('projects/create', { name }) })
+    if (project) { await addToProject(project.id, ids) }
+  } }, el('span', {}, '+ New project…')))
+  toggleMenu($('btn-add-to'), menu)
+})
+
+$('btn-remove-from').addEventListener('click', async () => {
+  const project = currentProject()
+  if (!project) return
+  try {
+    const { removed } = await api('projects/remove', { id: project.id, itemIds: [...state.selected] })
+    await refresh()
+    toast(`Removed ${plural(removed, 'reference')} from “${project.name}”`)
+  } catch (error) { fail(error) }
+})
+
+$('btn-edit').addEventListener('click', () => {
+  const [id] = state.selected
+  const item = state.items.find((i) => i.id === id)
+  if (item) openRefDialog(item)
+})
+
+async function deleteSelected() {
+  const ids = [...state.selected]
+  if (!ids.length) return
+  const ok = await confirmAction({ title: 'Delete references', confirm: 'Delete',
+    text: `Permanently delete ${plural(ids.length, 'reference')} from your library? ${currentProject() ? 'To only take them out of this project, use “Remove from project”.' : 'They are also removed from every project.'}` })
+  if (!ok) return
+  try {
+    const { removed } = await api('items/delete', { ids })
+    state.selected.clear()
+    await refresh()
+    toast(`Deleted ${plural(removed, 'reference')}`)
+  } catch (error) { fail(error) }
+}
+$('btn-delete').addEventListener('click', deleteSelected)
+$('btn-clear').addEventListener('click', () => { state.selected.clear(); syncSelection() })
+
+// ---------- menus ----------
+
+function closeMenus() {
+  for (const m of document.querySelectorAll('.menu')) m.hidden = true
+  for (const b of document.querySelectorAll('[aria-haspopup]')) b.setAttribute('aria-expanded', 'false')
+}
+function toggleMenu(button, menu) {
+  const open = menu.hidden
+  closeMenus()
+  menu.hidden = !open
+  button.setAttribute('aria-expanded', String(open))
+  if (open) menu.querySelector('button')?.focus({ preventScroll: true })
+}
+document.addEventListener('click', (e) => { if (!e.target.closest('.menu')) closeMenus() })
+
+// ---------- export ----------
+
+$('btn-export').addEventListener('click', (e) => {
+  e.stopPropagation()
+  $('export-scope').textContent = `Export ${scope().label}`
+  toggleMenu($('btn-export'), $('export-menu'))
+})
+$('export-menu').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-format]')
+  if (!btn) return
+  closeMenus()
+  const { ids, name } = scope()
+  try {
+    const res = await fetch('/api/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Zotlet-Token': TOKEN },
+      body: JSON.stringify({ format: btn.dataset.format, ids, name }),
+    })
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Export failed')
+    const disposition = res.headers.get('Content-Disposition') || ''
+    const file = decodeURIComponent((/filename\*=UTF-8''([^;]+)/.exec(disposition) || [])[1] || `${name}.txt`)
+    downloadBlob(await res.blob(), file)
+    toast(`Exported ${plural(Number(res.headers.get('X-Item-Count')) || ids.length, 'reference')} → ${file}`)
+  } catch (error) { fail(error) }
+})
+
+// ---------- bibliography ----------
+
+let lastBib = null
+async function renderBibliography() {
+  const dialog = $('bib-dialog')
+  const { ids, label } = scope()
+  const style = $('bib-style').value
+  $('bib-scope').textContent = `${label[0].toUpperCase()}${label.slice(1)}, in the order shown in the list.`
+  $('bib-citation').classList.add('loading')
+  $('bib-output').classList.add('loading')
+  dialog.querySelector('[data-error]').hidden = true
+  try {
+    const result = await api('cite', { style, ids })
+    lastBib = { ...result, name: scope().name }
+    $('bib-citation').innerHTML = result.citation.html || '<span class="muted">—</span>'
+    $('bib-output').innerHTML = result.bibliography.html || '<span class="muted">This style has no reference list.</span>'
+  } catch (error) {
+    lastBib = null
+    $('bib-citation').textContent = ''
+    $('bib-output').textContent = ''
+    showError(dialog, error.message)
+  } finally {
+    $('bib-citation').classList.remove('loading')
+    $('bib-output').classList.remove('loading')
+  }
+}
+function setStyle(id) {
+  $('style-select').value = id
+  $('bib-style').value = id
+  store.set('zotlet-style', id)
+}
+$('style-select').addEventListener('change', (e) => setStyle(e.target.value))
+$('bib-style').addEventListener('change', (e) => { setStyle(e.target.value); renderBibliography() })
+$('btn-bib').addEventListener('click', () => {
+  if (!state.visible.length) return
+  $('bib-citation').textContent = 'Formatting…'
+  $('bib-output').textContent = 'Formatting…'
+  $('bib-dialog').showModal()
+  renderBibliography()
+})
+$('bib-dialog').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-copy]')
+  if (!btn || !lastBib) return
+  const part = lastBib[btn.dataset.copy]
+  try {
+    if (window.ClipboardItem && navigator.clipboard?.write) {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([part.html], { type: 'text/html' }),
+        'text/plain': new Blob([part.text], { type: 'text/plain' }),
+      })])
+    } else {
+      await navigator.clipboard.writeText(part.text)
+    }
+    const label = btn.textContent
+    btn.textContent = 'Copied'
+    setTimeout(() => { btn.textContent = label }, 1200)
+  } catch {
+    // Clipboard API unavailable: select the text so ⌘C works.
+    const box = btn.dataset.copy === 'citation' ? $('bib-citation') : $('bib-output')
+    getSelection().selectAllChildren(box)
+    toast('Press ⌘C / Ctrl+C to copy the selected text')
+  }
+})
+$('bib-download').addEventListener('click', () => {
+  if (!lastBib) return
+  const text = `${lastBib.bibliography.text || lastBib.citation.text}\n`
+  downloadBlob(new Blob([text], { type: 'text/plain;charset=utf-8' }), `${lastBib.name} - ${lastBib.style.id}.txt`)
+})
+
+// ---------- dialogs ----------
+
+function showError(container, message) {
+  const box = container.querySelector('[data-error]')
+  box.textContent = message
+  box.hidden = !message
+}
+for (const dialog of document.querySelectorAll('dialog')) {
+  dialog.addEventListener('click', (e) => {
+    if (e.target.closest('[data-close]')) dialog.close()
+    // Backdrop click (outside the dialog box) closes it.
+    if (e.target === dialog) {
+      const r = dialog.getBoundingClientRect()
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close()
+    }
+  })
+}
+
+/** Ask for a name; `action(name)` runs on submit and may throw to keep the dialog open. */
+function promptName({ title, submit, value = '', action }) {
+  const dialog = $('name-dialog'), form = $('name-form'), input = $('name-input')
+  $('name-title').textContent = title
+  $('name-submit').textContent = submit
+  input.value = value
+  showError(dialog, '')
+  dialog.showModal()
+  input.select()
+  return new Promise((resolve) => {
+    let result = null
+    const onSubmit = async (e) => {
+      e.preventDefault()
+      $('name-submit').disabled = true
+      try { result = await action(input.value); dialog.close() }
+      catch (error) { showError(dialog, error.message); input.focus() }
+      finally { $('name-submit').disabled = false }
+    }
+    form.addEventListener('submit', onSubmit)
+    dialog.addEventListener('close', () => { form.removeEventListener('submit', onSubmit); resolve(result) }, { once: true })
+  })
+}
+
+function confirmAction({ title, text, confirm }) {
+  const dialog = $('confirm-dialog')
+  $('confirm-title').textContent = title
+  $('confirm-text').textContent = text
+  $('confirm-ok').textContent = confirm
+  dialog.returnValue = ''
+  dialog.showModal()
+  $('confirm-ok').focus()
+  return new Promise((resolve) => {
+    const ok = () => dialog.close('ok')
+    $('confirm-ok').addEventListener('click', ok)
+    dialog.addEventListener('close', () => { $('confirm-ok').removeEventListener('click', ok); resolve(dialog.returnValue === 'ok') }, { once: true })
+  })
+}
+
+// ---------- add / edit reference ----------
+
+let editing = null // item being edited, or null when adding
+
+function setTab(name) {
+  for (const b of $('ref-tabs').children) b.classList.toggle('active', b.dataset.tab === name)
+  for (const p of $('ref-dialog').querySelectorAll('[data-panel]')) p.hidden = p.dataset.panel !== name
+  const focus = name === 'import' ? $('import-text') : $('manual-form').elements.title
+  setTimeout(() => focus.focus(), 0)
+}
+$('ref-tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab) })
+
+const dateToText = (d) => (d?.['date-parts']?.[0] || []).map((n, i) => (i ? String(n).padStart(2, '0') : String(n))).join('-') || d?.literal || ''
+const namesToText = (names = []) => names.map((n) => (n.literal ? `{${n.literal}}`
+  : [[n['non-dropping-particle'], n.family].filter(Boolean).join(' '), [n.given, n['dropping-particle']].filter(Boolean).join(' '), n.suffix].filter(Boolean).join(', '))).join('\n')
+
+function textToNames(text) {
+  return text.split('\n').map((l) => l.trim()).filter(Boolean).map((line) => {
+    const literal = /^\{(.+)\}$/.exec(line)
+    if (literal) return { literal: literal[1].trim() }
+    if (line.includes(',')) {
+      const [family, given, suffix] = line.split(',').map((s) => s.trim())
+      return Object.fromEntries(Object.entries({ family, given, suffix }).filter(([, v]) => v))
+    }
+    const parts = line.split(/\s+/)
+    if (parts.length === 1) return { family: parts[0] }
+    return { family: parts.pop(), given: parts.join(' ') }
+  })
+}
+function textToDate(text) {
+  const t = text.trim()
+  if (!t) return null
+  const m = /^(\d{4})(?:[-/.](\d{1,2}))?(?:[-/.](\d{1,2}))?$/.exec(t)
+  if (!m) throw new Error('Enter the date as YYYY, YYYY-MM or YYYY-MM-DD')
+  const parts = [m[1], m[2], m[3]].filter(Boolean).map(Number)
+  if (parts[1] && (parts[1] < 1 || parts[1] > 12)) throw new Error('The month must be between 1 and 12')
+  if (parts[2] && (parts[2] < 1 || parts[2] > 31)) throw new Error('The day must be between 1 and 31')
+  return { 'date-parts': [parts] }
+}
+
+const FORM_FIELDS = ['title', 'author', 'type', 'issued', 'container-title', 'volume', 'issue', 'page', 'DOI', 'PMID', 'publisher', 'URL', 'abstract']
+function itemToForm(item = {}) {
+  return Object.fromEntries(FORM_FIELDS.map((k) => [k,
+    k === 'author' ? namesToText(item.author) : k === 'issued' ? dateToText(item.issued) : k === 'type' ? (item.type || 'article-journal') : String(item[k] ?? '')]))
+}
+
+function openRefDialog(item = null) {
+  editing = item
+  const dialog = $('ref-dialog'), form = $('manual-form')
+  const project = currentProject()
+  $('ref-dialog-title').textContent = item ? 'Edit reference' : 'Add references'
+  $('ref-tabs').hidden = !!item
+  $('manual-submit').textContent = item ? 'Save changes' : 'Add reference'
+  $('manual-key').hidden = !item
+  if (item) $('manual-key').replaceChildren('Citation key ', el('code', {}, item.id), ' — kept stable when you edit.')
+  $('manual-hint').textContent = !item && project ? `Will also be added to “${project.name}”.` : ''
+  $('import-target').hidden = !project
+  $('import-target').textContent = project ? `Imported references will also be added to “${project.name}”.` : ''
+  const values = itemToForm(item || {})
+  // Unknown types (e.g. "review") are shown as-is instead of silently changing.
+  const typeSelect = form.elements.type
+  typeSelect.querySelector('[data-extra]')?.remove()
+  if (![...typeSelect.options].some((o) => o.value === values.type)) typeSelect.append(el('option', { value: values.type, dataset: { extra: '1' } }, values.type))
+  for (const k of FORM_FIELDS) form.elements[k].value = values[k]
+  form.dataset.initial = JSON.stringify(values)
+  showError(form, '')
+  showError($('import-form'), '')
+  if (!item) { $('import-text').value = ''; $('import-results').hidden = true; $('import-results').replaceChildren() }
+  dialog.showModal()
+  setTab(item ? 'manual' : 'import')
+}
+$('btn-new').addEventListener('click', () => openRefDialog())
+
+$('manual-form').addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const form = e.target, initial = JSON.parse(form.dataset.initial)
+  showError(form, '')
+  try {
+    const values = Object.fromEntries(FORM_FIELDS.map((k) => [k, form.elements[k].value]))
+    if (!values.title.trim()) { form.elements.title.focus(); throw new Error('A title is required') }
+    // Only send what changed, so fields the form cannot represent survive an edit.
+    const fields = {}
+    for (const k of FORM_FIELDS) {
+      if (editing && values[k] === initial[k]) continue
+      fields[k] = k === 'author' ? textToNames(values[k]) : k === 'issued' ? textToDate(values[k]) : values[k].trim() || null
+    }
+    $('manual-submit').disabled = true
+    if (editing) {
+      if (Object.keys(fields).length) await api('items/update', { id: editing.id, fields })
+      $('ref-dialog').close()
+      await refresh()
+      toast('Reference saved')
+    } else {
+      const result = await api('items/create', { fields, projectId: state.project || undefined })
+      $('ref-dialog').close()
+      await refresh()
+      reveal(result.id)
+      toast(`Added ${result.id}`)
+    }
+  } catch (error) { showError(form, error.message) }
+  finally { $('manual-submit').disabled = false }
+})
+
+$('import-form').addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const form = e.target, text = $('import-text').value
+  showError(form, '')
+  if (!text.trim()) { $('import-text').focus(); return showError(form, 'Paste at least one DOI or PMID') }
+  const list = $('import-results')
+  list.hidden = false
+  list.replaceChildren(el('li', { class: 'pending' }, el('span', { class: 'mark' }, '…'), el('span', { class: 'ident' }, 'Looking up'), el('span', { class: 'detail muted' }, 'Contacting doi.org / PubMed…')))
+  $('import-submit').disabled = true
+  try {
+    const { results } = await api('import', { text, projectId: state.project || undefined })
+    list.replaceChildren(...results.map((r) => el('li', { class: r.status === 'error' ? 'failed' : r.status },
+      el('span', { class: 'mark' }, r.status === 'added' ? '✓' : r.status === 'duplicate' ? '•' : '✕'),
+      el('span', { class: 'ident truncate', title: r.input }, r.input),
+      el('span', { class: 'detail', title: r.title || r.message || '' },
+        r.status === 'error' ? r.message : r.status === 'duplicate' ? `Already in library as ${r.id}` : plain(r.title)))))
+    const added = results.filter((r) => r.status === 'added').length
+    const dupes = results.filter((r) => r.status === 'duplicate').length
+    const errors = results.length - added - dupes
+    await refresh()
+    const ok = results.filter((r) => r.status !== 'error').map((r) => r.id)
+    if (ok.length) reveal(...ok)
+    if (!errors) { $('import-text').value = '' }
+    else { $('import-text').value = results.filter((r) => r.status === 'error').map((r) => r.input).join('\n') }
+    if (!$('ref-dialog').open) toast([added && `Imported ${plural(added, 'reference')}`, dupes && `${dupes} already present`, errors && `${errors} failed`].filter(Boolean).join(' · '), errors && !added ? 'error' : '')
+  } catch (error) {
+    list.hidden = true
+    showError(form, error.message)
+  } finally { $('import-submit').disabled = false }
+})
+$('import-text').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $('import-form').requestSubmit() }
+})
+
+/** Select and scroll to freshly added rows. */
+function reveal(...ids) {
+  const visible = new Set(state.visible.map((i) => i.id))
+  const shown = ids.filter((id) => visible.has(id))
+  if (!shown.length) return
+  state.selected = new Set(shown)
+  state.anchor = shown[0]
+  syncSelection()
+  const row = [...$('rows').children].find((r) => r.dataset.id === shown[0])
+  row?.scrollIntoView({ block: 'nearest' })
+  for (const r of $('rows').children) if (state.selected.has(r.dataset.id)) r.classList.add('flash')
+}
+
+// ---------- theme ----------
+
+$('btn-theme').addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
+  document.documentElement.dataset.theme = next
+  store.set('zotlet-theme', next)
+})
+
+// ---------- keyboard ----------
+
+document.addEventListener('keydown', (e) => {
+  if (document.querySelector('dialog[open]')) return
+  const typing = e.target.closest('input, textarea, select')
+  if (e.key === 'Escape') {
+    closeMenus()
+    if (!typing && state.selected.size) { state.selected.clear(); syncSelection() }
+    return
+  }
+  if (typing) return
+  const mod = e.metaKey || e.ctrlKey
+  if (e.key === '/' || (mod && e.key.toLowerCase() === 'f')) { e.preventDefault(); $('search').focus(); $('search').select() }
+  else if (mod && e.key.toLowerCase() === 'a') { e.preventDefault(); state.selected = new Set(state.visible.map((i) => i.id)); syncSelection() }
+  else if ((e.key === 'Delete' || e.key === 'Backspace') && state.selected.size) { e.preventDefault(); deleteSelected() }
+  else if (e.key === 'Enter' && state.selected.size === 1) { e.preventDefault(); $('btn-edit').click() }
+  else if (!mod && e.key.toLowerCase() === 'n') { e.preventDefault(); openRefDialog() }
+  else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault()
+    const ids = state.visible.map((i) => i.id)
+    if (!ids.length) return
+    const current = state.cursor && ids.includes(state.cursor) ? ids.indexOf(state.cursor) : -1
+    const next = Math.max(0, Math.min(ids.length - 1, current + (e.key === 'ArrowDown' ? 1 : -1)))
+    select(ids[next], { range: e.shiftKey })
+    ;[...$('rows').children][next]?.scrollIntoView({ block: 'nearest' })
+  }
+})
+
+// Pick up changes made elsewhere (CLI, another tab) when the window regains focus.
+window.addEventListener('focus', () => { if (!document.querySelector('dialog[open]')) refresh().catch(() => {}) })
+
+refresh().catch(fail)

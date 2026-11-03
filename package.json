@@ -1,19 +1,19 @@
 {
   "name": "zotlet",
-  "version": "0.1.0",
-  "description": "A tiny local reference manager with Zotero-compatible citations",
+  "version": "1.0.0",
+  "description": "A minimal, personal reference manager: projects, DOI/PMID import, citeproc citations, CSL JSON/BibTeX/RIS export",
   "private": true,
   "type": "module",
   "bin": {
     "zotlet": "zotlet.js"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=18.17"
   },
   "scripts": {
-    "test": "node --test test/t2.mjs test/refresh_socket_test.mjs test/cli.test.mjs test/tpick.cjs test/genoffice_socket.test.mjs test/libreoffice_socket.test.mjs test/tcp_client.test.mjs test/http.test.mjs test/session_cleanup.test.mjs test/listeners.test.mjs test/word_probe.test.mjs test/styles.test.mjs test/web.test.mjs test/references.test.mjs test/style_repository.test.mjs test/web_management.test.mjs",
-    "start": "./zotlet web",
-    "web": "./zotlet web"
+    "start": "node zotlet.js web --open",
+    "test": "node --test",
+    "package": "sh scripts/package.sh"
   },
   "dependencies": {
     "citeproc": "^2.4.63"

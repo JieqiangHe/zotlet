@@ -1,0 +1,16 @@
+{
+  "author": [{ "family": "Doe", "given": "Jane" }, { "family": "Roe", "given": "Richard" }],
+  "issued": { "date-parts": [[2019, 8, 27]] },
+  "container-title": "Nature communications",
+  "container-title-short": "Nat Commun",
+  "page": "3812",
+  "volume": "10",
+  "issue": "1",
+  "title": "A PubMed-only record",
+  "type": "article-journal",
+  "PMID": "31452104",
+  "PMCID": "PMC6710000",
+  "id": "pmid:31452104",
+  "source": "PubMed",
+  "accessed": { "date-parts": [[2026, 11, 3]] }
+}

@@ -1,5 +1,4 @@
 #!/bin/bash
-cd "$(dirname "$0")"
-echo "Starting zotlet…"
-(sleep 1.5 && open "http://127.0.0.1:23121/") &
-exec node zotlet.js web
+# macOS: double-click this file in Finder to start zotlet.
+# The Terminal window shows the server output; it stays open after zotlet stops.
+exec /bin/bash "$(dirname "$0")/start-web.sh" "$@"

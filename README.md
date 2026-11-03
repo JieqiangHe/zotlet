@@ -1,95 +1,108 @@
 # zotlet
 
-A tiny local reference manager with Zotero-compatible citations.
+一个极简的个人文献管理器。按「项目」整理文献，粘贴 DOI / PMID 一键导入，用 citeproc-js 生成规范的引文和参考文献表，并导出 CSL JSON、BibTeX、RIS。
 
-## Features
+全部在本机运行：一个 Node.js 小服务器加一个静态网页，数据就是你电脑上的两个 JSON 文件。
 
-- A local web library at [http://127.0.0.1:23121/](http://127.0.0.1:23121/). You can search, add references by DOI or PMID, or type one in by hand. Projects can be created, renamed, deleted, and selected; the list then shows that project's references, and a reference can be removed from it. The page can format a bibliography for the current list and export CSL-JSON, BibTeX, or RIS.
-- Citation styles in `styles/`: Nature, Science, and Cell. Formatting uses [citeproc](https://www.npmjs.com/package/citeproc) and the bundled en-US CSL locale. Drop another `.csl` file into `styles/`, or into `~/.zotlet/styles`, to make it available to the citation service.
-- A command-line library: fetch metadata, list or search items, and turn a plain-text draft into a `.docx` whose citations are Zotero field codes.
-- A citation service on this machine. TCP port 23116 speaks the document integration used by LibreOffice (when the connecting process is LibreOffice) and, otherwise, the GenOffice-compatible session. HTTP port 23119 speaks the Zotero Connector citing protocol (`/connector/ping`, `/connector/document/execCommand`, `/connector/document/respond`, `/connector/sendToBack`). These are the same ports Zotero uses, so quit Zotero before starting the service. `zotlet web` starts the service with the page. `zotlet server` starts only the listeners.
+---
 
-The `docx` command writes a WordprocessingML `.docx` with Zotero citation and bibliography fields. The command tells you to open that file in GenOffice and press Refresh. Inserting or restyling a citation from the TCP or HTTP session runs `picker.jxa` through `osascript`. That picker script is not part of this source tree.
+## 快速开始
 
-## Requirements
+需要系统里已装好 **Node.js 18.17 或更新版本**（`node --version` 查看）。没有的话去 [nodejs.org](https://nodejs.org) 下载，或 `brew install node`。
 
-- Node.js 22 or newer
-- A network connection when looking up a DOI or PMID (Crossref CSL-JSON from `doi.org`, PubMed CSL from NCBI)
+**macOS**：解压后双击 `start-web.command`。
 
-## Install
+终端窗口会显示服务器日志，浏览器自动打开 <http://127.0.0.1:23121/>。用完在终端里按 `Ctrl+C` 停止；窗口不会被强制关闭，方便你看输出。
 
-```sh
+> 第一次双击如果提示「无法验证开发者」，在 Finder 里右键 → 打开 即可。
+
+**Linux / 从源码运行**：
+
+```bash
 npm install
 ```
 
-That installs the only dependency, `citeproc`.
-
-## Run
-
-On macOS:
-
-```sh
-./start-web.command
+```bash
+npm start
 ```
 
-On Linux, or from a shell:
+或者 `./start-web.sh`。如果 23121 端口被占用，可以 `node zotlet.js web --port 8080 --open`。再次双击启动器时如果 zotlet 已在运行，它只会打开浏览器，不会重复启动。
 
-```sh
-./start-web.sh
-```
+## 怎么用
 
-Or start it directly:
+| 想做的事 | 操作 |
+| --- | --- |
+| 导入文献 | 顶栏 **New** → 粘贴任意数量的 DOI、doi.org 链接、PMID 或 PubMed 链接（换行、空格、逗号分隔都行）→ **Import**。每条显示 ✓ 已添加 / • 已存在 / ✕ 失败原因 |
+| 手动录入 | **New** → **Manual entry** |
+| 编辑 | 双击一行，或选中后按 `Enter` / 点 **Edit**。引用键（ID）永远不变 |
+| 新建 / 重命名 / 删除项目 | 左栏底部的 **+ New**、**Rename**、**Delete** 按钮。删除项目不会删除文献 |
+| 把文献放进项目 | 选中后点 **Add to project**，或直接把行拖到左侧项目上。在某个项目下导入时，会自动加入该项目 |
+| 从项目移除 | 在项目里选中 → **Remove from project**（文献仍留在库里） |
+| 搜索 | 顶栏搜索框（快捷键 `/`），按标题、作者、期刊、年份、DOI、PMID、引用键匹配，多个词取交集 |
+| 排序 | 点列标题：Title / Authors / Year / Journal；第三次点击恢复「最近添加在前」 |
+| 引文与参考文献 | 选样式 → **Bibliography**。显示文内引用和参考文献表，**Copy** 会带着斜体/粗体格式粘贴到 Word / Google Docs，也可以下载 .txt |
+| 导出 | **Export** → CSL JSON / BibTeX / RIS |
+| 深色模式 | 右上角按钮，选择会记住 |
 
-```sh
-node zotlet.js web
-```
+**Bibliography 和 Export 作用于谁？** 有选中项时只处理选中的文献；没有选中时处理当前列表里看到的全部——即整个库、当前项目，或当前搜索结果。菜单和对话框顶部会写明范围。
 
-The start scripts open [http://127.0.0.1:23121/](http://127.0.0.1:23121/) after a short delay. If they do not, open that address yourself. The page is served only on `127.0.0.1`. Leave the process running while you use it, and press Ctrl+C to quit.
+快捷键：`N` 新建 · `/` 搜索 · `↑ ↓` 移动（`Shift` 多选）· `⌘/Ctrl+A` 全选 · `Enter` 编辑 · `Delete` 删除 · `Esc` 取消选择。
 
-If port 23121 is already taken, another zotlet web process is using it.
+### 内置引文样式
 
-## Command-line usage
+Nature、Science、Cell、PNAS、The Lancet、PLOS、APA 7th、Chicago (author-date)、Harvard (Cite Them Right)、Elsevier Harvard、AMA、Vancouver (NLM)、IEEE。
 
-`zotlet.js` is the CLI. With no command, or with `help`, `-h`, or `--help`, it prints usage.
+想要别的样式：从 [Zotero 样式库](https://www.zotero.org/styles) 下载 `.csl` 文件，放进 `~/.zotlet/styles/`，刷新页面即可（只支持独立样式，不支持 dependent style）。
+
+## 数据存在哪里
 
 ```text
-zotlet add <DOI|PMID>...                 fetch metadata into your library
-zotlet ls [words]                        list or search the library
-zotlet docx <draft.txt> <out.docx> [--style nature|science|cell]
-                                         turn a plain-text draft into a .docx with live citations
-zotlet server                            start TCP 23116 and HTTP 23119 (quit Zotero first)
-zotlet web                               serve local management on 23121 and start citations
+~/.zotlet/library.json     文献库：CSL-JSON 数组
+~/.zotlet/web-state.json   项目列表
+~/.zotlet/styles/          你自己添加的 .csl 样式
 ```
 
-Run them as `node zotlet.js <command>`.
+- 文献的 ID 和所有字段原样保留——包括 zotlet 不认识的字段，任何写入都不会丢掉它们。
+- 每次保存都先写临时文件再原子替换；文件不是合法 JSON 时会报错，而不是覆盖掉。
+- 备份 / 同步：直接复制或同步 `~/.zotlet` 文件夹。
+- 环境变量：`ZOTLET_HOME=/某路径` 会改用 `/某路径/.zotlet/`；`ZOTLET_LIB` 单独指定文献库文件；`ZOTLET_PORT` 指定端口。
 
-`add` accepts DOIs (including `https://doi.org/...` and `doi:` forms) and PMIDs. A DOI already in the library is skipped. The citation key is the first author's family name plus the year, with a letter added if that key is taken.
+导入的元数据会被清洗成干净的 CSL：作者对象只保留 `family`、`given`、`literal` 及姓名小品词等字段（`sequence`、`affiliation`、`ORCID`、`role` 等全部去掉），所以 Elsevier 之类的 DOI 不会再因为多余字段校验失败；日期、标题数组、JATS 摘要标签也会被规范化。重复检测按 DOI（不区分大小写）和 PMID。
 
-`ls` prints every item, or those whose stored JSON contains every word you pass.
-
-`docx` reads a UTF-8 draft: one paragraph per line. Cite with `[@key]` or `[@key1; @key2]`. A line that is only `[bibliography]` is where the reference list goes. Keys must already be in the library. The default style is `nature`.
-
-## Data
-
-The library is CSL-JSON at `~/.zotlet/library.json`. The web UI stores projects in `~/.zotlet/web-state.json`. User-added styles live in `~/.zotlet/styles/`.
-
-If `ZOTLET_HOME` is set, those files are under `$ZOTLET_HOME/.zotlet/` instead of your home directory. `ZOTLET_LIB` overrides the library file path.
-
-## Project layout
+## 命令行
 
 ```text
-zotlet.js            CLI (add, ls, docx, server, web)
-server.js            TCP and HTTP citation servers
-session.js           library, citeproc formatting, document commands
-tcp.js               TCP integration transport
-tcp-client.js        recognize a LibreOffice client on Linux and macOS
-http.js              Zotero Connector HTTP citing protocol
-metadata.js          DOI and PMID lookup, citation keys
-style-catalog.js     built-in and user CSL styles
-styles/              nature.csl, science.csl, cell.csl
-locales/             locales-en-US.xml
-web/                 local management page and its server (web/server.js)
-start-web.command    macOS launcher
-start-web.sh         shell launcher
-package.json         package metadata and the citeproc dependency
+node zotlet.js web [--port N] [--open]   启动网页（默认端口 23121）
+node zotlet.js add <DOI|PMID>...         在终端里导入
+node zotlet.js ls [关键词]               列出或搜索文献库
 ```
+
+## 打包
+
+```bash
+npm run package
+```
+
+生成 `dist/zotlet-<版本>.zip`：只有源码、两个启动脚本，以及纯 JavaScript 的 `citeproc` 依赖。**不包含 Node 二进制**，与 CPU 架构无关，解压后在任何装了 `node` 的电脑上双击即可。若解压后缺少 `node_modules`，启动器会自动执行一次 `npm install`。
+
+## 开发
+
+```bash
+npm test
+```
+
+测试用 Node 自带的 `node:test`，不需要网络（DOI / PubMed 请求用录制好的样本）。如果本机装了 Playwright，还会跑一组真实浏览器的端到端测试；设置 `ZOTLET_SCREENSHOTS=某目录` 可顺便保存截图。
+
+```text
+zotlet.js          命令行入口（web / add / ls）
+src/server.js      本地 HTTP 服务：静态页面 + JSON API（只监听 127.0.0.1，带会话令牌）
+src/store.js       library.json / web-state.json 的读写
+src/metadata.js    DOI / PMID 解析、查询与 CSL 清洗
+src/citations.js   citeproc-js 格式化与样式列表
+src/export.js      CSL JSON / BibTeX / RIS
+public/            前端（原生 HTML/CSS/JS，无构建步骤）
+styles/ locales/   CSL 样式与 en-US 语言文件
+test/              单元、API 与浏览器测试
+```
+
+更详细的设计约定见 [CLAUDE.md](CLAUDE.md)，原始需求见 [AGENTS.md](AGENTS.md)。

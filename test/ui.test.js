@@ -1,0 +1,179 @@
+// End-to-end checks in a real browser. Skipped automatically when Playwright is not installed.
+import { test, before, after } from 'node:test'
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import path from 'node:path'
+import { createRequire } from 'node:module'
+import { startServer } from '../src/server.js'
+import { createStore } from '../src/store.js'
+import { fixture, fakeFetch, tempDir } from './helpers.js'
+
+let playwright = null
+try { playwright = createRequire(import.meta.url)('playwright') } catch { /* optional */ }
+const SHOTS = process.env.ZOTLET_SCREENSHOTS // optional folder for screenshots
+const skip = !playwright && 'Playwright is not installed'
+
+const ELSEVIER = '10.1016/j.plaphy.2026.111729'
+let server, browser, page, dir
+
+before(async () => {
+  if (!playwright) return
+  dir = tempDir()
+  const store = createStore({ dir })
+  await store.addItems([
+    { type: 'article-journal', title: 'CRISPR screens in <i>Zea mays</i> reveal new regulators', author: [{ family: 'Olsen', given: 'Kai' }, { family: 'Ng', given: 'Mei' }], 'container-title': 'Nature Plants', issued: { 'date-parts': [[2023, 5]] }, DOI: '10.1038/s41477-023-0001-1' },
+    { type: 'book', title: 'Statistical Rethinking', author: [{ family: 'McElreath', given: 'Richard' }], publisher: 'CRC Press', issued: { 'date-parts': [[2020]] } },
+  ])
+  server = await startServer({
+    port: 0, dir, store, quiet: true,
+    fetchImpl: fakeFetch({ dois: { [ELSEVIER]: fixture('elsevier-crossref.json') }, pmids: { 31452104: fixture('pubmed.json') } }),
+  })
+  browser = await playwright.chromium.launch()
+  const context = await browser.newContext({ viewport: { width: 1280, height: 760 }, acceptDownloads: true })
+  page = await context.newPage()
+  page.errors = []
+  page.on('pageerror', (e) => page.errors.push(e))
+  await page.goto(server.url)
+  await page.waitForSelector('.rows .row')
+})
+after(async () => {
+  await browser?.close()
+  server?.close()
+  server?.closeAllConnections()
+  if (page) assert.deepEqual(page.errors.map(String), [])
+})
+
+const shot = async (name) => {
+  if (!SHOTS) return
+  fs.mkdirSync(SHOTS, { recursive: true })
+  await page.screenshot({ path: path.join(SHOTS, `${name}.png`) })
+}
+const rowTitles = () => page.$$eval('.rows .row .cell.title', (cells) => cells.map((c) => c.textContent))
+const rowCount = (n) => page.waitForFunction((n) => document.querySelectorAll('.rows .row').length === n, n)
+
+test('library loads with the top bar in the required order', { skip }, async () => {
+  const order = await page.$$eval('.topbar > *', (nodes) => nodes.map((n) => n.id || n.className))
+  assert.deepEqual(order, ['brand', 'btn-new', 'search', 'style-select', 'btn-bib', 'dropdown', 'grow', 'btn-theme'])
+  assert.equal((await rowTitles()).length, 2)
+  assert.equal(await page.textContent('#count-all'), '2')
+  await shot('01-library')
+})
+
+test('DOI / PMID import from the New dialog', { skip }, async () => {
+  await page.click('#btn-new')
+  await page.fill('#import-text', `${ELSEVIER}\nPMID 31452104\nbogus`)
+  await page.click('#import-submit')
+  await page.waitForSelector('#import-results li.added')
+  const statuses = await page.$$eval('#import-results li', (lis) => lis.map((li) => li.className))
+  assert.deepEqual(statuses, ['added', 'added', 'failed'])
+  await shot('02-import')
+  await page.click('#ref-dialog .dialog-head [data-close]')
+  await rowCount(4)
+  assert.ok((await rowTitles()).some((t) => t.includes('Arabidopsis')))
+})
+
+test('project buttons: create, add references, rename, remove', { skip }, async () => {
+  await page.click('#project-new')
+  await page.fill('#name-input', 'Drought review')
+  await page.click('#name-submit')
+  await page.waitForSelector('#project-list .nav-item.active')
+  assert.equal(await page.textContent('#view-title'), 'Drought review')
+  assert.ok(await page.isVisible('#empty'))
+  await shot('03-empty-project')
+
+  await page.click('.nav-item[data-project=""]')
+  await rowCount(4)
+  await page.click('.rows .row >> nth=0')
+  await page.click('.rows .row >> nth=1', { modifiers: ['Shift'] })
+  assert.equal(await page.textContent('#selection-count'), '2 selected')
+  await shot('04-selection')
+  await page.click('#btn-add-to')
+  await page.click('#add-to-menu button:has-text("Drought review")')
+  await page.waitForSelector('#project-list .nav-item .count:text-is("2")')
+
+  await page.click('#project-list .nav-item')
+  await rowCount(2)
+
+  await page.click('#project-rename')
+  await page.fill('#name-input', 'Drought & heat review')
+  await page.click('#name-submit')
+  await page.waitForSelector('#project-list .nav-item:has-text("Drought & heat review")')
+
+  await page.click('.rows .row >> nth=0')
+  await page.click('#btn-remove-from')
+  await rowCount(1)
+  assert.equal(await page.textContent('#count-all'), '4')
+  await shot('05-project')
+})
+
+test('bibliography and all export formats for the current project', { skip }, async () => {
+  await page.selectOption('#style-select', 'apa')
+  await page.click('#btn-bib')
+  await page.waitForSelector('#bib-output .csl-entry')
+  assert.equal(await page.$$eval('#bib-output .csl-entry', (e) => e.length), 1)
+  assert.match(await page.textContent('#bib-scope'), /Drought & heat review/)
+  await shot('06-bibliography')
+  await page.selectOption('#bib-style', 'nature')
+  await page.waitForFunction(() => /^1\./.test(document.querySelector('#bib-output .csl-left-margin')?.textContent || ''))
+  await page.click('#bib-dialog .dialog-foot .primary')
+
+  for (const [format, ext] of [['json', 'json'], ['bibtex', 'bib'], ['ris', 'ris']]) {
+    await page.click('#btn-export')
+    const [download] = await Promise.all([page.waitForEvent('download'), page.click(`#export-menu [data-format="${format}"]`)])
+    assert.equal(download.suggestedFilename(), `Drought & heat review.${ext}`)
+    assert.ok(fs.readFileSync(await download.path(), 'utf8').length > 20)
+  }
+})
+
+test('deleting a project keeps its references in the library', { skip }, async () => {
+  await page.click('#project-delete')
+  await page.click('#confirm-ok')
+  await page.waitForSelector('#projects-empty:not([hidden])')
+  assert.equal(await page.textContent('#view-title'), 'All references')
+  await rowCount(4)
+  assert.ok(await page.isDisabled('#project-rename'))
+})
+
+test('double-click edits a reference and keeps its key', { skip }, async () => {
+  await page.dblclick('.rows .row:has-text("Statistical Rethinking") .cell.title')
+  await page.fill('#manual-form [name="title"]', 'Statistical Rethinking (2nd ed.)')
+  await page.click('#manual-submit')
+  await page.waitForSelector('.rows .row:has-text("2nd ed.")')
+  const lib = JSON.parse(fs.readFileSync(path.join(dir, 'library.json'), 'utf8'))
+  assert.equal(lib.find((i) => i.id === 'mcelreath2020').title, 'Statistical Rethinking (2nd ed.)')
+})
+
+test('search filters the list and shows an empty state', { skip }, async () => {
+  await page.fill('#search', 'zea')
+  await rowCount(1)
+  await page.fill('#search', 'no such thing')
+  await page.waitForSelector('#empty:not([hidden])')
+  await shot('07-no-match')
+  await page.click('#empty button')
+  await rowCount(4)
+})
+
+test('dark mode toggle persists across reloads', { skip }, async () => {
+  const theme = () => page.evaluate(() => document.documentElement.dataset.theme)
+  const start = await theme()
+  await page.click('#btn-theme')
+  const flipped = await theme()
+  assert.notEqual(flipped, start)
+  await page.reload()
+  await page.waitForSelector('.rows .row')
+  assert.equal(await theme(), flipped)
+  if (flipped !== 'dark') await page.click('#btn-theme')
+  await shot('08-dark')
+  await page.click('#btn-new')
+  await page.click('[data-tab="manual"]')
+  await shot('09-dark-manual')
+  await page.keyboard.press('Escape')
+})
+
+test('narrow window: no horizontal overflow', { skip }, async () => {
+  await page.setViewportSize({ width: 700, height: 600 })
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+  assert.ok(overflow <= 0, `horizontal overflow ${overflow}px`)
+  await shot('10-narrow')
+  await page.setViewportSize({ width: 1280, height: 760 })
+})
