@@ -298,7 +298,9 @@ kbd {
   overflow: hidden;
 }
 .dialog[open] { display: flex; flex-direction: column; }
-.dialog > form[open], .dialog > form { display: flex; flex-direction: column; min-height: 0; }
+/* Every dialog is a column: head, (tabs), body that scrolls, foot. Use `1 1 auto` — a 0% basis
+   collapses to nothing in Safari when the dialog height is auto. */
+.dialog > form, .dialog-panel { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 .dialog.wide { width: min(680px, calc(100vw - 32px)); }
 .dialog.narrow { width: min(380px, calc(100vw - 32px)); }
 .dialog::backdrop { background: var(--backdrop); }
@@ -308,14 +310,12 @@ kbd {
 }
 .dialog-head h2 { flex: 1; font-size: 13px; }
 .dialog-head .select { width: 210px; }
-.dialog-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.dialog-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
 .dialog-body > p { margin: 0; }
-form.dialog-body { padding-bottom: 0; }
 .dialog-foot {
   display: flex; align-items: center; gap: 8px; flex: none;
   padding: 10px 16px; border-top: 1px solid var(--border); background: var(--panel-2);
 }
-form.dialog-body .dialog-foot { margin: 0 -16px; position: sticky; bottom: 0; }
 .dialog-foot > :first-child { flex: 1; min-width: 0; font-size: 11px; }
 
 .tabs { display: flex; gap: 2px; padding: 8px 16px 0; border-bottom: 1px solid var(--border); flex: none; }

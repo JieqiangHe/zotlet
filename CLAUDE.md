@@ -80,6 +80,11 @@ start-web.sh       real launcher; start-web.command just execs it (macOS double-
   hide the column header, and offer one action.
 - Rich text in titles: only `<i> <b> <sub> <sup>` are rendered (`richTitle()` in app.js builds DOM
   nodes — never assign item data to `innerHTML`). citeproc output is the only HTML set via innerHTML.
+- Dialog structure is always head → (tabs) → `.dialog-body` (the only scrolling part) → `.dialog-foot`.
+  A form that spans body + foot is a flex column (`.dialog-panel` or `.dialog > form`). Flex items
+  in dialogs use `flex: 1 1 auto`, never `flex: 1`: a 0% basis collapsed the body to 0px in Safari
+  (the user saw only the tabs and a clipped footer). Do not reintroduce sticky footers with negative
+  margins. `test/ui.test.js` checks every dialog's body height and that its controls stay inside the box.
 - The toast is a `popover="manual"` so it shows above modal dialogs (top layer).
 - Theme: `theme.js` sets `data-theme` before first paint from `localStorage['zotlet-theme']`,
   falling back to `prefers-color-scheme`. The selected project and style are also in localStorage.
@@ -115,7 +120,7 @@ subsystems and was unreliable. What was found and what was done:
   (light flash in dark mode); duplicate detection only looked at DOIs.
 - **Rebuilt** as `src/` + `public/` with the invariants above, 13 bundled styles (latest versions
   from the CSL repo), server-side BibTeX/RIS export (escaping, `--` page ranges, unique keys,
-  `\textit{}` for italics, CRLF RIS), and 43 tests (unit, API, browser).
+  `\textit{}` for italics, CRLF RIS), and tests (unit, API, browser).
 - Existing user data is read as-is: same paths (`~/.zotlet/library.json`, `web-state.json`), same
   env vars (`ZOTLET_HOME`, `ZOTLET_LIB`), and same project shape.
 

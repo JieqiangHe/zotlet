@@ -170,6 +170,55 @@ test('dark mode toggle persists across reloads', { skip }, async () => {
   await page.keyboard.press('Escape')
 })
 
+// Regression: dialog bodies once collapsed to 0px in Safari, clipping the form and its buttons.
+async function assertDialogLaidOut(selector) {
+  const problems = await page.evaluate((selector) => {
+    const dialog = document.querySelector(selector)
+    const box = dialog.getBoundingClientRect()
+    const out = []
+    for (const body of dialog.querySelectorAll('.dialog-body')) {
+      if (body.closest('[hidden]')) continue
+      if (body.clientHeight < 40) out.push(`body height ${body.clientHeight}`)
+    }
+    for (const el of dialog.querySelectorAll('button, textarea, input, select')) {
+      if (el.closest('[hidden]') || el.closest('details:not([open])')) continue
+      const r = el.getBoundingClientRect()
+      if (!r.width || !r.height) continue
+      if (el.closest('.dialog-body')?.scrollHeight > el.closest('.dialog-body')?.clientHeight) continue // scrollable: may be off-screen
+      if (r.top < box.top - 1 || r.bottom > box.bottom + 1) out.push(`${el.tagName}#${el.id || el.name || el.textContent.trim()} outside dialog`)
+    }
+    return out
+  }, selector)
+  assert.deepEqual(problems, [], selector)
+}
+
+test('every dialog lays out its body and buttons inside the box', { skip }, async () => {
+  for (const viewport of [{ width: 1280, height: 760 }, { width: 900, height: 420 }]) {
+    await page.setViewportSize(viewport)
+    await page.click('#btn-new')
+    await assertDialogLaidOut('#ref-dialog')
+    assert.ok(await page.isVisible('#import-submit'))
+    await page.click('[data-tab="manual"]')
+    await assertDialogLaidOut('#ref-dialog')
+    await page.click('#ref-dialog .dialog-head [data-close]')
+
+    await page.click('#btn-bib')
+    await page.waitForSelector('#bib-output .csl-entry')
+    await assertDialogLaidOut('#bib-dialog')
+    await page.click('#bib-dialog .dialog-foot .primary')
+
+    await page.click('#project-new')
+    await assertDialogLaidOut('#name-dialog')
+    await page.keyboard.press('Escape')
+  }
+  await page.setViewportSize({ width: 1280, height: 760 })
+  await page.click('#btn-new')
+  await shot('11-import-dialog')
+  await page.click('[data-tab="manual"]')
+  await shot('12-manual-dialog')
+  await page.keyboard.press('Escape')
+})
+
 test('narrow window: no horizontal overflow', { skip }, async () => {
   await page.setViewportSize({ width: 700, height: 600 })
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
