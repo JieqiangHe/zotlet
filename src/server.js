@@ -11,6 +11,7 @@ import { FORMATS } from './export.js'
 import { startIntegration } from './integration.js'
 import { openBrowser } from './open.js'
 import { createStyleRepository } from './style-repo.js'
+import { extractDOI, locatePdf, checkPdfPath, openFile, choosePdf, sha256 } from './pdf.js'
 
 const PUBLIC = path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'public')
 const STATIC = {
@@ -25,6 +26,7 @@ const STATIC = {
 const PICK_TIMEOUT = 30 * 60 * 1000
 const PICK_FIELDS = ['id', 'type', 'title', 'author', 'editor', 'issued', 'container-title', 'container-title-short', 'publisher', 'DOI', 'PMID']
 const MAX_IDENTIFIERS = 100
+const MAX_PDF_BYTES = 300 * 1024 * 1024
 const LOOKUP_CONCURRENCY = 4
 
 const fail = (message, status = 400) => Object.assign(new Error(message), { status })
@@ -83,7 +85,8 @@ export function safeFileName(name) {
 }
 
 export async function startServer({ port = 23121, host = '127.0.0.1', dir = dataDir(), store = createStore({ dir }),
-  fetchImpl = globalThis.fetch, quiet = false, integration = false, openUrl = openBrowser, log = console.log } = {}) {
+  fetchImpl = globalThis.fetch, quiet = false, integration = false, openUrl = openBrowser, log = console.log,
+  locate = locatePdf, openPath = openFile, choose = choosePdf, platform = process.platform } = {}) {
   const token = randomBytes(24).toString('hex')
   const userStyles = path.join(dir, 'styles')
   const styles = () => listStyles(userStyles)
@@ -115,7 +118,28 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
   }
 
   const api = {
-    'GET /api/state': async () => ({ ...(await store.snapshot()), styles: styleList() }),
+    'GET /api/state': async () => ({ ...(await store.snapshot()), styles: styleList(), platform }),
+
+    'POST /api/pdf/link': async (body) => {
+      if (typeof body.id !== 'string') throw fail('Missing reference id')
+      return store.setPdf(body.id, await checkPdfPath(body.path))
+    },
+    'POST /api/pdf/choose': async (body) => {
+      if (typeof body.id !== 'string') throw fail('Missing reference id')
+      const file = await choose()
+      return file ? store.setPdf(body.id, await checkPdfPath(file)) : { id: body.id, cancelled: true }
+    },
+    'POST /api/pdf/unlink': async (body) => {
+      if (typeof body.id !== 'string') throw fail('Missing reference id')
+      return store.setPdf(body.id, null)
+    },
+    'POST /api/pdf/open': async (body) => {
+      const file = (await store.snapshot()).pdfs[body.id]
+      if (!file) throw fail('No PDF is linked to this reference', 404)
+      try { await fs.access(file) } catch { throw fail(`The PDF is no longer at ${file}. Drop the file on the reference again to relink it.`, 410) }
+      await openPath(file)
+      return { ok: true, path: file }
+    },
 
     'POST /api/styles/search': async (body) => repository.search(typeof body.query === 'string' ? body.query : '', { refresh: !!body.refresh }),
     'POST /api/styles/install': async (body) => {
@@ -201,6 +225,50 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
     },
   }
 
+  async function readPdf(req) {
+    if (!/^application\/pdf\b/i.test(req.headers['content-type'] || '')) throw fail('Expected a PDF', 415)
+    const chunks = []
+    let size = 0
+    for await (const chunk of req) {
+      size += chunk.length
+      if (size > MAX_PDF_BYTES) throw fail('The PDF is too large (300 MB at most)', 413)
+      chunks.push(chunk)
+    }
+    const bytes = Buffer.concat(chunks)
+    if (bytes.subarray(0, 1024).indexOf('%PDF-') < 0) throw fail('This file is not a PDF')
+    return bytes
+  }
+
+  /**
+   * A PDF dropped on the page. Reads its DOI, imports the reference (or finds it in the library),
+   * finds the file on disk and links its path. With ?itemId= it only links the file to that item.
+   * The PDF itself is never stored.
+   */
+  async function importPdf(req, url) {
+    const header = (name) => { try { return decodeURIComponent(String(req.headers[name] || '')) } catch { return '' } }
+    const name = header('x-file-name'), size = Number(req.headers['x-file-size'])
+    const bytes = await readPdf(req)
+    const located = await locate({ name, size: Number.isFinite(size) && size > 0 ? size : bytes.length, hash: sha256(bytes) })
+    const out = { file: name, path: located || null }
+    const itemId = url.searchParams.get('itemId')
+    if (itemId) {
+      if (!(await store.snapshot()).items.some((i) => i.id === itemId)) throw fail('Reference not found', 404)
+      if (located) await store.setPdf(itemId, located)
+      return { ...out, status: 'linked', id: itemId }
+    }
+    const found = extractDOI(bytes)
+    if (!found) return { ...out, status: 'no-doi' }
+    out.doi = found.doi
+    const [request] = parseIdentifiers(found.doi)
+    if (!request || request.kind !== 'doi') return { ...out, status: 'no-doi' }
+    let item
+    try { item = await lookupIdentifier(request, fetchImpl) } catch (error) { return { ...out, status: 'error', message: error.message } }
+    const projectId = url.searchParams.get('projectId') || undefined
+    const [saved] = await store.addItems([item], { projectId })
+    if (located) await store.setPdf(saved.id, located)
+    return { ...out, status: saved.status, id: saved.id, title: saved.item.title }
+  }
+
   async function exportFile(body, res) {
     const format = FORMATS[body.format]
     if (!format) throw fail('Choose CSL JSON, BibTeX or RIS')
@@ -240,6 +308,7 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
       if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) return send(403, { error: 'The page is out of date. Reload it.' })
 
       if (req.method === 'POST' && url.pathname === '/api/export') return await exportFile(await readBody(req), res)
+      if (req.method === 'POST' && url.pathname === '/api/pdf/import') return send(200, await importPdf(req, url))
       const handler = api[`${req.method} ${url.pathname}`]
       if (!handler) return send(404, { error: 'Not found' })
       const body = req.method === 'POST' ? await readBody(req) : {}

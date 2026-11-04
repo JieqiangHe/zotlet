@@ -453,3 +453,38 @@ body.pick.done .pick-foot, body.pick.done .topbar > :not(.brand) { display: none
 .style-list .badge { color: var(--ok); font-size: 11px; font-weight: 550; }
 .style-list li.current .style-name::after { content: "  · current"; color: var(--accent); font-weight: 500; font-size: 11px; }
 .dialog-foot code { font-family: var(--mono); font-size: 10.5px; }
+
+/* ---------- linked PDFs ---------- */
+.pdf-badge {
+  flex: none; display: inline-flex; align-items: center; height: 16px; margin-right: 6px; padding: 0 4px;
+  border: 1px solid var(--border-strong); border-radius: 3px; background: var(--panel);
+  color: var(--danger); font: 600 9.5px/1 var(--font); letter-spacing: 0.02em; vertical-align: 1px; cursor: pointer;
+}
+.pdf-badge:hover { border-color: var(--danger); background: var(--danger-soft); }
+.pdf-badge.missing { color: var(--muted); text-decoration: line-through; }
+.table { position: relative; }
+.drop-hint {
+  position: absolute; inset: 8px; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  border: 2px dashed var(--accent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--panel) 88%, transparent);
+  color: var(--text-2); text-align: center; pointer-events: none;
+}
+.drop-hint strong { color: var(--accent); font-size: 13px; }
+.table.over-row .drop-hint { display: none !important; }
+.rows .row.drop-target { background: var(--accent-soft-strong); box-shadow: inset 0 0 0 2px var(--accent); }
+.pdf-line { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); }
+.pdf-line .pdf-path { flex: 1; min-width: 0; font-family: var(--mono); font-size: 11px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+.pdf-line .btn { flex: none; }
+.pdf-results { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); }
+.pdf-results:empty { display: none; }
+.pdf-results li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 4px 8px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.pdf-results li:last-child { border-bottom: 0; }
+.pdf-results .mark { font-weight: 700; text-align: center; color: var(--muted); }
+.pdf-results .ok .mark { color: var(--ok); }
+.pdf-results .warn .mark { color: var(--warn); }
+.pdf-results .bad .mark { color: var(--danger); }
+.pdf-results .file { font-family: var(--mono); font-size: 11px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pdf-results .what { grid-column: 2; color: var(--text); }
+.pdf-results .what .muted { color: var(--muted); }
+.pdf-results .fix { grid-column: 2; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pdf-results .fix input { flex: 1 1 220px; height: 24px; }
+.pdf-line input { flex: 1 1 auto; height: 24px; }

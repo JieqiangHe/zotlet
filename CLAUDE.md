@@ -36,6 +36,7 @@ src/citations.js   style discovery (styles/ + ~/.zotlet/styles) and citeproc for
 src/export.js      CSL JSON, BibTeX, RIS writers.
 src/integration.js Word/LibreOffice/GenOffice: Zotero plugin protocol on TCP 23116 + HTTP 23119, document session.
 src/style-repo.js  "Get more styles": Zotero's style index (styles.json), download/install, add .csl file, remove.
+src/pdf.js         linked PDFs: DOI extraction from PDF bytes, locating a dropped file on disk, open/choose.
 src/open.js        openBrowser().
 public/            index.html, app.js (single ES module), style.css, theme.js (pre-paint theme),
                    pick.html + pick.js (citation/style picker opened by the word processor integration).
@@ -86,6 +87,21 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   `POST /api/pick/done` (closing the tab cancels; 30 min timeout). The old native `picker.jxa` never
   existed in the repo, so don't reintroduce it.
 - A busy port (Zotero running) only prints a warning; the web app still starts.
+
+## Linked PDFs
+
+- PDFs are never copied. `web-state.json` gets `pdfs: { itemId: absolutePath }`; library.json stays
+  pure CSL-JSON (so exports are unaffected). Deleting an item drops its entry.
+- Browsers do not reveal a dropped file's path, so the page POSTs the bytes to `/api/pdf/import`
+  (raw `application/pdf`, name in `X-File-Name`). The server reads the DOI (`extractDOI`: XMP/Info
+  metadata first, else the most frequent DOI in the inflated page text — headers/footers repeat the
+  article's own DOI, references appear once), looks it up, adds or finds the item, then `locatePdf`
+  finds the original (Spotlight `mdfind` on macOS, then a time-boxed walk of Downloads/Desktop/
+  Documents/iCloud/CloudStorage/home) and confirms it by SHA-256. Not found → imported but unlinked;
+  the UI offers "Choose file…" (macOS native dialog) or a pasted path. `?itemId=` only links.
+- Rows with a PDF show a PDF badge; double-click opens the PDF with the system app (else edits).
+  The edit dialog shows the path with Open / Change / Unlink. No DOI → the user can type one.
+- `extractDOI` was checked on real BMC/Hindawi PDFs; tests use synthetic PDFs (`makePdf` in helpers).
 
 ## Citation styles
 

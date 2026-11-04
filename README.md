@@ -17,6 +17,8 @@ The app opens at <http://127.0.0.1:23121/>. Press `Ctrl+C` in the terminal to st
 
 **Cite in Word, LibreOffice and GenOffice** — zotlet answers the Zotero word-processor plugin (it listens on Zotero's ports 23116 and 23119, so quit Zotero first). Keep zotlet running and use the plugin's *Add/Edit Citation*, *Add/Edit Bibliography*, *Refresh*, *Document Preferences* and *Unlink Citations* buttons. *Add/Edit Citation* opens a picker tab in your browser: search, click the references, press Enter, then switch back to your document. Start with `--no-word` to turn this off.
 
+**PDFs** — drag PDF files onto the list: zotlet reads the DOI inside each one, imports the reference and remembers where the file is (the PDF is not copied). Drop a PDF on a reference to attach it. Double-click a reference with a PDF to open it in your PDF app.
+
 **Data** lives in `~/.zotlet/`: `library.json` holds the references as CSL-JSON, and `web-state.json` holds the projects. To add more citation styles, choose **Get more styles…** at the bottom of the style menu: search the ~10,000 styles of the official CSL repository (like Zotero) and click Install, or add a `.csl` file you downloaded. They are saved in `~/.zotlet/styles/`.
 
 **Develop**: `npm test` runs the tests, and `npm run package` builds a zip. [CLAUDE.md](CLAUDE.md) covers the design, and [AGENTS.md](AGENTS.md) the requirements.
@@ -33,6 +35,8 @@ The app opens at <http://127.0.0.1:23121/>. Press `Ctrl+C` in the terminal to st
 浏览器会打开 <http://127.0.0.1:23121/>，在终端按 `Ctrl+C` 停止。
 
 **在 Word、LibreOffice、GenOffice 中引用**：zotlet 兼容 Zotero 的文字处理器插件（监听 Zotero 的 23116 和 23119 端口，所以请先退出 Zotero）。保持 zotlet 运行，在插件里使用 *Add/Edit Citation*、*Add/Edit Bibliography*、*Refresh*、*Document Preferences*、*Unlink Citations*。点 *Add/Edit Citation* 会在浏览器里打开一个选择页：搜索、点选文献、按回车，然后切回文档即可。用 `--no-word` 启动可关闭此功能。
+
+**PDF**：把 PDF 文件拖进列表，zotlet 会读出里面的 DOI、导入文献，并记住文件所在位置（不会复制 PDF）。把 PDF 拖到某条文献上可直接关联。双击带 PDF 的文献，用系统默认的 PDF 软件打开。
 
 **数据**存放在 `~/.zotlet/`：`library.json` 是 CSL-JSON 格式的文献库，`web-state.json` 存项目。想加更多引文样式，在样式菜单最下面选 **Get more styles…**：像 Zotero 一样搜索官方 CSL 仓库的约一万个样式，点 Install 即可；也可以添加自己下载的 `.csl` 文件。样式保存在 `~/.zotlet/styles/`。
 
