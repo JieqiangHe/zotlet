@@ -15,6 +15,19 @@ const skip = !playwright && 'Playwright is not installed'
 
 const ELSEVIER = '10.1016/j.plaphy.2026.111729'
 let server, browser, page, dir
+
+// Serves Zotero's style index and one journal style; everything else goes to `next`.
+const JOURNAL_STYLE = fs.readFileSync(new URL('./fixtures/dependent-style.csl', import.meta.url), 'utf8')
+const styleNet = (next) => async (url, init) => {
+  if (String(url) === 'https://www.zotero.org/styles-files/styles.json') {
+    return Response.json([
+      { title: 'Plant Physiology and Biochemistry', name: 'plant-physiology-and-biochemistry', dependent: 1, categories: { format: 'author-date', fields: ['botany'] }, updated: '2018-02-16' },
+      { title: 'Nature', name: 'nature', dependent: 0, categories: { format: 'numeric', fields: ['science'] } },
+    ])
+  }
+  if (String(url) === 'https://www.zotero.org/styles/plant-physiology-and-biochemistry') return new Response(JOURNAL_STYLE)
+  return next(url, init)
+}
 const opened = []
 
 before(async () => {
@@ -27,7 +40,7 @@ before(async () => {
   ])
   server = await startServer({
     port: 0, dir, store, quiet: true, openUrl: (url) => opened.push(url),
-    fetchImpl: fakeFetch({ dois: { [ELSEVIER]: fixture('elsevier-crossref.json') }, pmids: { 31452104: fixture('pubmed.json') } }),
+    fetchImpl: styleNet(fakeFetch({ dois: { [ELSEVIER]: fixture('elsevier-crossref.json') }, pmids: { 31452104: fixture('pubmed.json') } })),
   })
   browser = await playwright.chromium.launch()
   const context = await browser.newContext({ viewport: { width: 1280, height: 760 }, acceptDownloads: true })
@@ -274,4 +287,34 @@ test('citation picker (opened by Word / GenOffice): search, select, insert; styl
   await gone.waitForSelector('#pick-rows .row')
   await gone.close({ runBeforeUnload: true })
   assert.equal(await closed, null)
+})
+
+test('get more styles: search the repository, install a journal style, use and remove it', { skip }, async () => {
+  await page.setViewportSize({ width: 1280, height: 760 })
+  await page.selectOption('#style-select', '__more__')
+  await page.waitForSelector('#styles-dialog[open] #style-results li')
+  await page.fill('#style-query', 'plant physiology')
+  await page.waitForFunction(() => document.querySelectorAll('#style-results li').length === 1)
+  await assertDialogLaidOut('#styles-dialog')
+  await shot('30-styles-search')
+  await page.click('#style-results li button:has-text("Install")')
+  await page.waitForSelector('#style-results li .badge')
+  assert.equal(await page.inputValue('#style-select'), 'plant-physiology-and-biochemistry')
+  await page.click('#styles-tabs [data-tab="installed"]')
+  await page.waitForSelector('#style-installed li.current')
+  assert.match(await page.textContent('#style-installed li.current'), /uses Elsevier Harvard/)
+  await assertDialogLaidOut('#styles-dialog')
+  await shot('31-styles-installed')
+  await page.click('#styles-dialog .dialog-foot .primary')
+
+  await page.click('#btn-bib')
+  await page.waitForSelector('#bib-output .csl-entry')
+  assert.equal(await page.inputValue('#bib-style'), 'plant-physiology-and-biochemistry')
+  await page.click('#bib-dialog .dialog-foot .primary')
+
+  await page.selectOption('#style-select', '__more__')
+  await page.click('#styles-tabs [data-tab="installed"]')
+  await page.click('#style-installed li.current button:has-text("Remove")')
+  await page.waitForFunction(() => !document.querySelector('#style-select option[value="plant-physiology-and-biochemistry"]'))
+  await page.keyboard.press('Escape')
 })

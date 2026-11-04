@@ -10,6 +10,7 @@ import { formatCitations, listStyles } from './citations.js'
 import { FORMATS } from './export.js'
 import { startIntegration } from './integration.js'
 import { openBrowser } from './open.js'
+import { createStyleRepository } from './style-repo.js'
 
 const PUBLIC = path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'public')
 const STATIC = {
@@ -17,7 +18,6 @@ const STATIC = {
   '/app.js': ['app.js', 'text/javascript'],
   '/theme.js': ['theme.js', 'text/javascript'],
   '/style.css': ['style.css', 'text/css'],
-  '/favicon.svg': ['favicon.svg', 'image/svg+xml'],
   '/pick.html': ['pick.html', 'text/html'],
   '/pick.js': ['pick.js', 'text/javascript'],
 }
@@ -87,6 +87,8 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
   const token = randomBytes(24).toString('hex')
   const userStyles = path.join(dir, 'styles')
   const styles = () => listStyles(userStyles)
+  const styleList = () => styles().map(({ id, title, label, builtin, parent, format }) => ({ id, title, label, builtin, parent: parent || null, format }))
+  const repository = createStyleRepository({ userDir: userStyles, cacheFile: path.join(dir, 'style-index.json'), fetchImpl })
 
   // Pending picker requests from the word processor integration, answered by public/pick.html.
   const picks = new Map()
@@ -113,7 +115,21 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
   }
 
   const api = {
-    'GET /api/state': async () => ({ ...(await store.snapshot()), styles: listStyles(userStyles).map(({ id, title, label }) => ({ id, title, label })) }),
+    'GET /api/state': async () => ({ ...(await store.snapshot()), styles: styleList() }),
+
+    'POST /api/styles/search': async (body) => repository.search(typeof body.query === 'string' ? body.query : '', { refresh: !!body.refresh }),
+    'POST /api/styles/install': async (body) => {
+      if (typeof body.name !== 'string') throw fail('Missing style name')
+      return { installed: await repository.install(body.name), styles: styleList() }
+    },
+    'POST /api/styles/add': async (body) => {
+      if (typeof body.xml !== 'string') throw fail('Choose a .csl file')
+      return { installed: await repository.addFile(body.xml), styles: styleList() }
+    },
+    'POST /api/styles/remove': async (body) => {
+      if (typeof body.id !== 'string') throw fail('Missing style id')
+      return { removed: await repository.remove(body.id), styles: styleList() }
+    },
 
     'POST /api/import': async (body) => {
       if (typeof body.text !== 'string') throw fail('Paste one or more DOIs or PMIDs')
@@ -161,7 +177,7 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
       const items = (spec.items || []).map((item) => Object.fromEntries(PICK_FIELDS.filter((k) => k in item).map((k) => [k, item[k]])))
       return { mode: spec.mode, style: spec.style, selected: spec.selected || [], items,
         projects: projects.map(({ id, name, itemIds }) => ({ id, name, itemIds })),
-        styles: styles().map(({ id, title, label }) => ({ id, title, label })) }
+        styles: styleList() }
     },
     'POST /api/pick/done': async (body) => {
       const entry = pending(body.id)
@@ -213,7 +229,7 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
       if (req.method === 'GET' && url.pathname === '/api/ping') return send(200, { app: 'zotlet' })
       if (req.method === 'GET' && Object.hasOwn(STATIC, url.pathname)) {
         const [file, type] = STATIC[url.pathname]
-        let content = await fs.readFile(path.join(PUBLIC, file), file === 'favicon.svg' ? undefined : 'utf8')
+        let content = await fs.readFile(path.join(PUBLIC, file), 'utf8')
         if (file.endsWith('.html')) content = content.replace('__ZOTLET_TOKEN__', token)
         return send(200, content, type)
       }

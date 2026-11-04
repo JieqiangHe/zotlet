@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="zotlet-token" content="__ZOTLET_TOKEN__">
   <title>zotlet</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="data:,">
   <script src="/theme.js"></script>
   <link rel="stylesheet" href="/style.css">
   <script type="module" src="/app.js"></script>
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><img src="/favicon.svg" alt="" width="16" height="16">zotlet</div>
+    <div class="brand">zotlet</div>
     <button id="btn-new" class="btn primary" title="Add references (N)">
       <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>New
     </button>
@@ -203,6 +203,40 @@
       <span class="muted">Copy keeps italics and bold when pasted into Word or Google Docs.</span>
       <button id="bib-download" class="btn">Download .txt</button>
       <button class="btn primary" data-close>Done</button>
+    </footer>
+  </dialog>
+
+  <!-- Citation styles: search the style repository, install, add a .csl file, remove -->
+  <dialog id="styles-dialog" class="dialog wide" aria-labelledby="styles-title">
+    <header class="dialog-head">
+      <h2 id="styles-title">Citation styles</h2>
+      <button class="btn icon ghost" data-close aria-label="Close">
+        <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg>
+      </button>
+    </header>
+    <nav id="styles-tabs" class="tabs" role="tablist">
+      <button role="tab" data-tab="get" class="active">Get styles</button>
+      <button role="tab" data-tab="installed">Installed <span id="styles-installed-count" class="muted"></span></button>
+    </nav>
+    <div class="dialog-body">
+      <div data-pane="get" class="style-pane">
+        <label class="search style-search">
+          <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+          <input id="style-query" type="search" placeholder="Search ~10,000 styles: journal name, e.g. Plant Physiology, ACS, Elsevier…" aria-label="Search styles" autocomplete="off" spellcheck="false">
+        </label>
+        <p id="style-status" class="muted style-status"></p>
+        <ul id="style-results" class="style-list"></ul>
+      </div>
+      <div data-pane="installed" class="style-pane" hidden>
+        <ul id="style-installed" class="style-list"></ul>
+      </div>
+      <p class="error" data-error hidden role="alert"></p>
+    </div>
+    <footer class="dialog-foot">
+      <span class="muted">Styles come from the official CSL repository (zotero.org/styles) and are saved in <code>~/.zotlet/styles</code>.</span>
+      <input id="style-file" type="file" accept=".csl,.xml,application/xml,text/xml" hidden>
+      <button id="style-add-file" type="button" class="btn">Add .csl file…</button>
+      <button type="button" class="btn primary" data-close>Done</button>
     </footer>
   </dialog>
 

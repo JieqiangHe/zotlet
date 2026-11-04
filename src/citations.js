@@ -27,24 +27,50 @@ function readTitle(xml) {
   return m ? decode(m[1].trim()) : null
 }
 
+/** Parse the <info> block of a CSL style. `parent` is set for dependent styles. */
+export function styleInfo(xml) {
+  if (typeof xml !== 'string' || !/<style\b[^>]*xmlns="http:\/\/purl\.org\/net\/xbiblio\/csl"/.test(xml)) return null
+  const info = /<info>([\s\S]*?)<\/info>/.exec(xml)?.[1] || ''
+  const uri = /<id>([^<]+)<\/id>/.exec(info)?.[1].trim()
+  let parent = null
+  for (const link of info.match(/<link\b[^>]*>/g) || []) {
+    if (/\brel="independent-parent"/.test(link)) parent = decode(/\bhref="([^"]+)"/.exec(link)?.[1] || '') || null
+  }
+  return { title: readTitle(xml), uri: uri ? decode(uri) : null, parent,
+    format: /<category\b[^>]*citation-format="([^"]+)"/.exec(info)?.[1] || null }
+}
+
+export const SAFE_STYLE_ID = SAFE_ID
+export const styleIdFromURI = (uri) => String(uri || '').replace(/[?#].*$/, '').replace(/\/+$/, '').split('/').pop()
+
+/**
+ * Installed styles: bundled ones first, then ~/.zotlet/styles. A dependent style (most journal
+ * styles) renders with its parent's file, so `file` is always the file to format with;
+ * `path` is the style's own file. Dependents whose parent is not installed are left out.
+ */
 export function listStyles(userDir) {
-  const found = new Map()
+  const found = new Map(), dependents = []
   for (const dir of [BUILTIN_STYLES, userDir].filter(Boolean)) {
     let names = []
     try { names = fs.readdirSync(dir) } catch { continue }
     for (const name of names) {
       const id = name.slice(0, -4)
-      if (!name.endsWith('.csl') || !SAFE_ID.test(id) || found.has(id)) continue
+      if (!name.endsWith('.csl') || !SAFE_ID.test(id) || found.has(id) || dependents.some((d) => d.id === id)) continue
       const file = path.join(dir, name)
       try {
-        const xml = fs.readFileSync(file, 'utf8')
-        if (!/<style\b/.test(xml) || /<link[^>]+rel="independent-parent"/.test(xml)) continue
-        const title = readTitle(xml) || id
-        const uri = /<info>[\s\S]*?<id>([^<]+)<\/id>/.exec(xml)?.[1].trim()
-        found.set(id, { id, title, label: LABELS[id] || title, file, builtin: dir === BUILTIN_STYLES,
-          uri: uri ? decode(uri) : `http://www.zotero.org/styles/${id}` })
+        const info = styleInfo(fs.readFileSync(file, 'utf8'))
+        if (!info) continue
+        const title = info.title || id
+        const entry = { id, title, label: LABELS[id] || title, file, path: file, builtin: dir === BUILTIN_STYLES,
+          uri: info.uri || `http://www.zotero.org/styles/${id}`, format: info.format }
+        if (info.parent) dependents.push({ ...entry, parent: info.parent })
+        else found.set(id, entry)
       } catch { /* unreadable style: skip */ }
     }
+  }
+  for (const dep of dependents) {
+    const parent = found.get(styleIdFromURI(dep.parent)) || [...found.values()].find((s) => s.uri === dep.parent)
+    if (parent) found.set(dep.id, { ...dep, file: parent.file, parent: parent.id, format: dep.format || parent.format })
   }
   const rank = (id) => (PREFERRED.includes(id) ? PREFERRED.indexOf(id) : PREFERRED.length)
   return [...found.values()].sort((a, b) => rank(a.id) - rank(b.id) || a.title.localeCompare(b.title))

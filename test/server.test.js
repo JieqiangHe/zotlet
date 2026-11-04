@@ -40,7 +40,7 @@ async function call(route, body, { token = server.token, raw = false } = {}) {
 test('serves the page with a session token and static assets', async () => {
   const html = await (await fetch(base)).text()
   assert.ok(html.includes(server.token))
-  for (const asset of ['app.js', 'style.css', 'theme.js', 'favicon.svg']) assert.equal((await fetch(new URL(asset, base))).status, 200, asset)
+  for (const asset of ['app.js', 'style.css', 'theme.js']) assert.equal((await fetch(new URL(asset, base))).status, 200, asset)
   assert.equal((await fetch(new URL('../package.json', base))).status, 404)
 })
 

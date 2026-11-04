@@ -35,8 +35,9 @@ src/metadata.js    identifier parsing, doi.org / Crossref / PubMed lookup, CSL n
 src/citations.js   style discovery (styles/ + ~/.zotlet/styles) and citeproc formatting.
 src/export.js      CSL JSON, BibTeX, RIS writers.
 src/integration.js Word/LibreOffice/GenOffice: Zotero plugin protocol on TCP 23116 + HTTP 23119, document session.
+src/style-repo.js  "Get more styles": Zotero's style index (styles.json), download/install, add .csl file, remove.
 src/open.js        openBrowser().
-public/            index.html, app.js (single ES module), style.css, theme.js (pre-paint theme), favicon.svg,
+public/            index.html, app.js (single ES module), style.css, theme.js (pre-paint theme),
                    pick.html + pick.js (citation/style picker opened by the word processor integration).
 styles/            13 independent CSL styles from the official CSL repo (CC BY-SA 3.0).
 locales/           locales-en-US.xml (every style is rendered with en-US).
@@ -86,6 +87,19 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   existed in the repo, so don't reintroduce it.
 - A busy port (Zotero running) only prints a warning; the web app still starts.
 
+## Citation styles
+
+- `listStyles()` returns bundled styles, then `~/.zotlet/styles`. A dependent (journal) style is listed
+  with `file` = its parent's file (what to render with), `path` = its own file and `parent` = parent id;
+  one whose parent is missing is left out. Always render from `style.file`.
+- The style menu ends with "Get more styles…", which opens the styles dialog (search, Installed tab,
+  Add .csl file). The index comes from `https://www.zotero.org/styles-files/styles.json`, cached in
+  memory and in `~/.zotlet/style-index.json` (used when offline). Downloads try zotero.org first,
+  then raw.githubusercontent.com (`<name>.csl`, `dependent/<name>.csl`). Installing a journal style
+  installs its parent if needed; a parent still used by a journal style cannot be removed; bundled
+  styles cannot be removed or replaced. Styles are checked with citeproc before they are saved.
+- No logo: the user does not want one (no favicon, the brand is plain text).
+
 ## UI conventions
 
 - Look: light gray canvas (`--bg`), white panels, 1px borders, 4px radius (6px panels/menus),
@@ -123,7 +137,7 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   After any UI change, run them with `ZOTLET_SCREENSHOTS` and look at the PNGs (light, dark, dialogs,
   700px-wide window). The narrow test asserts there is no horizontal overflow.
 - Every bundled style is rendered in `citations.test.js`; add a new style to `styles/` and that test
-  covers it automatically. Dependent styles are skipped by `listStyles`.
+  covers it automatically.
 
 ## History: the 2026-11 rebuild
 

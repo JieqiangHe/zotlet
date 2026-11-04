@@ -269,10 +269,12 @@ function renderChrome() {
   $('btn-export').disabled = state.visible.length === 0
 }
 
+const MORE_STYLES = '__more__'
 function renderStyles() {
   const saved = store.get('zotlet-style')
   const options = () => state.styles.map((s) => el('option', { value: s.id, title: s.title }, s.label))
-  $('style-select').replaceChildren(...options())
+  $('style-select').replaceChildren(...options(), el('option', { disabled: true, value: '' }, '──────────'),
+    el('option', { value: MORE_STYLES }, 'Get more styles…'))
   $('bib-style').replaceChildren(...options())
   const value = state.styles.some((s) => s.id === saved) ? saved : state.styles[0]?.id
   $('style-select').value = value
@@ -553,7 +555,11 @@ function setStyle(id) {
   $('bib-style').value = id
   store.set('zotlet-style', id)
 }
-$('style-select').addEventListener('change', (e) => setStyle(e.target.value))
+$('style-select').addEventListener('change', (e) => {
+  if (e.target.value !== MORE_STYLES) return setStyle(e.target.value)
+  e.target.value = $('bib-style').value
+  openStylesDialog()
+})
 $('bib-style').addEventListener('change', (e) => { setStyle(e.target.value); renderBibliography() })
 $('btn-bib').addEventListener('click', () => {
   if (!state.visible.length) return
@@ -589,6 +595,125 @@ $('bib-download').addEventListener('click', () => {
   if (!lastBib) return
   const text = `${lastBib.bibliography.text || lastBib.citation.text}\n`
   downloadBlob(new Blob([text], { type: 'text/plain;charset=utf-8' }), `${lastBib.name} - ${lastBib.style.id}.txt`)
+})
+
+// ---------- citation styles (repository) ----------
+
+const currentStyle = () => $('bib-style').value
+const FORMAT_NAMES = { 'author-date': 'author-date', numeric: 'numeric', note: 'note', label: 'label', author: 'author' }
+let styleSearchTimer = null, styleSearchSeq = 0
+
+function setStyleList(styles, select) {
+  state.styles = styles
+  renderStyles()
+  if (select && styles.some((s) => s.id === select)) setStyle(select)
+  renderInstalledStyles()
+}
+
+function styleActions(...buttons) { return el('div', { class: 'style-actions' }, ...buttons) }
+
+function renderStyleResults({ total, results }, query) {
+  const list = $('style-results')
+  list.replaceChildren()
+  $('style-status').textContent = !total ? `No styles match “${query}”.`
+    : `${total.toLocaleString()} style${total === 1 ? '' : 's'}${query ? ` match “${query}”` : ''}${total > results.length ? ` · showing the first ${results.length}, type more to narrow down` : ''}`
+  for (const r of results) {
+    const meta = [FORMAT_NAMES[r.format] || r.format, r.fields.join(', '), r.dependent ? 'journal style' : 'independent style', r.updated && `updated ${r.updated}`].filter(Boolean).join(' · ')
+    const use = el('button', { type: 'button', class: 'btn sm', onclick: () => { setStyle(r.name); renderInstalledStyles(); toast(`Citation style: ${r.title}`) } }, 'Use')
+    const install = el('button', { type: 'button', class: 'btn sm primary', onclick: async () => {
+      install.disabled = true
+      install.textContent = 'Installing…'
+      showError($('styles-dialog'), '')
+      try {
+        const res = await api('styles/install', { name: r.name })
+        setStyleList(res.styles, res.installed.id)
+        r.installed = true
+        install.replaceWith(el('span', { class: 'badge' }, 'Installed'), use)
+        const parent = res.installed.parent && res.styles.find((x) => x.id === res.installed.parent)
+        toast(`Installed “${res.installed.title}”${parent ? ` (based on ${parent.label})` : ''} and selected it`)
+      } catch (error) {
+        install.disabled = false
+        install.textContent = 'Install'
+        showError($('styles-dialog'), error.message)
+      }
+    } }, 'Install')
+    list.append(el('li', {},
+      el('div', { class: 'style-text' }, el('span', { class: 'style-name', title: r.title }, r.title), el('span', { class: 'style-meta', title: meta }, meta)),
+      styleActions(...(r.installed ? [el('span', { class: 'badge' }, r.builtin ? 'Built-in' : 'Installed'), use] : [install]))))
+  }
+}
+
+async function searchStyles(refresh = false) {
+  const query = $('style-query').value.trim()
+  const seq = ++styleSearchSeq
+  $('style-status').textContent = refresh ? 'Downloading the style list…' : 'Searching…'
+  showError($('styles-dialog'), '')
+  try {
+    const result = await api('styles/search', { query, refresh })
+    if (seq === styleSearchSeq) renderStyleResults(result, query)
+  } catch (error) {
+    if (seq !== styleSearchSeq) return
+    $('style-status').textContent = ''
+    $('style-results').replaceChildren()
+    showError($('styles-dialog'), `${error.message}. Check your internet connection, or add a .csl file you downloaded yourself.`)
+  }
+}
+
+function renderInstalledStyles() {
+  const list = $('style-installed')
+  list.replaceChildren()
+  $('styles-installed-count').textContent = String(state.styles.length)
+  const byId = new Map(state.styles.map((s) => [s.id, s]))
+  for (const s of state.styles) {
+    const usedBy = state.styles.filter((d) => d.parent === s.id)
+    const meta = [s.builtin ? 'built-in' : 'installed by you', s.format, s.parent && `uses ${byId.get(s.parent)?.label || s.parent}`,
+      usedBy.length && `needed by ${usedBy.length} journal style${usedBy.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ')
+    const buttons = [el('button', { type: 'button', class: 'btn sm', disabled: s.id === currentStyle(), onclick: () => { setStyle(s.id); renderInstalledStyles() } }, 'Use')]
+    if (!s.builtin) {
+      buttons.push(el('button', { type: 'button', class: 'btn sm danger', disabled: usedBy.length > 0, title: usedBy.length ? 'Remove the journal styles that use it first' : '', onclick: async () => {
+        showError($('styles-dialog'), '')
+        try {
+          const res = await api('styles/remove', { id: s.id })
+          setStyleList(res.styles)
+          toast(`Removed “${s.title}”`)
+        } catch (error) { showError($('styles-dialog'), error.message) }
+      } }, 'Remove'))
+    }
+    list.append(el('li', { class: s.id === currentStyle() ? 'current' : '' },
+      el('div', { class: 'style-text' }, el('span', { class: 'style-name', title: s.title }, s.title), el('span', { class: 'style-meta' }, meta)),
+      styleActions(...buttons)))
+  }
+}
+
+function setStylesTab(name) {
+  for (const b of $('styles-tabs').children) b.classList.toggle('active', b.dataset.tab === name)
+  for (const p of $('styles-dialog').querySelectorAll('[data-pane]')) p.hidden = p.dataset.pane !== name
+  showError($('styles-dialog'), '')
+  if (name === 'get') setTimeout(() => $('style-query').focus(), 0)
+}
+
+function openStylesDialog() {
+  setStylesTab('get')
+  renderInstalledStyles()
+  $('styles-dialog').showModal()
+  searchStyles()
+}
+
+$('styles-tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setStylesTab(b.dataset.tab) })
+$('style-query').addEventListener('input', () => { clearTimeout(styleSearchTimer); styleSearchTimer = setTimeout(() => searchStyles(), 250) })
+$('style-query').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(styleSearchTimer); searchStyles() } })
+$('style-add-file').addEventListener('click', () => $('style-file').click())
+$('style-file').addEventListener('change', async (e) => {
+  const file = e.target.files[0]
+  e.target.value = ''
+  if (!file) return
+  showError($('styles-dialog'), '')
+  try {
+    const res = await api('styles/add', { xml: await file.text() })
+    setStyleList(res.styles, res.installed.id)
+    setStylesTab('installed')
+    toast(`Added “${res.installed.title}” and selected it`)
+  } catch (error) { showError($('styles-dialog'), error.message) }
 })
 
 // ---------- dialogs ----------
