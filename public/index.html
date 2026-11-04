@@ -82,7 +82,7 @@
             <button id="btn-delete" class="btn sm danger">Delete</button>
             <button id="btn-clear" class="btn sm ghost" title="Clear selection (Esc)">Clear</button>
           </div>
-          <div id="list-hint" class="listbar-actions muted">Drop PDFs here to import by DOI · double-click opens the PDF (or edits)</div>
+          <div id="list-hint" class="listbar-actions muted">Drop PDFs here to import by DOI · double-click to edit</div>
         </div>
         <div class="table" role="grid" aria-labelledby="view-title">
           <div class="row head" role="row">
@@ -93,7 +93,7 @@
             <button class="cell sort" data-sort="journal" role="columnheader">Journal<span class="arrow"></span></button>
           </div>
           <div id="rows" class="rows"></div>
-          <div id="drop-hint" class="drop-hint" hidden><strong>Drop PDFs to import them by DOI</strong><span>Drop on a reference to attach the PDF to it. Only the file's location is saved.</span></div>
+          <div id="drop-hint" class="drop-hint" hidden><strong>Drop PDFs to import them by DOI</strong><span>zotlet reads the DOI inside each PDF. The PDF itself is not kept.</span></div>
           <div id="empty" class="empty" hidden></div>
         </div>
       </div>
@@ -139,7 +139,6 @@
     <form id="manual-form" class="dialog-panel" data-panel="manual" hidden novalidate>
       <div class="dialog-body">
         <p id="manual-key" class="note" hidden></p>
-        <div id="manual-pdf" class="pdf-line" hidden></div>
         <div class="grid">
           <label class="field span-2"><span>Title <b class="req">*</b></span><textarea name="title" rows="2" required></textarea></label>
           <label class="field span-2"><span>Authors <small class="muted">one per line · Family, Given · {Organisation}</small></span><textarea name="author" rows="3" spellcheck="false"></textarea></label>
@@ -217,7 +216,7 @@
       </button>
     </header>
     <div class="dialog-body">
-      <p id="pdf-note" class="muted">zotlet reads the DOI inside each PDF and looks the reference up. The PDF is not copied — only where it is on your computer is remembered, so moving the file breaks the link.</p>
+      <p id="pdf-note" class="muted">zotlet reads the DOI inside each PDF and imports the reference. The PDF itself is not kept.</p>
       <ul id="pdf-results" class="pdf-results"></ul>
     </div>
     <footer class="dialog-foot">

@@ -68,8 +68,6 @@ export function createStore({ dir = dataDir(), libraryFile = process.env.ZOTLET_
       p.name = typeof p.name === 'string' && p.name.trim() ? p.name : 'Untitled'
       p.itemIds = Array.isArray(p.itemIds) ? [...new Set(p.itemIds.filter((id) => typeof id === 'string'))] : []
     }
-    // Linked PDFs: { itemId: absolute path }. Only the path is stored, never the file.
-    state.pdfs = plain(state.pdfs) ? Object.fromEntries(Object.entries(state.pdfs).filter(([, v]) => typeof v === 'string' && v)) : {}
     return { items, state }
   }
 
@@ -103,7 +101,6 @@ export function createStore({ dir = dataDir(), libraryFile = process.env.ZOTLET_
     return {
       items: visible,
       projects: state.projects.map((p) => ({ id: p.id, name: p.name, created: p.created || null, itemIds: p.itemIds.filter((id) => known.has(id)) })),
-      pdfs: Object.fromEntries(Object.entries(state.pdfs).filter(([id]) => known.has(id))),
       paths: { library: libraryFile, state: stateFile },
     }
   }
@@ -158,18 +155,7 @@ export function createStore({ dir = dataDir(), libraryFile = process.env.ZOTLET_
         const before = items.length
         for (let i = items.length - 1; i >= 0; i--) if (plain(items[i]) && remove.has(items[i].id)) items.splice(i, 1)
         for (const p of state.projects) p.itemIds = p.itemIds.filter((id) => !remove.has(id))
-        for (const id of remove) delete state.pdfs[id]
         return { removed: before - items.length }
-      })
-    },
-
-    /** Link a PDF path to an item (`null` unlinks). */
-    setPdf(id, file) {
-      return mutate(({ items, state }) => {
-        if (!usedIds(items).has(id)) throw userError('Reference not found', 404)
-        if (file) state.pdfs[id] = file
-        else delete state.pdfs[id]
-        return { id, pdf: file || null }
       })
     },
 

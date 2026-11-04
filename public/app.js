@@ -12,8 +12,6 @@ const store = {
 const state = {
   items: [],
   projects: [],
-  pdfs: {}, // itemId -> path of the linked PDF
-  platform: '',
   styles: [],
   paths: {},
   project: store.get('zotlet-project') || '',
@@ -43,8 +41,6 @@ async function refresh() {
   state.items = data.items
   state.projects = data.projects
   state.paths = data.paths
-  state.pdfs = data.pdfs || {}
-  state.platform = data.platform || ''
   if (!state.styles.length) { state.styles = data.styles; renderStyles() }
   if (state.project && !state.projects.some((p) => p.id === state.project)) setProject('')
   render()
@@ -204,8 +200,6 @@ function renderRows() {
   const rows = state.visible.map((item) => {
     const selected = state.selected.has(item.id)
     const title = el('span', { class: 'cell title', title: plain(item.title) })
-    const pdf = state.pdfs[item.id]
-    if (pdf) title.append(el('button', { type: 'button', class: 'pdf-badge', title: `Open PDF\n${pdf}`, 'aria-label': 'Open PDF', dataset: { pdf: item.id } }, 'PDF'))
     title.append(richTitle(item.title || '(untitled)'))
     const journal = el('span', { class: 'cell journal', title: item['container-title'] || '' })
     journal.append(richTitle(item['container-title'] || item.publisher || ''))
@@ -329,8 +323,6 @@ function syncSelection() {
 }
 
 $('rows').addEventListener('click', (e) => {
-  const badge = e.target.closest('[data-pdf]')
-  if (badge) { e.stopPropagation(); openPdf(badge.dataset.pdf); return }
   const row = e.target.closest('.row')
   if (!row) return
   const viaCheckbox = !!e.target.closest('.cell.check')
@@ -338,10 +330,7 @@ $('rows').addEventListener('click', (e) => {
 })
 $('rows').addEventListener('dblclick', (e) => {
   const row = e.target.closest('.row')
-  if (!row || e.target.closest('.cell.check') || e.target.closest('[data-pdf]')) return
-  // Double-click opens the linked PDF; without one it edits the reference.
-  if (state.pdfs[row.dataset.id]) openPdf(row.dataset.id)
-  else openRefDialog(state.items.find((i) => i.id === row.dataset.id))
+  if (row && !e.target.closest('.cell.check')) openRefDialog(state.items.find((i) => i.id === row.dataset.id))
 })
 $('check-all').addEventListener('change', (e) => {
   state.selected = e.target.checked ? new Set(state.visible.map((i) => i.id)) : new Set()
@@ -608,62 +597,17 @@ $('bib-download').addEventListener('click', () => {
   downloadBlob(new Blob([text], { type: 'text/plain;charset=utf-8' }), `${lastBib.name} - ${lastBib.style.id}.txt`)
 })
 
-// ---------- linked PDFs ----------
-
-async function openPdf(id) {
-  try { await api('pdf/open', { id }) } catch (error) { fail(error) }
-}
-
-/** The PDF row in the edit dialog: path, Open, Change, Unlink. */
-function renderPdfLine(item) {
-  const box = $('manual-pdf')
-  box.hidden = !item
-  if (!item) return
-  const file = state.pdfs[item.id]
-  const after = async (call) => {
-    try { await call(); await refresh(); renderPdfLine(state.items.find((i) => i.id === item.id) || item) } catch (error) { fail(error) }
-  }
-  const change = state.platform === 'darwin'
-    ? el('button', { type: 'button', class: 'btn sm', onclick: () => after(() => api('pdf/choose', { id: item.id })) }, file ? 'Change…' : 'Choose PDF…')
-    : el('button', { type: 'button', class: 'btn sm', onclick: () => {
-      const input = el('input', { type: 'text', value: file || '', placeholder: 'Full path of the PDF', spellcheck: 'false', 'aria-label': 'Path of the PDF' })
-      const save = () => after(() => api('pdf/link', { id: item.id, path: input.value }))
-      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); save() } })
-      box.replaceChildren(el('span', { class: 'muted' }, 'PDF'), input,
-        el('button', { type: 'button', class: 'btn sm primary', onclick: save }, 'Link'),
-        el('button', { type: 'button', class: 'btn sm', onclick: () => renderPdfLine(item) }, 'Cancel'))
-      input.focus()
-    } }, file ? 'Change…' : 'Link PDF…')
-  box.replaceChildren(
-    el('span', { class: 'muted' }, 'PDF'),
-    file ? el('span', { class: 'pdf-path', title: file }, `\u200e${file}\u200e`) : el('span', { class: 'pdf-path' }, 'None — drop the PDF on this reference in the list'),
-    file && el('button', { type: 'button', class: 'btn sm', onclick: () => openPdf(item.id) }, 'Open'),
-    change,
-    file && el('button', { type: 'button', class: 'btn sm danger', title: 'Forget the link (the file is not deleted)', onclick: () => after(() => api('pdf/unlink', { id: item.id })) }, 'Unlink'))
-}
+// ---------- PDFs dropped on the list: read the DOI, import the reference ----------
 
 async function uploadPdf(file, query = '') {
   let res
   try {
-    res = await fetch(`/api/pdf/import${query}`, { method: 'POST', body: file, headers: {
-      'Content-Type': 'application/pdf', 'X-Zotlet-Token': TOKEN, 'X-File-Name': encodeURIComponent(file.name), 'X-File-Size': String(file.size) } })
+    res = await fetch(`/api/pdf/import${query}`, { method: 'POST', body: file,
+      headers: { 'Content-Type': 'application/pdf', 'X-Zotlet-Token': TOKEN, 'X-File-Name': encodeURIComponent(file.name) } })
   } catch { throw new Error('Cannot reach zotlet. Is the server still running?') }
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`)
   return data
-}
-
-/** Buttons to link a file that was not found on disk: native dialog on macOS, else a path. */
-function locateControls(id, onDone) {
-  const input = el('input', { type: 'text', placeholder: 'Full path, e.g. /Users/you/Downloads/paper.pdf', spellcheck: 'false', 'aria-label': 'Path of the PDF' })
-  const link = async (call) => {
-    try { const r = await call(); if (!r.cancelled) { await refresh(); onDone() } } catch (error) { toast(error.message, 'error') }
-  }
-  return [
-    state.platform === 'darwin' && el('button', { type: 'button', class: 'btn sm', onclick: () => link(() => api('pdf/choose', { id })) }, 'Choose file…'),
-    input,
-    el('button', { type: 'button', class: 'btn sm', onclick: () => link(() => api('pdf/link', { id, path: input.value })) }, 'Link'),
-  ]
 }
 
 function pdfRow(file) {
@@ -673,52 +617,41 @@ function pdfRow(file) {
     li.replaceChildren(el('span', { class: 'mark' }, mark), el('span', { class: 'file', title: file.name }, file.name),
       el('span', { class: 'what' }, ...[what].flat()), fix.length ? el('div', { class: 'fix' }, ...fix) : null)
   }
-  set('pending', '…', el('span', { class: 'muted' }, 'Reading the PDF and looking up its DOI…'))
+  set('pending', '…', el('span', { class: 'muted' }, 'Reading the DOI and looking it up…'))
   return { li, set }
 }
 
 function describe(result, set, retry) {
-  const where = result.path ? el('span', { class: 'muted' }, ` · linked to ${result.path}`) : null
-  const notFound = (id) => [el('span', { class: 'muted' }, 'The file could not be found on disk, so it is not linked yet. '), ...locateControls(id, () => set('ok', '✓', [`PDF linked to ${id}`]))]
-  const title = (t) => el('b', {}, plain(t || '(untitled)'))
-  if (result.status === 'added' || result.status === 'duplicate') {
-    const what = [result.status === 'added' ? 'Imported ' : 'Already in your library: ', title(result.title), ` (${result.doi})`, where]
-    if (result.path) set('ok', '✓', what)
-    else set('warn', '!', what, notFound(result.id))
-  } else if (result.status === 'linked') {
-    if (result.path) set('ok', '✓', ['PDF attached to ', el('b', {}, result.id), where])
-    else set('warn', '!', ['Not attached'], notFound(result.id))
-  } else {
-    const input = el('input', { type: 'text', value: result.doi || '', placeholder: 'Type the DOI, e.g. 10.1016/j.plaphy.2026.111729', spellcheck: 'false', 'aria-label': 'DOI' })
-    const go = el('button', { type: 'button', class: 'btn sm primary', onclick: () => retry(input.value) }, 'Import')
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go.click() } })
-    const found = result.path ? el('span', { class: 'muted' }, ` · file at ${result.path}`) : null
-    set('bad', '✗', result.status === 'no-doi' ? ['No DOI found in this PDF', found] : [`The DOI ${result.doi} could not be looked up: ${result.message}`, found], [input, go])
-  }
+  const title = el('b', {}, plain(result.title || '(untitled)'))
+  if (result.status === 'added') return set('ok', '✓', ['Imported ', title, el('span', { class: 'muted' }, ` · ${result.doi}`)])
+  if (result.status === 'duplicate') return set('warn', '•', ['Already in your library: ', title, el('span', { class: 'muted' }, ` · ${result.doi}`)])
+  const input = el('input', { type: 'text', value: result.doi || '', placeholder: 'Type the DOI, e.g. 10.1016/j.plaphy.2026.111729', spellcheck: 'false', 'aria-label': 'DOI' })
+  const go = el('button', { type: 'button', class: 'btn sm primary', onclick: () => retry(input.value) }, 'Import')
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go.click() } })
+  set('bad', '✗', result.status === 'no-doi' ? 'No DOI found in this PDF' : `The DOI ${result.doi} could not be looked up: ${result.message}`, [input, go])
 }
 
-async function importPdfs(files, { itemId } = {}) {
+async function importPdfs(files) {
   const pdfs = files.filter((f) => /\.pdf$/i.test(f.name) || f.type === 'application/pdf')
   if (!pdfs.length) { toast('Only PDF files can be dropped here', 'error'); return }
   const project = currentProject()
-  $('pdf-title').textContent = itemId ? 'Attach PDF' : `Import ${pdfs.length === 1 ? 'PDF' : `${pdfs.length} PDFs`}`
+  $('pdf-title').textContent = `Import ${pdfs.length === 1 ? 'PDF' : `${pdfs.length} PDFs`}`
   $('pdf-results').replaceChildren()
-  $('pdf-summary').textContent = project && !itemId ? `New references are also added to “${project.name}”.` : ''
+  $('pdf-summary').textContent = project ? `New references are also added to “${project.name}”.` : ''
   if (!$('pdf-dialog').open) $('pdf-dialog').showModal()
-  const query = itemId ? `?itemId=${encodeURIComponent(itemId)}` : project ? `?projectId=${encodeURIComponent(project.id)}` : ''
+  const query = project ? `?projectId=${encodeURIComponent(project.id)}` : ''
   let touched = null
   for (const file of pdfs) {
     const row = pdfRow(file)
     $('pdf-results').append(row.li)
-    // Typing a DOI for a PDF without one: import it, then link this same file.
     const retry = async (text) => {
       try {
         const { results } = await api('import', { text, projectId: project?.id || undefined })
-        const r = results.find((x) => x.status !== 'error')
-        if (!r) throw new Error(results[0]?.message || 'Not a DOI')
-        const linked = await uploadPdf(file, `?itemId=${encodeURIComponent(r.id)}`)
+        const r = results[0]
+        if (!r || r.status === 'error') throw new Error(r?.message || 'Not a DOI')
         await refresh()
-        describe({ ...linked, status: r.status, title: r.title, doi: text.trim() }, row.set, retry)
+        describe({ status: r.status, title: r.title, doi: text.trim() }, row.set, retry)
+        flashRow(r.id)
       } catch (error) { toast(error.message, 'error') }
     }
     try {
@@ -743,32 +676,16 @@ function flashRow(id) {
 // Drag PDFs from Finder / Explorer onto the list (internal row drags carry no files).
 const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files')
 let dragDepth = 0
-function clearDrop() {
-  dragDepth = 0
-  $('drop-hint').hidden = true
-  document.querySelector('.table').classList.remove('over-row')
-  for (const r of document.querySelectorAll('.row.drop-target')) r.classList.remove('drop-target')
-}
+function clearDrop() { dragDepth = 0; $('drop-hint').hidden = true }
 const table = document.querySelector('.table')
 table.addEventListener('dragenter', (e) => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth++; $('drop-hint').hidden = false })
 table.addEventListener('dragleave', (e) => { if (hasFiles(e) && --dragDepth <= 0) clearDrop() })
-table.addEventListener('dragover', (e) => {
-  if (!hasFiles(e)) return
-  e.preventDefault()
-  e.dataTransfer.dropEffect = 'copy'
-  const row = e.target.closest('.rows .row')
-  for (const r of document.querySelectorAll('.row.drop-target')) if (r !== row) r.classList.remove('drop-target')
-  row?.classList.add('drop-target')
-  table.classList.toggle('over-row', !!row)
-})
+table.addEventListener('dragover', (e) => { if (!hasFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy' })
 table.addEventListener('drop', (e) => {
   if (!hasFiles(e)) return
   e.preventDefault()
-  const row = e.target.closest('.rows .row')
   clearDrop()
-  const files = [...e.dataTransfer.files]
-  if (row && files.length === 1) importPdfs(files, { itemId: row.dataset.id })
-  else importPdfs(files)
+  importPdfs([...e.dataTransfer.files])
 })
 // Dropping a file anywhere else must not make the browser navigate away to it.
 window.addEventListener('dragover', (e) => { if (hasFiles(e)) e.preventDefault() })
@@ -1004,7 +921,6 @@ function openRefDialog(item = null) {
   $('manual-submit').textContent = item ? 'Save changes' : 'Add reference'
   $('manual-key').hidden = !item
   if (item) $('manual-key').replaceChildren('Citation key ', el('code', {}, item.id), ' — kept stable when you edit.')
-  renderPdfLine(item)
   $('manual-hint').textContent = !item && project ? `Will also be added to “${project.name}”.` : ''
   $('import-target').hidden = !project
   $('import-target').textContent = project ? `Imported references will also be added to “${project.name}”.` : ''

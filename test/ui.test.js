@@ -7,7 +7,6 @@ import { createRequire } from 'node:module'
 import { startServer } from '../src/server.js'
 import { createStore } from '../src/store.js'
 import { fixture, fakeFetch, tempDir, makePdf } from './helpers.js'
-import { locatePdf } from '../src/pdf.js'
 
 let playwright = null
 try { playwright = createRequire(import.meta.url)('playwright') } catch { /* optional */ }
@@ -15,8 +14,7 @@ const SHOTS = process.env.ZOTLET_SCREENSHOTS // optional folder for screenshots
 const skip = !playwright && 'Playwright is not installed'
 
 const ELSEVIER = '10.1016/j.plaphy.2026.111729'
-let server, browser, page, dir, pdfDir
-const openedFiles = []
+let server, browser, page, dir
 
 // Serves Zotero's style index and one journal style; everything else goes to `next`.
 const JOURNAL_STYLE = fs.readFileSync(new URL('./fixtures/dependent-style.csl', import.meta.url), 'utf8')
@@ -35,8 +33,6 @@ const opened = []
 before(async () => {
   if (!playwright) return
   dir = tempDir()
-  pdfDir = path.join(dir, 'Downloads')
-  fs.mkdirSync(pdfDir)
   const store = createStore({ dir })
   await store.addItems([
     { type: 'article-journal', title: 'CRISPR screens in <i>Zea mays</i> reveal new regulators', author: [{ family: 'Olsen', given: 'Kai' }, { family: 'Ng', given: 'Mei' }], 'container-title': 'Nature Plants', issued: { 'date-parts': [[2023, 5]] }, DOI: '10.1038/s41477-023-0001-1' },
@@ -44,8 +40,6 @@ before(async () => {
   ])
   server = await startServer({
     port: 0, dir, store, quiet: true, openUrl: (url) => opened.push(url),
-    locate: (file, options) => locatePdf(file, { ...options, roots: [pdfDir], useSpotlight: false }),
-    openPath: async (file) => { openedFiles.push(file) },
     fetchImpl: styleNet(fakeFetch({ dois: { [ELSEVIER]: fixture('elsevier-crossref.json') }, pmids: { 31452104: fixture('pubmed.json') } })),
   })
   browser = await playwright.chromium.launch()
@@ -326,7 +320,6 @@ test('get more styles: search the repository, install a journal style, use and r
 })
 
 async function dropPdf(selector, name, bytes) {
-  fs.writeFileSync(path.join(pdfDir, name), bytes)
   const dataTransfer = await page.evaluateHandle(({ name, data }) => {
     const dt = new DataTransfer()
     dt.items.add(new File([Uint8Array.from(atob(data), (c) => c.charCodeAt(0))], name, { type: 'application/pdf' }))
@@ -337,52 +330,29 @@ async function dropPdf(selector, name, bytes) {
   return dataTransfer
 }
 
-test('drop PDFs: DOI read from the file, path linked, double-click opens it', { skip }, async () => {
+test('drop PDFs: the DOI is read and the reference imported; type a DOI when none is found', { skip }, async () => {
   await page.setViewportSize({ width: 1280, height: 760 })
   await page.click('.nav-item[data-project=""]')
+  const before = (await createStore({ dir }).snapshot()).items.length
   const article = makePdf({ pages: ['[(Plant Physiology and Biochemistry)-300(https://doi.org/10.1016/j.plaphy.2026.111729)]TJ'] })
   const dt = await dropPdf('.table', 'elsevier.pdf', article)
   assert.ok(await page.isVisible('#drop-hint'))
   await shot('40-pdf-drop-hint')
   await page.dispatchEvent('.table', 'drop', { dataTransfer: dt })
-  await page.waitForSelector('#pdf-results li.ok')
-  const text = await page.textContent('#pdf-results li')
-  assert.match(text, /10\.1016\/j\.plaphy\.2026\.111729/)
-  assert.match(text, /linked to .*elsevier\.pdf/)
+  await page.waitForSelector('#pdf-results li.warn')
+  assert.match(await page.textContent('#pdf-results li'), /Already in your library: .*10\.1016\/j\.plaphy\.2026\.111729/)
+  assert.ok(await page.isHidden('#drop-hint'))
 
-  // A PDF without a DOI: type one in.
-  const notes = makePdf({ pages: ['(Lab notes without an identifier)Tj'] })
-  const dt2 = await dropPdf('.table', 'notes.pdf', notes)
+  // No DOI in the file: type it in the result row.
+  const dt2 = await dropPdf('.table', 'notes.pdf', makePdf({ pages: ['(Lab notes without an identifier)Tj'] }))
   await page.dispatchEvent('.table', 'drop', { dataTransfer: dt2 })
   await page.waitForSelector('#pdf-results li.bad')
   assert.match(await page.textContent('#pdf-results li.bad'), /No DOI found/)
   await assertDialogLaidOut('#pdf-dialog')
   await shot('41-pdf-no-doi')
+  await page.fill('#pdf-results li.bad input', '10.1016/j.plaphy.2026.111729')
+  await page.click('#pdf-results li.bad button')
+  await page.waitForSelector('#pdf-results li.warn')
   await page.click('#pdf-dialog .dialog-foot .primary')
-
-  const row = '.rows .row:has-text("Arabidopsis")'
-  await page.waitForSelector(`${row} .pdf-badge`)
-  await shot('42-pdf-badge')
-  await page.dblclick(`${row} .cell.year`)
-  for (let k = 0; !openedFiles.length && k < 100; k++) await new Promise((r) => setTimeout(r, 20))
-  assert.equal(openedFiles.at(-1), path.join(pdfDir, 'elsevier.pdf'))
-
-  // Dropping onto a row attaches the file to that reference.
-  const book = '.rows .row:has-text("Statistical Rethinking")'
-  const dt3 = await dropPdf(book, 'rethinking.pdf', makePdf({ pages: ['(Statistical Rethinking)Tj'] }))
-  await page.dispatchEvent(book, 'drop', { dataTransfer: dt3 })
-  await page.waitForSelector('#pdf-results li.ok')
-  assert.match(await page.textContent('#pdf-results li'), /PDF attached to mcelreath2020/)
-  await page.click('#pdf-dialog .dialog-foot .primary')
-  await page.waitForSelector(`${book} .pdf-badge`)
-
-  // The edit dialog shows the path and can unlink it.
-  await page.click(`${book} .cell.year`)
-  await page.click('#btn-edit')
-  assert.match(await page.textContent('#manual-pdf'), /rethinking\.pdf/)
-  await shot('43-edit-pdf')
-  await page.click('#manual-pdf button:has-text("Unlink")')
-  await page.waitForFunction(() => /None/.test(document.querySelector('#manual-pdf').textContent))
-  await page.keyboard.press('Escape')
-  await page.waitForFunction(() => !document.querySelector('.rows .row[data-id="mcelreath2020"] .pdf-badge'))
+  assert.equal((await createStore({ dir }).snapshot()).items.length, before)
 })
