@@ -15,6 +15,7 @@ const skip = !playwright && 'Playwright is not installed'
 
 const ELSEVIER = '10.1016/j.plaphy.2026.111729'
 let server, browser, page, dir
+const opened = []
 
 before(async () => {
   if (!playwright) return
@@ -25,7 +26,7 @@ before(async () => {
     { type: 'book', title: 'Statistical Rethinking', author: [{ family: 'McElreath', given: 'Richard' }], publisher: 'CRC Press', issued: { 'date-parts': [[2020]] } },
   ])
   server = await startServer({
-    port: 0, dir, store, quiet: true,
+    port: 0, dir, store, quiet: true, openUrl: (url) => opened.push(url),
     fetchImpl: fakeFetch({ dois: { [ELSEVIER]: fixture('elsevier-crossref.json') }, pmids: { 31452104: fixture('pubmed.json') } }),
   })
   browser = await playwright.chromium.launch()
@@ -225,4 +226,52 @@ test('narrow window: no horizontal overflow', { skip }, async () => {
   assert.ok(overflow <= 0, `horizontal overflow ${overflow}px`)
   await shot('10-narrow')
   await page.setViewportSize({ width: 1280, height: 760 })
+})
+
+test('citation picker (opened by Word / GenOffice): search, select, insert; style picker', { skip }, async () => {
+  const { items } = await createStore({ dir }).snapshot()
+  const result = server.pick({ mode: 'cite', style: 'nature', items, selected: [] })
+  await new Promise((r) => setTimeout(r, 20))
+  const picker = await page.context().newPage()
+  picker.on('pageerror', (e) => page.errors.push(e))
+  await picker.goto(opened.shift())
+  await picker.waitForSelector('#pick-rows .row')
+  assert.equal(await picker.$$eval('#pick-rows .row', (rows) => rows.length), items.length)
+  await picker.fill('#pick-search', 'rethinking')
+  await picker.waitForFunction(() => document.querySelectorAll('#pick-rows .row').length === 1)
+  const picked = await picker.getAttribute('#pick-rows .row', 'data-id')
+  await picker.click('#pick-rows .row')
+  assert.equal(await picker.isDisabled('#pick-ok'), false)
+  await picker.fill('#pick-search', '')
+  await picker.selectOption('#pick-style', 'apa')
+  if (SHOTS) await picker.screenshot({ path: path.join(SHOTS, '20-picker.png') })
+  await picker.setViewportSize({ width: 700, height: 600 })
+  assert.ok(await picker.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'no horizontal overflow')
+  if (SHOTS) await picker.screenshot({ path: path.join(SHOTS, '21-picker-narrow.png') })
+  await picker.keyboard.press('Enter')
+  const chosen = await result
+  assert.equal(chosen.style, 'apa')
+  assert.deepEqual(chosen.ids, [picked])
+  await picker.waitForSelector('#pick-message:not([hidden])')
+  await picker.close().catch(() => {})
+
+  const styleResult = server.pick({ mode: 'style', style: 'nature' })
+  await new Promise((r) => setTimeout(r, 20))
+  const stylePage = await page.context().newPage()
+  await stylePage.goto(opened.shift())
+  await stylePage.waitForSelector('#pick-rows .row.selected')
+  await stylePage.click('#pick-rows .row:nth-child(2)')
+  if (SHOTS) await stylePage.screenshot({ path: path.join(SHOTS, '22-style-picker.png') })
+  await stylePage.click('#pick-ok')
+  assert.equal((await styleResult).style, 'science')
+  await stylePage.close().catch(() => {})
+
+  // Closing the tab without answering cancels the request.
+  const closed = server.pick({ mode: 'cite', style: 'nature', items, selected: [] })
+  await new Promise((r) => setTimeout(r, 20))
+  const gone = await page.context().newPage()
+  await gone.goto(opened.shift())
+  await gone.waitForSelector('#pick-rows .row')
+  await gone.close({ runBeforeUnload: true })
+  assert.equal(await closed, null)
 })

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="zotlet-token" content="__ZOTLET_TOKEN__">
+  <title>zotlet — insert citation</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script src="/theme.js"></script>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/pick.js"></script>
+</head>
+<body class="pick">
+  <header class="topbar">
+    <div class="brand pick-brand"><img src="/favicon.svg" alt="" width="16" height="16">zotlet</div>
+    <label class="search" id="pick-search-box">
+      <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+      <input id="pick-search" type="search" placeholder="Search title, author, journal, year, DOI…" aria-label="Search references" autocomplete="off" spellcheck="false">
+    </label>
+    <select id="pick-project" class="select" aria-label="Project" title="Show references from"></select>
+    <select id="pick-style" class="select" aria-label="Citation style" title="Citation style for this document"></select>
+  </header>
+
+  <main class="main">
+    <section class="panel" aria-labelledby="pick-title">
+      <div class="listbar">
+        <div class="listbar-title"><h1 id="pick-title">Insert citation</h1><span id="pick-count" class="muted"></span></div>
+        <span id="pick-hint" class="muted">Click to select · ↑↓ move · Space toggle · Enter insert · Esc cancel</span>
+      </div>
+      <div id="pick-rows" class="rows" role="listbox" aria-multiselectable="true" tabindex="0"></div>
+      <div id="pick-message" class="empty" hidden></div>
+    </section>
+  </main>
+
+  <footer class="pick-foot">
+    <div id="pick-chosen" class="pick-chosen" aria-live="polite"></div>
+    <button id="pick-cancel" class="btn">Cancel</button>
+    <button id="pick-ok" class="btn primary" disabled>Insert</button>
+  </footer>
+</body>
+</html>

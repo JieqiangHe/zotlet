@@ -127,7 +127,7 @@ input:not([type="checkbox"]) { height: var(--control); }
 textarea { resize: vertical; line-height: 1.45; }
 input:focus, textarea:focus, .select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft-strong); outline: none; }
 input::placeholder, textarea::placeholder { color: var(--muted); }
-input[type="checkbox"] { width: 13px; height: 13px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+input[type="checkbox"], input[type="radio"] { width: 13px; height: 13px; margin: 0; padding: 0; border: 0; background: none; accent-color: var(--accent); cursor: pointer; }
 kbd {
   padding: 0 5px; border: 1px solid var(--border); border-radius: 3px;
   background: var(--panel-2); color: var(--muted); font: 10px/16px var(--mono);
@@ -403,4 +403,34 @@ kbd {
   .row > :nth-child(3) { display: none; }
   .main { padding: 8px; }
   .listbar-actions .muted { display: none; }
+}
+
+/* ---------- citation picker (pick.html, opened by Word / LibreOffice / GenOffice) ---------- */
+body.pick .pick-brand { width: auto; padding-right: 8px; }
+body.pick #pick-project { width: 170px; flex: 0 1 170px; min-width: 96px; }
+body.pick #pick-style { width: 170px; flex: 0 1 170px; min-width: 96px; }
+body.pick #pick-hint { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.pick .rows:focus { outline: none; }
+body.pick .rows .row { cursor: pointer; }
+body.pick .rows .row.cursor { box-shadow: inset 2px 0 0 var(--accent); }
+body.pick .row.style-row { grid-template-columns: 36px minmax(0, 1fr) minmax(0, 200px); }
+.pick-foot {
+  display: flex; align-items: center; gap: 8px;
+  height: 48px; padding: 0 12px;
+  background: var(--panel); border-top: 1px solid var(--border);
+}
+.pick-chosen { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; color: var(--muted); }
+.pick-chosen .chip {
+  display: inline-flex; align-items: center; gap: 4px; max-width: 220px; height: 22px; padding: 0 4px 0 8px;
+  border: 1px solid var(--border); border-radius: 11px; background: var(--accent-soft); color: var(--text);
+}
+.pick-chosen .chip span { overflow: hidden; text-overflow: ellipsis; }
+.pick-chosen .chip button {
+  width: 16px; height: 16px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; line-height: 1;
+}
+.pick-chosen .chip button:hover { background: var(--hover); color: var(--text); }
+.pick-foot .btn { flex: none; }
+body.pick.done .pick-foot, body.pick.done .topbar > :not(.brand) { display: none; }
+@media (max-width: 640px) {
+  body.pick #pick-hint { display: none; }
 }

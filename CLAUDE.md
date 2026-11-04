@@ -7,7 +7,8 @@ conventions to keep, and what was done in the 2026-11 rebuild.
 ## What zotlet is
 
 A minimal, personal reference manager: projects on the left, one reference list in the center
-(no right-hand detail pane), DOI/PMID import, citeproc-js citations, CSL JSON / BibTeX / RIS export.
+(no right-hand detail pane), DOI/PMID import, citeproc-js citations, CSL JSON / BibTeX / RIS export,
+and live citations in Word / LibreOffice / GenOffice through the Zotero plugin protocol.
 Runtime is the user's own system `node` (>= 18.17) + a static frontend. The only npm dependency is
 `citeproc`. No build step, no framework, no bundled Node binary.
 
@@ -33,7 +34,10 @@ src/store.js       library.json + web-state.json persistence (atomic, serialized
 src/metadata.js    identifier parsing, doi.org / Crossref / PubMed lookup, CSL normalization, citation keys.
 src/citations.js   style discovery (styles/ + ~/.zotlet/styles) and citeproc formatting.
 src/export.js      CSL JSON, BibTeX, RIS writers.
-public/            index.html, app.js (single ES module), style.css, theme.js (pre-paint theme), favicon.svg.
+src/integration.js Word/LibreOffice/GenOffice: Zotero plugin protocol on TCP 23116 + HTTP 23119, document session.
+src/open.js        openBrowser().
+public/            index.html, app.js (single ES module), style.css, theme.js (pre-paint theme), favicon.svg,
+                   pick.html + pick.js (citation/style picker opened by the word processor integration).
 styles/            13 independent CSL styles from the official CSL repo (CC BY-SA 3.0).
 locales/           locales-en-US.xml (every style is rendered with en-US).
 test/              *.test.js + helpers.js + fixtures/ (recorded Crossref and PubMed records).
@@ -62,6 +66,25 @@ start-web.sh       real launcher; start-web.command just execs it (macOS double-
    `.command` files don't always load the shell profile), installs citeproc only if missing, never
    closes the Terminal window, and waits for Enter after the server stops.
 7. **Two panes only.** Do not add a right-hand detail pane; editing happens in a dialog.
+
+## Word processor integration
+
+`zotlet.js web` starts `src/integration.js` next to the web app (`startServer({ integration: {} })`;
+`--no-word` or `ZOTLET_NO_WORD=1` turns it off; tests pass ports 0). It is the protocol of Zotero's
+plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which the user relies on:
+
+- **TCP 23116** (Word, LibreOffice, GenOffice): 8-byte header (transaction id, length) + JSON. A command
+  arrives as id 0; zotlet then issues `Document_getFields`-style RPCs. LibreOffice is detected from the
+  peer process (`/proc` on Linux, `lsof` on macOS) and gets the newer data format.
+- **HTTP 23119** (`/connector/document/execCommand` + `respond`): each response carries the next RPC.
+- Commands: `addEditCitation`, `addEditBibliography`, `refresh`, `setDocPrefs`, `removeCodes`.
+  Field codes are Zotero's (`ITEM CSL_CITATION {…}`, `BIBL … CSL_BIBLIOGRAPHY`), so documents stay
+  compatible with Zotero. Refresh uses the library copy of an item when its id is in the library,
+  else the embedded `itemData`. `itemURI()` must not change: existing documents contain those URIs.
+- Picking happens in the browser: `server.pick(spec)` opens `/pick.html?id=…` and waits for
+  `POST /api/pick/done` (closing the tab cancels; 30 min timeout). The old native `picker.jxa` never
+  existed in the repo, so don't reintroduce it.
+- A busy port (Zotero running) only prints a warning; the web app still starts.
 
 ## UI conventions
 
@@ -107,10 +130,10 @@ start-web.sh       real launcher; start-web.command just execs it (macOS double-
 The previous tree (`web/`, `session.js`, `tcp.js`, `http.js`, …) mixed this app with unrelated
 subsystems and was unreliable. What was found and what was done:
 
-- **Removed** (non-goals in AGENTS.md or dead code): the Word/LibreOffice/"GenOffice" TCP bridge,
-  the Zotero Connector HTTP endpoints, the `docx` command, a `picker.jxa` integration whose script did
+- **Removed** (dead code or non-goals): the Zotero Connector endpoints for saving web pages, the `docx` command, a `picker.jxa` integration whose script did
   not exist in the repo, PDF folder scanning/linking, a style editor/repository browser, and worker
-  files. `package.json` referenced 16 test files that did not exist; `web/server.js` imported
+  files. The Word/LibreOffice/GenOffice bridge was removed too, which broke citing for the user; it was
+  restored right after as `src/integration.js` (see above). `package.json` referenced 16 test files that did not exist; `web/server.js` imported
   modules that were never served; the error text referred to a `zotlet-macos-arm64` folder.
 - **Problems fixed along the way**: abstracts were stored with raw JATS markup; the launcher opened
   the browser after a fixed 1.5s sleep and gave no guidance when `node` was missing or not on the

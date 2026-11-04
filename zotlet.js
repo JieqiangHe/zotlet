@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // zotlet — a minimal, personal reference manager.
-import { spawn } from 'node:child_process'
+import { openBrowser } from './src/open.js'
 import { createStore, dataDir } from './src/store.js'
 import { parseIdentifiers, lookupIdentifier } from './src/metadata.js'
 
@@ -12,22 +12,12 @@ const HELP = `${bold('zotlet')} ${dim('— a minimal personal reference manager'
 
 ${bold('Usage')}
   node zotlet.js web [--port N] [--open]   start the local web app (default port ${DEFAULT_PORT})
+                    [--no-word]             … without the Word/LibreOffice/GenOffice plugin service
   node zotlet.js add <DOI|PMID>...         import references from the command line
   node zotlet.js ls [words]                list or search the library
   node zotlet.js help                      show this message
 
 ${dim(`Data folder: ${dataDir()}`)}`
-
-function openBrowser(url) {
-  const [cmd, args] = process.platform === 'darwin' ? ['open', [url]]
-    : process.platform === 'win32' ? ['cmd', ['/c', 'start', '', url]]
-      : ['xdg-open', [url]]
-  try {
-    const child = spawn(cmd, args, { stdio: 'ignore', detached: true })
-    child.on('error', () => console.log(`Open ${url} in your browser.`))
-    child.unref()
-  } catch { console.log(`Open ${url} in your browser.`) }
-}
 
 async function isZotlet(port) {
   try {
@@ -41,10 +31,11 @@ async function web(args) {
   const port = i >= 0 ? Number(args[i + 1]) : Number(process.env.ZOTLET_PORT || DEFAULT_PORT)
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('--port needs a number between 0 and 65535')
   const open = args.includes('--open')
+  const integration = !args.includes('--no-word') && !process.env.ZOTLET_NO_WORD && {}
   const { startServer } = await import('./src/server.js')
   let server
   try {
-    server = await startServer({ port })
+    server = await startServer({ port, integration })
   } catch (error) {
     if (error.code !== 'EADDRINUSE') throw error
     if (await isZotlet(port)) {
@@ -58,6 +49,10 @@ async function web(args) {
   const { items, projects, paths } = await createStore().snapshot()
   console.log(`${bold('zotlet')} ${dim('·')} ${server.url}`)
   console.log(dim(`${items.length} references · ${projects.length} projects · ${paths.library}`))
+  const word = server.integration
+  if (word?.tcp || word?.http) {
+    console.log(dim(`Word / LibreOffice / GenOffice citations: on (ports ${[word.tcp, word.http].filter(Boolean).map((s) => s.address().port).join(', ')})`))
+  }
   console.log(dim('Keep this window open while you use zotlet. Press Ctrl+C to stop.'))
   if (open) openBrowser(server.url)
   const stop = () => { console.log(dim('\nzotlet stopped.')); server.close(); server.closeAllConnections(); process.exit(0) }

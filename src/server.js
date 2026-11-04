@@ -8,6 +8,8 @@ import { createStore, dataDir } from './store.js'
 import { lookupIdentifier, parseIdentifiers, normalizeItem, ITEM_FIELDS } from './metadata.js'
 import { formatCitations, listStyles } from './citations.js'
 import { FORMATS } from './export.js'
+import { startIntegration } from './integration.js'
+import { openBrowser } from './open.js'
 
 const PUBLIC = path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'public')
 const STATIC = {
@@ -16,7 +18,12 @@ const STATIC = {
   '/theme.js': ['theme.js', 'text/javascript'],
   '/style.css': ['style.css', 'text/css'],
   '/favicon.svg': ['favicon.svg', 'image/svg+xml'],
+  '/pick.html': ['pick.html', 'text/html'],
+  '/pick.js': ['pick.js', 'text/javascript'],
 }
+// A citation picker left open this long is cancelled, so the word processor is released.
+const PICK_TIMEOUT = 30 * 60 * 1000
+const PICK_FIELDS = ['id', 'type', 'title', 'author', 'editor', 'issued', 'container-title', 'container-title-short', 'publisher', 'DOI', 'PMID']
 const MAX_IDENTIFIERS = 100
 const LOOKUP_CONCURRENCY = 4
 
@@ -76,9 +83,27 @@ export function safeFileName(name) {
 }
 
 export async function startServer({ port = 23121, host = '127.0.0.1', dir = dataDir(), store = createStore({ dir }),
-  fetchImpl = globalThis.fetch, quiet = false } = {}) {
+  fetchImpl = globalThis.fetch, quiet = false, integration = false, openUrl = openBrowser, log = console.log } = {}) {
   const token = randomBytes(24).toString('hex')
   const userStyles = path.join(dir, 'styles')
+  const styles = () => listStyles(userStyles)
+
+  // Pending picker requests from the word processor integration, answered by public/pick.html.
+  const picks = new Map()
+  function pick(spec) {
+    const id = randomBytes(12).toString('hex')
+    return new Promise((resolve) => {
+      const entry = { spec, timer: setTimeout(() => entry.done(null), PICK_TIMEOUT) }
+      entry.done = (value) => { clearTimeout(entry.timer); picks.delete(id); resolve(value) }
+      picks.set(id, entry)
+      openUrl(`${server.url}pick.html?id=${id}`)
+    })
+  }
+  const pending = (id) => {
+    const entry = typeof id === 'string' && picks.get(id)
+    if (!entry) throw fail('This request is no longer active. Start it again from your word processor.', 410)
+    return entry
+  }
 
   async function selectItems(ids) {
     const all = (await store.snapshot()).items
@@ -130,6 +155,29 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
     'POST /api/projects/add': async (body) => store.addToProject(body.id, stringList(body.itemIds)),
     'POST /api/projects/remove': async (body) => store.removeFromProject(body.id, stringList(body.itemIds)),
 
+    'POST /api/pick/get': async (body) => {
+      const { spec } = pending(body.id)
+      const { projects } = await store.snapshot()
+      const items = (spec.items || []).map((item) => Object.fromEntries(PICK_FIELDS.filter((k) => k in item).map((k) => [k, item[k]])))
+      return { mode: spec.mode, style: spec.style, selected: spec.selected || [], items,
+        projects: projects.map(({ id, name, itemIds }) => ({ id, name, itemIds })),
+        styles: styles().map(({ id, title, label }) => ({ id, title, label })) }
+    },
+    'POST /api/pick/done': async (body) => {
+      const entry = pending(body.id)
+      if (body.cancel) { entry.done(null); return { ok: true } }
+      const style = typeof body.style === 'string' && styles().some((s) => s.id === body.style) ? body.style : undefined
+      if (entry.spec.mode === 'style') {
+        if (!style) throw fail('Choose a citation style')
+        entry.done({ style })
+      } else {
+        const ids = stringList(body.ids)
+        if (!ids.length) throw fail('Choose at least one reference')
+        entry.done({ ids, style })
+      }
+      return { ok: true }
+    },
+
     'POST /api/cite': async (body) => {
       const items = await selectItems(body.ids)
       if (!items.length) throw fail('No references to format')
@@ -166,7 +214,7 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
       if (req.method === 'GET' && Object.hasOwn(STATIC, url.pathname)) {
         const [file, type] = STATIC[url.pathname]
         let content = await fs.readFile(path.join(PUBLIC, file), file === 'favicon.svg' ? undefined : 'utf8')
-        if (file === 'index.html') content = content.replace('__ZOTLET_TOKEN__', token)
+        if (file.endsWith('.html')) content = content.replace('__ZOTLET_TOKEN__', token)
         return send(200, content, type)
       }
       if (!url.pathname.startsWith('/api/')) return send(404, { error: 'Not found' }, 'application/json')
@@ -192,5 +240,20 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
   })
   server.url = `http://127.0.0.1:${server.address().port}/`
   server.token = token
+  server.pick = pick
+
+  // Word / LibreOffice / GenOffice plugins (Zotero protocol). Off unless asked for.
+  if (integration) {
+    const ctx = { items: async () => (await store.snapshot()).items, styles, pick }
+    server.integration = await startIntegration(ctx, { ...integration, host,
+      log: quiet ? () => {} : (line) => log(`${new Date().toTimeString().slice(0, 8)}  ${line}`),
+      warn: quiet ? () => {} : log })
+    const close = server.close.bind(server)
+    server.close = (callback) => {
+      server.integration.close()
+      for (const entry of picks.values()) entry.done(null)
+      return close(callback)
+    }
+  }
   return server
 }

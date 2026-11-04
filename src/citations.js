@@ -40,7 +40,9 @@ export function listStyles(userDir) {
         const xml = fs.readFileSync(file, 'utf8')
         if (!/<style\b/.test(xml) || /<link[^>]+rel="independent-parent"/.test(xml)) continue
         const title = readTitle(xml) || id
-        found.set(id, { id, title, label: LABELS[id] || title, file, builtin: dir === BUILTIN_STYLES })
+        const uri = /<info>[\s\S]*?<id>([^<]+)<\/id>/.exec(xml)?.[1].trim()
+        found.set(id, { id, title, label: LABELS[id] || title, file, builtin: dir === BUILTIN_STYLES,
+          uri: uri ? decode(uri) : `http://www.zotero.org/styles/${id}` })
       } catch { /* unreadable style: skip */ }
     }
   }
@@ -58,7 +60,7 @@ function engineItem(item) {
   return copy
 }
 
-function makeEngine(xml, items, format) {
+export function makeEngine(xml, items, format) {
   const byId = new Map(items.map((i) => [String(i.id), engineItem(i)]))
   const sys = { retrieveLocale: () => LOCALE, retrieveItem: (id) => byId.get(String(id)) }
   const engine = new CSL.Engine(sys, xml, 'en-US', true)

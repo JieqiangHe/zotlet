@@ -20,6 +20,10 @@ Focus: compact UI, project-centric organization, reliable DOI import, and clean 
   Generate in-text citations and bibliographies using citeproc-js.  
   Support common styles (Nature, Science, Cell, etc.).
 
+- **Word processor citations**:  
+  Insert and refresh live citations and bibliographies in Microsoft Word, LibreOffice and GenOffice
+  through the Zotero word-processor plugin protocol (TCP 23116, HTTP 23119).
+
 - **Export**:  
   One-click download of the current selection (or whole library / project) as:
   - CSL JSON
@@ -77,7 +81,7 @@ Focus: compact UI, project-centric organization, reliable DOI import, and clean 
 - No silent / background-only launcher.
 - No bundled Node binary.
 - No three-pane Zotero clone.
-- No attempt to re-implement the full Zotero connector or word-processor integration in this version.
+- No attempt to re-implement the full Zotero connector (web page saving, translators).
 
 ## Acceptance Checks
 
