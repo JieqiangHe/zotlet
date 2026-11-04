@@ -21,20 +21,9 @@
       <input id="search" type="search" placeholder="Search title, author, journal, DOI…" aria-label="Search references" autocomplete="off" spellcheck="false">
       <kbd>/</kbd>
     </label>
-    <select id="style-select" class="select" aria-label="Citation style" title="Citation style"></select>
-    <button id="btn-bib" class="btn" title="Format citations and bibliography">Bibliography</button>
-    <div class="dropdown">
-      <button id="btn-export" class="btn" aria-haspopup="menu" aria-expanded="false">
-        Export<svg class="i caret" viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg>
-      </button>
-      <div id="export-menu" class="menu align-right" role="menu" hidden>
-        <div id="export-scope" class="menu-label"></div>
-        <button role="menuitem" data-format="json">CSL JSON <span class="muted">.json</span></button>
-        <button role="menuitem" data-format="bibtex">BibTeX <span class="muted">.bib</span></button>
-        <button role="menuitem" data-format="ris">RIS <span class="muted">.ris</span></button>
-      </div>
-    </div>
     <span class="grow"></span>
+    <button id="btn-styles" class="btn" title="Download and manage citation styles">Styles</button>
+    <button id="btn-export" class="btn" title="Download CSL JSON + BibTeX + RIS in one zip">Export</button>
     <button id="btn-theme" class="btn icon" title="Toggle dark mode" aria-label="Toggle dark mode">
       <svg class="i only-light" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.6A5.5 5.5 0 0 1 6.4 2.5a5.5 5.5 0 1 0 7.1 7.1Z"/></svg>
       <svg class="i only-dark" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg>
@@ -78,32 +67,26 @@
               <div id="add-to-menu" class="menu align-right" role="menu" hidden></div>
             </div>
             <button id="btn-remove-from" class="btn sm" hidden>Remove from project</button>
-            <button id="btn-edit" class="btn sm">Edit</button>
             <button id="btn-delete" class="btn sm danger">Delete</button>
-            <button id="btn-clear" class="btn sm ghost" title="Clear selection (Esc)">Clear</button>
           </div>
-          <div id="list-hint" class="listbar-actions muted">Drop PDFs here to import by DOI · double-click to edit</div>
+          <div id="list-hint" class="listbar-actions muted">Drop PDFs or a CSL JSON file here to import · double-click to edit</div>
         </div>
         <div class="table" role="grid" aria-labelledby="view-title">
           <div class="row head" role="row">
             <span class="cell check"><input id="check-all" type="checkbox" aria-label="Select all"></span>
-            <button class="cell sort" data-sort="title" role="columnheader">Title<span class="arrow"></span></button>
-            <button class="cell sort" data-sort="author" role="columnheader">Authors<span class="arrow"></span></button>
-            <button class="cell sort num" data-sort="year" role="columnheader">Year<span class="arrow"></span></button>
-            <button class="cell sort" data-sort="journal" role="columnheader">Journal<span class="arrow"></span></button>
+            <span class="cell" role="columnheader">Title</span>
+            <span class="cell" role="columnheader">Authors</span>
+            <span class="cell num" role="columnheader">Year</span>
+            <span class="cell" role="columnheader">Journal</span>
           </div>
           <div id="rows" class="rows"></div>
-          <div id="drop-hint" class="drop-hint" hidden><strong>Drop PDFs to import them by DOI</strong><span>zotlet reads the DOI inside each PDF. The PDF itself is not kept.</span></div>
+          <div id="drop-hint" class="drop-hint" hidden><strong>Drop PDFs or a CSL JSON file to import</strong><span>zotlet reads the DOI inside each PDF; the PDF itself is not kept. CSL JSON comes from Zotero (File → Export Library…).</span></div>
           <div id="empty" class="empty" hidden></div>
         </div>
       </div>
     </main>
   </div>
 
-  <footer class="statusbar">
-    <span id="status-path" class="truncate"></span>
-    <span id="status-text"></span>
-  </footer>
 
   <!-- Add / edit reference -->
   <dialog id="ref-dialog" class="dialog wide" aria-labelledby="ref-dialog-title">
@@ -179,44 +162,17 @@
     </form>
   </dialog>
 
-  <!-- Bibliography -->
-  <dialog id="bib-dialog" class="dialog wide" aria-labelledby="bib-title">
-    <header class="dialog-head">
-      <h2 id="bib-title">Bibliography</h2>
-      <select id="bib-style" class="select" aria-label="Citation style"></select>
-      <button class="btn icon ghost" data-close aria-label="Close">
-        <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg>
-      </button>
-    </header>
-    <div class="dialog-body">
-      <p id="bib-scope" class="muted"></p>
-      <section class="out">
-        <div class="out-head"><span>In-text citation</span><button class="btn sm ghost" data-copy="citation">Copy</button></div>
-        <div id="bib-citation" class="out-box citation"></div>
-      </section>
-      <section class="out">
-        <div class="out-head"><span>Reference list</span><button class="btn sm ghost" data-copy="bibliography">Copy</button></div>
-        <div id="bib-output" class="out-box bibliography"></div>
-      </section>
-      <p class="error" data-error hidden role="alert"></p>
-    </div>
-    <footer class="dialog-foot">
-      <span class="muted">Copy keeps italics and bold when pasted into Word or Google Docs.</span>
-      <button id="bib-download" class="btn">Download .txt</button>
-      <button class="btn primary" data-close>Done</button>
-    </footer>
-  </dialog>
 
   <!-- PDFs dropped on the list -->
   <dialog id="pdf-dialog" class="dialog wide" aria-labelledby="pdf-title">
     <header class="dialog-head">
-      <h2 id="pdf-title">Import PDFs</h2>
+      <h2 id="pdf-title">Import</h2>
       <button class="btn icon ghost" data-close aria-label="Close">
         <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg>
       </button>
     </header>
     <div class="dialog-body">
-      <p id="pdf-note" class="muted">zotlet reads the DOI inside each PDF and imports the reference. The PDF itself is not kept.</p>
+      <p id="pdf-note" class="muted">PDF: zotlet reads its DOI and imports the reference (the PDF itself is not kept). CSL JSON: every reference in the file is imported.</p>
       <ul id="pdf-results" class="pdf-results"></ul>
     </div>
     <footer class="dialog-foot">

@@ -16,7 +16,6 @@ const state = {
   paths: {},
   project: store.get('zotlet-project') || '',
   query: '',
-  sort: { key: '', dir: 1 },
   selected: new Set(),
   anchor: null, // start of a shift-range
   cursor: null, // row moved by the arrow keys
@@ -41,7 +40,7 @@ async function refresh() {
   state.items = data.items
   state.projects = data.projects
   state.paths = data.paths
-  if (!state.styles.length) { state.styles = data.styles; renderStyles() }
+  state.styles = data.styles
   if (state.project && !state.projects.some((p) => p.id === state.project)) setProject('')
   render()
 }
@@ -149,26 +148,7 @@ function computeVisible() {
   }
   const words = state.query.toLowerCase().split(/\s+/).filter(Boolean)
   if (words.length) items = items.filter((i) => { const h = haystack(i); return words.every((w) => h.includes(w)) })
-  const { key, dir } = state.sort
-  const order = new Map(state.items.map((i, n) => [i.id, n]))
-  const value = {
-    title: (i) => plain(i.title).toLowerCase(),
-    author: (i) => authorsShort(i).toLowerCase(),
-    year: (i) => Number(yearOf(i)) || 0,
-    journal: (i) => (i['container-title'] || '').toLowerCase(),
-  }[key]
-  items = [...items].sort((a, b) => {
-    if (value) {
-      const x = value(a), y = value(b)
-      // Empty values always sink to the bottom.
-      if (x === '' || x === 0) return (y === '' || y === 0) ? 0 : 1
-      if (y === '' || y === 0) return -1
-      if (x < y) return -dir
-      if (x > y) return dir
-    }
-    return order.get(b.id) - order.get(a.id) // newest first
-  })
-  return items
+  return [...items].reverse() // newest first
 }
 
 function render() {
@@ -251,37 +231,16 @@ function renderChrome() {
   $('list-hint').hidden = n > 0 || state.visible.length === 0
   $('selection-count').textContent = `${n} selected`
   $('btn-remove-from').hidden = !project
-  $('btn-edit').hidden = n !== 1
   const all = $('check-all')
   all.checked = n > 0 && n === state.visible.length
   all.indeterminate = n > 0 && n < state.visible.length
   all.disabled = state.visible.length === 0
-  for (const btn of document.querySelectorAll('.cell.sort')) {
-    const active = btn.dataset.sort === state.sort.key
-    btn.classList.toggle('active', active)
-    btn.querySelector('.arrow').textContent = active ? (state.sort.dir > 0 ? '▲' : '▼') : ''
-    btn.setAttribute('aria-sort', active ? (state.sort.dir > 0 ? 'ascending' : 'descending') : 'none')
-  }
-  $('status-path').textContent = state.paths.library || ''
-  $('status-path').title = state.paths.library || ''
-  $('status-text').textContent = `${plural(state.items.length, 'reference')} · ${plural(state.projects.length, 'project')}`
-  $('btn-bib').disabled = state.visible.length === 0
   $('btn-export').disabled = state.visible.length === 0
+  $('btn-export').title = `Export ${scope().label}: CSL JSON + BibTeX + RIS in one zip`
 }
 
-const MORE_STYLES = '__more__'
-function renderStyles() {
-  const saved = store.get('zotlet-style')
-  const options = () => state.styles.map((s) => el('option', { value: s.id, title: s.title }, s.label))
-  $('style-select').replaceChildren(...options(), el('option', { disabled: true, value: '' }, '──────────'),
-    el('option', { value: MORE_STYLES }, 'Get more styles…'))
-  $('bib-style').replaceChildren(...options())
-  const value = state.styles.some((s) => s.id === saved) ? saved : state.styles[0]?.id
-  $('style-select').value = value
-  $('bib-style').value = value
-}
 
-/** What Bibliography / Export act on: the selection, else everything visible. */
+/** What Export acts on: the selection, else everything visible. */
 function scope() {
   const project = currentProject()
   if (state.selected.size) {
@@ -336,15 +295,6 @@ $('check-all').addEventListener('change', (e) => {
   state.selected = e.target.checked ? new Set(state.visible.map((i) => i.id)) : new Set()
   syncSelection()
 })
-for (const btn of document.querySelectorAll('.cell.sort')) {
-  btn.addEventListener('click', () => {
-    const key = btn.dataset.sort
-    if (state.sort.key !== key) state.sort = { key, dir: key === 'year' ? -1 : 1 }
-    else if (state.sort.dir === (key === 'year' ? -1 : 1)) state.sort.dir *= -1
-    else state.sort = { key: '', dir: 1 } // third click: back to "newest first"
-    render()
-  })
-}
 
 let searchTimer
 $('search').addEventListener('input', (e) => {
@@ -461,11 +411,6 @@ $('btn-remove-from').addEventListener('click', async () => {
   } catch (error) { fail(error) }
 })
 
-$('btn-edit').addEventListener('click', () => {
-  const [id] = state.selected
-  const item = state.items.find((i) => i.id === id)
-  if (item) openRefDialog(item)
-})
 
 async function deleteSelected() {
   const ids = [...state.selected]
@@ -481,7 +426,6 @@ async function deleteSelected() {
   } catch (error) { fail(error) }
 }
 $('btn-delete').addEventListener('click', deleteSelected)
-$('btn-clear').addEventListener('click', () => { state.selected.clear(); syncSelection() })
 
 // ---------- menus ----------
 
@@ -500,101 +444,21 @@ document.addEventListener('click', (e) => { if (!e.target.closest('.menu')) clos
 
 // ---------- export ----------
 
-$('btn-export').addEventListener('click', (e) => {
-  e.stopPropagation()
-  $('export-scope').textContent = `Export ${scope().label}`
-  toggleMenu($('btn-export'), $('export-menu'))
-})
-$('export-menu').addEventListener('click', async (e) => {
-  const btn = e.target.closest('button[data-format]')
-  if (!btn) return
-  closeMenus()
-  const { ids, name } = scope()
+$('btn-export').addEventListener('click', async () => {
+  const { ids, name, label } = scope()
+  if (!ids.length) return
   try {
     const res = await fetch('/api/export', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Zotlet-Token': TOKEN },
-      body: JSON.stringify({ format: btn.dataset.format, ids, name }),
+      body: JSON.stringify({ format: 'zip', ids, name }),
     })
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Export failed')
     const disposition = res.headers.get('Content-Disposition') || ''
-    const file = decodeURIComponent((/filename\*=UTF-8''([^;]+)/.exec(disposition) || [])[1] || `${name}.txt`)
+    const file = decodeURIComponent((/filename\*=UTF-8''([^;]+)/.exec(disposition) || [])[1] || `${name}.zip`)
     downloadBlob(await res.blob(), file)
-    toast(`Exported ${plural(Number(res.headers.get('X-Item-Count')) || ids.length, 'reference')} → ${file}`)
+    toast(`Exported ${label} → ${file}`)
   } catch (error) { fail(error) }
-})
-
-// ---------- bibliography ----------
-
-let lastBib = null
-async function renderBibliography() {
-  const dialog = $('bib-dialog')
-  const { ids, label } = scope()
-  const style = $('bib-style').value
-  $('bib-scope').textContent = `${label[0].toUpperCase()}${label.slice(1)}, in the order shown in the list.`
-  $('bib-citation').classList.add('loading')
-  $('bib-output').classList.add('loading')
-  dialog.querySelector('[data-error]').hidden = true
-  try {
-    const result = await api('cite', { style, ids })
-    lastBib = { ...result, name: scope().name }
-    $('bib-citation').innerHTML = result.citation.html || '<span class="muted">—</span>'
-    $('bib-output').innerHTML = result.bibliography.html || '<span class="muted">This style has no reference list.</span>'
-  } catch (error) {
-    lastBib = null
-    $('bib-citation').textContent = ''
-    $('bib-output').textContent = ''
-    showError(dialog, error.message)
-  } finally {
-    $('bib-citation').classList.remove('loading')
-    $('bib-output').classList.remove('loading')
-  }
-}
-function setStyle(id) {
-  $('style-select').value = id
-  $('bib-style').value = id
-  store.set('zotlet-style', id)
-}
-$('style-select').addEventListener('change', (e) => {
-  if (e.target.value !== MORE_STYLES) return setStyle(e.target.value)
-  e.target.value = $('bib-style').value
-  openStylesDialog()
-})
-$('bib-style').addEventListener('change', (e) => { setStyle(e.target.value); renderBibliography() })
-$('btn-bib').addEventListener('click', () => {
-  if (!state.visible.length) return
-  $('bib-citation').textContent = 'Formatting…'
-  $('bib-output').textContent = 'Formatting…'
-  $('bib-dialog').showModal()
-  renderBibliography()
-})
-$('bib-dialog').addEventListener('click', async (e) => {
-  const btn = e.target.closest('[data-copy]')
-  if (!btn || !lastBib) return
-  const part = lastBib[btn.dataset.copy]
-  try {
-    if (window.ClipboardItem && navigator.clipboard?.write) {
-      await navigator.clipboard.write([new ClipboardItem({
-        'text/html': new Blob([part.html], { type: 'text/html' }),
-        'text/plain': new Blob([part.text], { type: 'text/plain' }),
-      })])
-    } else {
-      await navigator.clipboard.writeText(part.text)
-    }
-    const label = btn.textContent
-    btn.textContent = 'Copied'
-    setTimeout(() => { btn.textContent = label }, 1200)
-  } catch {
-    // Clipboard API unavailable: select the text so ⌘C works.
-    const box = btn.dataset.copy === 'citation' ? $('bib-citation') : $('bib-output')
-    getSelection().selectAllChildren(box)
-    toast('Press ⌘C / Ctrl+C to copy the selected text')
-  }
-})
-$('bib-download').addEventListener('click', () => {
-  if (!lastBib) return
-  const text = `${lastBib.bibliography.text || lastBib.citation.text}\n`
-  downloadBlob(new Blob([text], { type: 'text/plain;charset=utf-8' }), `${lastBib.name} - ${lastBib.style.id}.txt`)
 })
 
 // ---------- PDFs dropped on the list: read the DOI, import the reference ----------
@@ -631,16 +495,34 @@ function describe(result, set, retry) {
   set('bad', '✗', result.status === 'no-doi' ? 'No DOI found in this PDF' : `The DOI ${result.doi} could not be looked up: ${result.message}`, [input, go])
 }
 
+/** A CSL JSON file, e.g. exported from Zotero (File → Export Library… → CSL JSON). */
+async function importCslFile(file, project) {
+  const row = pdfRow(file)
+  $('pdf-results').append(row.li)
+  try {
+    let items
+    try { items = JSON.parse(await file.text()) } catch { throw new Error('This file is not valid JSON') }
+    if (!Array.isArray(items)) items = items && typeof items === 'object' && Array.isArray(items.items) ? items.items : [items]
+    const r = await api('import-csl', { items, projectId: project?.id || undefined })
+    row.set(r.added ? 'ok' : 'warn', r.added ? '✓' : '•', [`Imported ${plural(r.added, 'reference')}`,
+      el('span', { class: 'muted' }, [r.duplicates && ` · ${r.duplicates} already in your library`, r.skipped && ` · ${r.skipped} skipped (no title)`].filter(Boolean).join(''))])
+    return r.ids[0]
+  } catch (error) { row.set('bad', '✗', error.message) }
+  return null
+}
+
 async function importPdfs(files) {
   const pdfs = files.filter((f) => /\.pdf$/i.test(f.name) || f.type === 'application/pdf')
-  if (!pdfs.length) { toast('Only PDF files can be dropped here', 'error'); return }
+  const jsons = files.filter((f) => /\.json$/i.test(f.name) || f.type === 'application/json')
+  if (!pdfs.length && !jsons.length) { toast('Drop PDF files or a CSL JSON file', 'error'); return }
   const project = currentProject()
-  $('pdf-title').textContent = `Import ${pdfs.length === 1 ? 'PDF' : `${pdfs.length} PDFs`}`
+  $('pdf-title').textContent = jsons.length && !pdfs.length ? 'Import CSL JSON' : `Import ${pdfs.length === 1 && !jsons.length ? 'PDF' : `${pdfs.length + jsons.length} files`}`
   $('pdf-results').replaceChildren()
   $('pdf-summary').textContent = project ? `New references are also added to “${project.name}”.` : ''
   if (!$('pdf-dialog').open) $('pdf-dialog').showModal()
   const query = project ? `?projectId=${encodeURIComponent(project.id)}` : ''
   let touched = null
+  for (const file of jsons) touched = (await importCslFile(file, project)) || touched
   for (const file of pdfs) {
     const row = pdfRow(file)
     $('pdf-results').append(row.li)
@@ -693,14 +575,11 @@ window.addEventListener('drop', (e) => { if (hasFiles(e)) { e.preventDefault(); 
 
 // ---------- citation styles (repository) ----------
 
-const currentStyle = () => $('bib-style').value
 const FORMAT_NAMES = { 'author-date': 'author-date', numeric: 'numeric', note: 'note', label: 'label', author: 'author' }
 let styleSearchTimer = null, styleSearchSeq = 0
 
-function setStyleList(styles, select) {
+function setStyleList(styles) {
   state.styles = styles
-  renderStyles()
-  if (select && styles.some((s) => s.id === select)) setStyle(select)
   renderInstalledStyles()
 }
 
@@ -713,18 +592,17 @@ function renderStyleResults({ total, results }, query) {
     : `${total.toLocaleString()} style${total === 1 ? '' : 's'}${query ? ` match “${query}”` : ''}${total > results.length ? ` · showing the first ${results.length}, type more to narrow down` : ''}`
   for (const r of results) {
     const meta = [FORMAT_NAMES[r.format] || r.format, r.fields.join(', '), r.dependent ? 'journal style' : 'independent style', r.updated && `updated ${r.updated}`].filter(Boolean).join(' · ')
-    const use = el('button', { type: 'button', class: 'btn sm', onclick: () => { setStyle(r.name); renderInstalledStyles(); toast(`Citation style: ${r.title}`) } }, 'Use')
     const install = el('button', { type: 'button', class: 'btn sm primary', onclick: async () => {
       install.disabled = true
       install.textContent = 'Installing…'
       showError($('styles-dialog'), '')
       try {
         const res = await api('styles/install', { name: r.name })
-        setStyleList(res.styles, res.installed.id)
+        setStyleList(res.styles)
         r.installed = true
-        install.replaceWith(el('span', { class: 'badge' }, 'Installed'), use)
+        install.replaceWith(el('span', { class: 'badge' }, 'Installed'))
         const parent = res.installed.parent && res.styles.find((x) => x.id === res.installed.parent)
-        toast(`Installed “${res.installed.title}”${parent ? ` (based on ${parent.label})` : ''} and selected it`)
+        toast(`Installed “${res.installed.title}”${parent ? ` (based on ${parent.label})` : ''} · choose it in Word/GenOffice under Document Preferences`)
       } catch (error) {
         install.disabled = false
         install.textContent = 'Install'
@@ -733,7 +611,7 @@ function renderStyleResults({ total, results }, query) {
     } }, 'Install')
     list.append(el('li', {},
       el('div', { class: 'style-text' }, el('span', { class: 'style-name', title: r.title }, r.title), el('span', { class: 'style-meta', title: meta }, meta)),
-      styleActions(...(r.installed ? [el('span', { class: 'badge' }, r.builtin ? 'Built-in' : 'Installed'), use] : [install]))))
+      styleActions(r.installed ? el('span', { class: 'badge' }, r.builtin ? 'Built-in' : 'Installed') : install)))
   }
 }
 
@@ -762,7 +640,7 @@ function renderInstalledStyles() {
     const usedBy = state.styles.filter((d) => d.parent === s.id)
     const meta = [s.builtin ? 'built-in' : 'installed by you', s.format, s.parent && `uses ${byId.get(s.parent)?.label || s.parent}`,
       usedBy.length && `needed by ${usedBy.length} journal style${usedBy.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ')
-    const buttons = [el('button', { type: 'button', class: 'btn sm', disabled: s.id === currentStyle(), onclick: () => { setStyle(s.id); renderInstalledStyles() } }, 'Use')]
+    const buttons = []
     if (!s.builtin) {
       buttons.push(el('button', { type: 'button', class: 'btn sm danger', disabled: usedBy.length > 0, title: usedBy.length ? 'Remove the journal styles that use it first' : '', onclick: async () => {
         showError($('styles-dialog'), '')
@@ -773,7 +651,7 @@ function renderInstalledStyles() {
         } catch (error) { showError($('styles-dialog'), error.message) }
       } }, 'Remove'))
     }
-    list.append(el('li', { class: s.id === currentStyle() ? 'current' : '' },
+    list.append(el('li', {},
       el('div', { class: 'style-text' }, el('span', { class: 'style-name', title: s.title }, s.title), el('span', { class: 'style-meta' }, meta)),
       styleActions(...buttons)))
   }
@@ -793,6 +671,7 @@ function openStylesDialog() {
   searchStyles()
 }
 
+$('btn-styles').addEventListener('click', openStylesDialog)
 $('styles-tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setStylesTab(b.dataset.tab) })
 $('style-query').addEventListener('input', () => { clearTimeout(styleSearchTimer); styleSearchTimer = setTimeout(() => searchStyles(), 250) })
 $('style-query').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(styleSearchTimer); searchStyles() } })
@@ -804,9 +683,9 @@ $('style-file').addEventListener('change', async (e) => {
   showError($('styles-dialog'), '')
   try {
     const res = await api('styles/add', { xml: await file.text() })
-    setStyleList(res.styles, res.installed.id)
+    setStyleList(res.styles)
     setStylesTab('installed')
-    toast(`Added “${res.installed.title}” and selected it`)
+    toast(`Added “${res.installed.title}”`)
   } catch (error) { showError($('styles-dialog'), error.message) }
 })
 
@@ -1039,7 +918,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === '/' || (mod && e.key.toLowerCase() === 'f')) { e.preventDefault(); $('search').focus(); $('search').select() }
   else if (mod && e.key.toLowerCase() === 'a') { e.preventDefault(); state.selected = new Set(state.visible.map((i) => i.id)); syncSelection() }
   else if ((e.key === 'Delete' || e.key === 'Backspace') && state.selected.size) { e.preventDefault(); deleteSelected() }
-  else if (e.key === 'Enter' && state.selected.size === 1) { e.preventDefault(); $('btn-edit').click() }
+  else if (e.key === 'Enter' && state.selected.size === 1) { e.preventDefault(); openRefDialog(state.items.find((i) => state.selected.has(i.id))) }
   else if (!mod && e.key.toLowerCase() === 'n') { e.preventDefault(); openRefDialog() }
   else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
     e.preventDefault()

@@ -142,7 +142,7 @@ function finish(message, detail) {
   state.finished = true
   document.body.classList.add('done')
   $('pick-rows').hidden = true
-  $('pick-hint').hidden = true
+  $('pick-bookmarks').hidden = true
   $('pick-count').textContent = ''
   const box = $('pick-message')
   box.replaceChildren(el('strong', {}, message), el('p', {}, detail))
@@ -156,8 +156,9 @@ async function submit() {
   if (cite && !state.chosen.length) return
   $('pick-ok').disabled = true
   try {
-    await api('pick/done', cite ? { id: ID, ids: state.chosen, style: $('pick-style').value } : { id: ID, style: state.data.style })
-    store.set('zotlet-style', cite ? $('pick-style').value : state.data.style)
+    const bookmarks = $('pick-bookmarks').hidden ? undefined : $('pick-bookmarks').querySelector('input').checked
+    await api('pick/done', cite ? { id: ID, ids: state.chosen, style: state.data.askStyle ? $('pick-style').value : undefined }
+      : { id: ID, style: state.data.style, bookmarks })
     finish(cite ? 'Citation sent to your document' : 'Document style updated', 'Switch back to your word processor. You can close this tab.')
   } catch (error) {
     $('pick-ok').disabled = false
@@ -221,12 +222,19 @@ async function init() {
   if (data.mode === 'style') {
     document.title = 'zotlet — document style'
     $('pick-title').textContent = 'Citation style for this document'
-    $('pick-hint').textContent = '↑↓ move · Enter apply · Esc cancel'
     $('pick-search-box').hidden = true
     $('pick-project').hidden = true
     $('pick-style').hidden = true
-    $('pick-chosen').replaceChildren()
+    $('pick-chosen').hidden = true
     $('pick-ok').textContent = 'Apply'
+    if (typeof data.bookmarks === 'boolean') {
+      const box = $('pick-bookmarks'), input = box.querySelector('input')
+      input.checked = data.bookmarks
+      input.disabled = data.bookmarksLocked
+      box.title = data.bookmarksLocked ? 'Can only be chosen before the first citation is inserted'
+        : 'Bookmarks work in both Word and LibreOffice/GenOffice with Zotero'
+      box.hidden = false
+    }
     state.cursor = Math.max(0, data.styles.findIndex((s) => s.id === data.style))
     renderStyles()
     $('pick-rows').focus()
@@ -244,6 +252,8 @@ async function init() {
   if (lastProject && data.projects.some((p) => p.id === lastProject)) $('pick-project').value = lastProject
   $('pick-style').replaceChildren(...data.styles.map((s) => el('option', { value: s.id }, s.label)))
   $('pick-style').value = data.style
+  // Like Zotero: the style is chosen with the first citation, later via Document Preferences.
+  $('pick-style').hidden = !data.askStyle
   $('pick-search').addEventListener('input', () => { state.cursor = 0; renderItems() })
   $('pick-project').addEventListener('change', () => { state.cursor = 0; renderItems() })
   renderItems()

@@ -18,14 +18,13 @@
       <input id="pick-search" type="search" placeholder="Search title, author, journal, year, DOI…" aria-label="Search references" autocomplete="off" spellcheck="false">
     </label>
     <select id="pick-project" class="select" aria-label="Project" title="Show references from"></select>
-    <select id="pick-style" class="select" aria-label="Citation style" title="Citation style for this document"></select>
+    <select id="pick-style" class="select" aria-label="Citation style" title="Citation style for this document" hidden></select>
   </header>
 
   <main class="main">
     <section class="panel" aria-labelledby="pick-title">
       <div class="listbar">
         <div class="listbar-title"><h1 id="pick-title">Insert citation</h1><span id="pick-count" class="muted"></span></div>
-        <span id="pick-hint" class="muted">Click to select · ↑↓ move · Space toggle · Enter insert · Esc cancel</span>
       </div>
       <div id="pick-rows" class="rows" role="listbox" aria-multiselectable="true" tabindex="0"></div>
       <div id="pick-message" class="empty" hidden></div>
@@ -34,6 +33,7 @@
 
   <footer class="pick-foot">
     <div id="pick-chosen" class="pick-chosen" aria-live="polite"></div>
+    <label id="pick-bookmarks" class="pick-option" hidden><input type="checkbox"> <span>Also open in Microsoft Word with Zotero (store citations as bookmarks)</span></label>
     <button id="pick-cancel" class="btn">Cancel</button>
     <button id="pick-ok" class="btn primary" disabled>Insert</button>
   </footer>

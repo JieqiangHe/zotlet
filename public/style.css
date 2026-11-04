@@ -61,7 +61,7 @@ html, body { height: 100%; }
 body {
   margin: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
   background: var(--bg);
   color: var(--text);
   font: 12px/1.45 var(--font);
@@ -92,7 +92,7 @@ h1, h2 { margin: 0; font-weight: 600; }
 .btn:hover:not(:disabled) { background: var(--hover); }
 .btn:active:not(:disabled) { transform: translateY(0.5px); }
 .btn:disabled { opacity: 0.45; cursor: default; }
-.btn:focus-visible, .select:focus-visible, .nav-item:focus-visible, .cell.sort:focus-visible, .menu button:focus-visible, .tabs button:focus-visible {
+.btn:focus-visible, .select:focus-visible, .nav-item:focus-visible, .menu button:focus-visible, .tabs button:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 1px;
 }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
@@ -155,7 +155,6 @@ kbd {
 .search input::-webkit-search-cancel-button { display: none; }
 .search kbd { position: absolute; right: 6px; pointer-events: none; }
 .search input:focus ~ kbd, .search input:not(:placeholder-shown) ~ kbd { display: none; }
-#style-select { width: 170px; flex: 0 1 170px; min-width: 104px; }
 .topbar > .btn, .topbar > .dropdown { flex: none; }
 
 /* ---------- menus ---------- */
@@ -247,14 +246,6 @@ kbd {
 .cell { min-width: 0; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cell.check { display: flex; align-items: center; justify-content: center; padding: 0; height: 100%; cursor: pointer; }
 .cell.num { text-align: right; font-variant-numeric: tabular-nums; }
-.cell.sort {
-  display: flex; align-items: center; gap: 4px; height: 100%;
-  border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
-}
-.cell.sort.num { justify-content: flex-end; }
-.cell.sort:hover { color: var(--text); }
-.cell.sort .arrow { font-size: 9px; color: var(--accent); }
-.cell.sort.active { color: var(--text); }
 
 .rows { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .rows .row { cursor: default; user-select: none; }
@@ -279,15 +270,6 @@ kbd {
 .empty p { margin: 0; max-width: 380px; }
 .empty .btn { margin-top: 6px; }
 
-/* ---------- status bar ---------- */
-.statusbar {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  height: 24px; padding: 0 12px;
-  background: var(--panel); border-top: 1px solid var(--border);
-  color: var(--muted); font-size: 11px;
-}
-#status-path { font-family: var(--mono); font-size: 10.5px; }
-#status-text { flex: none; }
 
 /* ---------- dialogs ---------- */
 .dialog {
@@ -355,20 +337,6 @@ kbd {
 .results .ident { font-family: var(--mono); font-size: 11px; color: var(--text-2); }
 .results .detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.out { display: flex; flex-direction: column; gap: 6px; }
-.out-head { display: flex; align-items: center; justify-content: space-between; color: var(--text-2); font-weight: 500; }
-.out-head .btn { margin-right: -8px; }
-.out-box {
-  padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--panel-2); font-size: 12.5px; line-height: 1.55; user-select: text;
-}
-.out-box.bibliography { max-height: 46vh; overflow-y: auto; }
-.out-box.loading { color: var(--muted); }
-.csl-bib-body { display: flex; flex-direction: column; gap: 6px; }
-.csl-entry { display: flex; gap: 6px; }
-.csl-entry:not(:has(.csl-left-margin)) { display: block; padding-left: 1.6em; text-indent: -1.6em; }
-.csl-left-margin { flex: none; min-width: 1.6em; color: var(--text-2); }
-.csl-right-inline { flex: 1; min-width: 0; }
 
 /* ---------- toast ---------- */
 .toast {
@@ -390,14 +358,12 @@ kbd {
   .brand { width: auto; }
   .topbar { gap: 6px; }
   .search { min-width: 100px; }
-  #style-select { min-width: 92px; }
-  .row { grid-template-columns: 36px minmax(0, 1fr) minmax(0, 130px) 48px; }
+    .row { grid-template-columns: 36px minmax(0, 1fr) minmax(0, 130px) 48px; }
   .row > :nth-child(5) { display: none; }
   .layout { grid-template-columns: 180px minmax(0, 1fr); }
   .search kbd { display: none; }
 }
 @media (max-width: 640px) {
-  #btn-bib { display: none; }
   .row { grid-template-columns: 32px minmax(0, 1fr) 48px; }
   .row > :nth-child(3) { display: none; }
   .main { padding: 8px; }
@@ -405,10 +371,10 @@ kbd {
 }
 
 /* ---------- citation picker (pick.html, opened by Word / LibreOffice / GenOffice) ---------- */
+body.pick { grid-template-rows: auto minmax(0, 1fr) auto; }
 body.pick .pick-brand { width: auto; padding-right: 8px; }
 body.pick #pick-project { width: 170px; flex: 0 1 170px; min-width: 96px; }
 body.pick #pick-style { width: 170px; flex: 0 1 170px; min-width: 96px; }
-body.pick #pick-hint { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.pick .rows:focus { outline: none; }
 body.pick .rows .row { cursor: pointer; }
 body.pick .rows .row.cursor { box-shadow: inset 2px 0 0 var(--accent); }
@@ -430,9 +396,6 @@ body.pick .row.style-row { grid-template-columns: 36px minmax(0, 1fr) minmax(0, 
 .pick-chosen .chip button:hover { background: var(--hover); color: var(--text); }
 .pick-foot .btn { flex: none; }
 body.pick.done .pick-foot, body.pick.done .topbar > :not(.brand) { display: none; }
-@media (max-width: 640px) {
-  body.pick #pick-hint { display: none; }
-}
 
 /* ---------- citation styles dialog ---------- */
 #styles-dialog { height: min(620px, calc(100vh - 48px)); }
@@ -475,3 +438,6 @@ body.pick.done .pick-foot, body.pick.done .topbar > :not(.brand) { display: none
 .pdf-results .what .muted { color: var(--muted); }
 .pdf-results .fix { grid-column: 2; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .pdf-results .fix input { flex: 1 1 220px; height: 24px; }
+.pick-option { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; color: var(--text-2); cursor: pointer; }
+.pick-option span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick-option:has(input:disabled) { color: var(--muted); cursor: default; }

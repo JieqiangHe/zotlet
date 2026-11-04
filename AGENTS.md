@@ -21,14 +21,13 @@ Focus: compact UI, project-centric organization, reliable DOI import, and clean 
   Support common styles (Nature, Science, Cell, etc.).
 
 - **Word processor citations**:  
-  Insert and refresh live citations and bibliographies in Microsoft Word, LibreOffice and GenOffice
-  through the Zotero word-processor plugin protocol (TCP 23116, HTTP 23119).
+  Insert and refresh live citations and bibliographies in GenOffice and LibreOffice through the
+  Zotero word-processor plugin protocol (TCP 23116, HTTP 23119). Documents must stay usable with
+  Zotero itself, in Word and in GenOffice (Zotero field codes, embedded item data, field type kept).
 
 - **Export**:  
-  One-click download of the current selection (or whole library / project) as:
-  - CSL JSON
-  - BibTeX
-  - RIS
+  One click downloads the current selection (or project / whole library) as a zip with
+  CSL JSON, BibTeX and RIS (importable into Zotero). CSL JSON from Zotero can be imported back.
 
 ## UI
 
@@ -48,7 +47,8 @@ Focus: compact UI, project-centric organization, reliable DOI import, and clean 
 
 - Dark mode: toggle in the top bar, persisted in localStorage.
 
-- Top bar: clean and ordered (New, Search, Style selector, Bibliography, Export, theme toggle).
+- Top bar: clean and ordered (New, Search, Styles, Export, theme toggle). Keep the UI minimal:
+  writing happens in the word processor, zotlet only collects, cites and exports.
 
 - Project actions:  
   Direct buttons at the bottom of the left pane (`+ New`, `Rename`, `Delete`).  
@@ -87,6 +87,6 @@ Focus: compact UI, project-centric organization, reliable DOI import, and clean 
 
 - DOI `10.1016/j.plaphy.2026.111729` (and similar Elsevier DOIs) imports without author-validation errors.
 - Creating, renaming, and deleting a project works from the left-pane buttons.
-- Bibliography generation and multi-format export work for both the whole library and a single project.
+- Citing from GenOffice/LibreOffice and the zip export work for both the whole library and a single project.
 - Dark mode toggle persists across reloads.
 - Double-clicking the launcher on a machine that already has `node` in `PATH` starts the server and opens the browser.

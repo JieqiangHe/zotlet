@@ -1,3 +1,4 @@
+import zlib from 'node:zlib'
 // CSL JSON, BibTeX and RIS export.
 
 const year = (item) => item.issued?.['date-parts']?.[0]?.[0]
@@ -146,7 +147,63 @@ export function toRIS(items) {
   return items.map(risEntry).join('\r\n')
 }
 
+// ---------- zip (all formats at once) ----------
+
+const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
+  let c = n
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+  return c >>> 0
+})
+function crc32(buf) {
+  let c = 0xffffffff
+  for (const byte of buf) c = CRC_TABLE[(c ^ byte) & 0xff] ^ (c >>> 8)
+  return (c ^ 0xffffffff) >>> 0
+}
+
+/** A minimal zip writer (deflate, UTF-8 names). `files` is [[name, string | Buffer]]. */
+export function zip(files, date = new Date()) {
+  const time = (date.getHours() << 11) | (date.getMinutes() << 5) | (date.getSeconds() >> 1)
+  const day = ((date.getFullYear() - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate()
+  const parts = [], central = []
+  let offset = 0
+  for (const [name, content] of files) {
+    const data = Buffer.isBuffer(content) ? content : Buffer.from(content, 'utf8')
+    const packed = zlib.deflateRawSync(data), nameBytes = Buffer.from(name, 'utf8'), crc = crc32(data)
+    const local = Buffer.alloc(30), dir = Buffer.alloc(46)
+    local.writeUInt32LE(0x04034b50, 0); local.writeUInt16LE(20, 4); local.writeUInt16LE(0x0800, 6); local.writeUInt16LE(8, 8)
+    local.writeUInt16LE(time, 10); local.writeUInt16LE(day, 12); local.writeUInt32LE(crc, 14)
+    local.writeUInt32LE(packed.length, 18); local.writeUInt32LE(data.length, 22); local.writeUInt16LE(nameBytes.length, 26)
+    dir.writeUInt32LE(0x02014b50, 0); dir.writeUInt16LE(20, 4); dir.writeUInt16LE(20, 6); dir.writeUInt16LE(0x0800, 8); dir.writeUInt16LE(8, 10)
+    dir.writeUInt16LE(time, 12); dir.writeUInt16LE(day, 14); dir.writeUInt32LE(crc, 16); dir.writeUInt32LE(packed.length, 20)
+    dir.writeUInt32LE(data.length, 24); dir.writeUInt16LE(nameBytes.length, 28); dir.writeUInt32LE(offset, 42)
+    parts.push(local, nameBytes, packed)
+    central.push(dir, nameBytes)
+    offset += 30 + nameBytes.length + packed.length
+  }
+  const dir = Buffer.concat(central), end = Buffer.alloc(22)
+  end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(files.length, 8); end.writeUInt16LE(files.length, 10)
+  end.writeUInt32LE(dir.length, 12); end.writeUInt32LE(offset, 16)
+  return Buffer.concat([...parts, dir, end])
+}
+
+const README = (name, n) => `${name} — ${n} reference${n === 1 ? '' : 's'} exported from zotlet
+
+${name}.ris   RIS: Zotero, EndNote, Mendeley, most reference managers
+${name}.json  CSL JSON: Zotero, and zotlet itself (drop it on the zotlet list)
+${name}.bib   BibTeX: LaTeX
+
+Into Zotero: File → Import… → choose ${name}.ris (or ${name}.json).
+Documents written with zotlet keep a full copy of every cited reference, so Zotero can
+refresh them in Word or LibreOffice even before the references are imported.
+`.replace(/\n/g, '\r\n')
+
+/** Everything at once: one zip with CSL JSON, BibTeX and RIS. */
+export function toZip(items, name = 'references') {
+  return zip([[`${name}.ris`, toRIS(items)], [`${name}.json`, toCSLJSON(items)], [`${name}.bib`, toBibTeX(items)], ['README.txt', README(name, items.length)]])
+}
+
 export const FORMATS = {
+  zip: { label: 'All formats (.zip)', extension: 'zip', mime: 'application/zip', render: toZip },
   json: { label: 'CSL JSON', extension: 'json', mime: 'application/vnd.citationstyles.csl+json', render: toCSLJSON },
   bibtex: { label: 'BibTeX', extension: 'bib', mime: 'application/x-bibtex', render: toBibTeX },
   ris: { label: 'RIS', extension: 'ris', mime: 'application/x-research-info-systems', render: toRIS },

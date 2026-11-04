@@ -8,7 +8,7 @@ conventions to keep, and what was done in the 2026-11 rebuild.
 
 A minimal, personal reference manager: projects on the left, one reference list in the center
 (no right-hand detail pane), DOI/PMID import, citeproc-js citations, CSL JSON / BibTeX / RIS export,
-and live citations in Word / LibreOffice / GenOffice through the Zotero plugin protocol.
+and live citations in GenOffice / LibreOffice through the Zotero plugin protocol (documents stay usable in Zotero + Word).
 Runtime is the user's own system `node` (>= 18.17) + a static frontend. The only npm dependency is
 `citeproc`. No build step, no framework, no bundled Node binary.
 
@@ -34,7 +34,7 @@ src/store.js       library.json + web-state.json persistence (atomic, serialized
 src/metadata.js    identifier parsing, doi.org / Crossref / PubMed lookup, CSL normalization, citation keys.
 src/citations.js   style discovery (styles/ + ~/.zotlet/styles) and citeproc formatting.
 src/export.js      CSL JSON, BibTeX, RIS writers.
-src/integration.js Word/LibreOffice/GenOffice: Zotero plugin protocol on TCP 23116 + HTTP 23119, document session.
+src/integration.js GenOffice/LibreOffice: Zotero plugin protocol on TCP 23116 + HTTP 23119, document session.
 src/style-repo.js  "Get more styles": Zotero's style index (styles.json), download/install, add .csl file, remove.
 src/pdf.js         extractDOI(): the article DOI from PDF bytes (for PDFs dropped on the list).
 src/open.js        openBrowser().
@@ -75,14 +75,26 @@ start-web.sh       real launcher; start-web.command just execs it (macOS double-
 `--no-word` or `ZOTLET_NO_WORD=1` turns it off; tests pass ports 0). It is the protocol of Zotero's
 plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which the user relies on:
 
-- **TCP 23116** (Word, LibreOffice, GenOffice): 8-byte header (transaction id, length) + JSON. A command
-  arrives as id 0; zotlet then issues `Document_getFields`-style RPCs. LibreOffice is detected from the
-  peer process (`/proc` on Linux, `lsof` on macOS) and gets the newer data format.
+- **TCP 23116** is Zotero's *LibreOffice* plugin protocol (checked against
+  zotero-libreoffice-integration: primaryFieldType ReferenceMark, secondary Bookmark, RTF): used by
+  LibreOffice and GenOffice. 8-byte header (transaction id, length) + JSON; a command arrives as id 0,
+  then zotlet issues `Document_getFields`-style RPCs. LibreOffice is detected from the peer process
+  (`/proc` on Linux, `lsof` on macOS) and gets the newer data format; other clients (GenOffice) get
+  the older one that worked for the user. Microsoft Word talks to Zotero through its own plugin
+  channel (a pipe), not this port — zotlet cannot serve Word directly.
 - **HTTP 23119** (`/connector/document/execCommand` + `respond`): each response carries the next RPC.
 - Commands: `addEditCitation`, `addEditBibliography`, `refresh`, `setDocPrefs`, `removeCodes`.
-  Field codes are Zotero's (`ITEM CSL_CITATION {…}`, `BIBL … CSL_BIBLIOGRAPHY`), so documents stay
-  compatible with Zotero. Refresh uses the library copy of an item when its id is in the library,
-  else the embedded `itemData`. `itemURI()` must not change: existing documents contain those URIs.
+  Field codes are Zotero's (`ITEM CSL_CITATION {…}`, `BIBL … CSL_BIBLIOGRAPHY`) with full `itemData`,
+  so Zotero refreshes zotlet documents from the embedded data. `itemURI()` must not change.
+- Zotero round trip (checked against zotero/xpcom/integration.js): Zotero rejects a document whose
+  stored `fieldType` is not the app's primary/secondary type (Word: Field/Bookmark; LibreOffice:
+  ReferenceMark/Bookmark; HTTP: Http). So zotlet **never rewrites the stored fieldType** (and keeps
+  other prefs). New documents default to ReferenceMark; Document Preferences offers Bookmark
+  ("Also open in Microsoft Word with Zotero") until the first citation exists (no conversion).
+  Citation items not in the library by id are matched by DOI; their existing URIs (Zotero's) stay
+  first and the zotlet URI is appended, so both Zotero and zotlet find the item.
+- The picker shows the style menu only for the first citation of a new document (like Zotero);
+  later the style is changed through Document Preferences.
 - Picking happens in the browser: `server.pick(spec)` opens `/pick.html?id=…` and waits for
   `POST /api/pick/done` (closing the tab cancels; 30 min timeout). The old native `picker.jxa` never
   existed in the repo, so don't reintroduce it.
@@ -116,14 +128,19 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
 - Look: light gray canvas (`--bg`), white panels, 1px borders, 4px radius (6px panels/menus),
   12px base font, 28px controls, 30px rows, 44px top bar. Every color is a CSS variable in `:root`
   and overridden in `:root[data-theme="dark"]` — never hard-code colors in rules.
-- Top bar order is fixed by the spec: brand, New, Search, Style selector, Bibliography, Export,
-  (spacer), theme toggle. `test/ui.test.js` asserts this order.
+- Top bar order is fixed by the spec: brand, New, Search, (spacer), Styles, Export, theme toggle.
+  `test/ui.test.js` asserts this order. Removed on purpose to keep it minimal (2026-11): the style
+  menu and Bibliography dialog (citing happens in the word processor), column sorting, the status
+  bar, the export format menu, the Edit/Clear selection buttons (double-click / Enter edits, Esc
+  clears). Don't bring them back unless the user asks.
 - The brand block is 212px wide so **New** lines up with the left edge of the list panel
   (sidebar 220px + 12px gutter). Keep those numbers in sync if you change the sidebar width.
 - Project actions are three direct buttons at the bottom of the sidebar; Rename/Delete are disabled
   when no project is selected. No overflow menus for them (they can get clipped).
-- Bibliography/Export scope: the selection if any, else everything currently visible (library,
-  project, or search results). Always label the scope in the UI.
+- Export scope: the selection if any, else everything currently visible (library, project, or
+  search results); shown in the Export button's tooltip and the toast. Export is one zip
+  (`toZip` in src/export.js: RIS + CSL JSON + BibTeX + README). Dropping a CSL JSON file imports it
+  (`POST /api/import-csl`, every item through `normalizeItem`).
 - Empty states (empty library, empty project, no search matches) are centered in the list panel,
   hide the column header, and offer one action.
 - Rich text in titles: only `<i> <b> <sub> <sup>` are rendered (`richTitle()` in app.js builds DOM

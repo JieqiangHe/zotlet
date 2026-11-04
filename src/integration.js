@@ -94,9 +94,38 @@ function bibRtf([meta, entries]) {
   return `{\\rtf ${indent}${entries.map((s) => s.replace(/\s+$/, '')).join('\\par ')}}`
 }
 
+const doiKey = (doi) => (typeof doi === 'string' ? doi.trim().toLowerCase().replace(/^https?:\/\/(dx\.)?doi\.org\//, '') : '')
+const unique = (list) => [...new Set(list.filter(Boolean))]
+
+/** Library lookups by zotlet id and by DOI (for citations written by Zotero). */
+async function libraryIndex(ctx) {
+  const items = await ctx.items()
+  const byId = new Map(items.map((i) => [String(i.id), i])), byDOI = new Map()
+  for (const i of items) if (doiKey(i.DOI)) byDOI.set(doiKey(i.DOI), i)
+  return { items, byId, byDOI }
+}
+
+/**
+ * Point a citation item at the zotlet library when possible: by id, else by DOI (a citation
+ * inserted by Zotero). Existing URIs are kept first, so Zotero still finds its own items.
+ */
+function matchCitationItem(ci, lib) {
+  const found = lib.byId.get(String(ci.id)) || lib.byDOI.get(doiKey(ci.itemData?.DOI))
+  if (found) {
+    ci.id = found.id
+    ci.itemData = { ...found, id: found.id }
+    ci.uris = unique([...(Array.isArray(ci.uris) ? ci.uris : []), ci.uri, itemURI(found.id)])
+  } else {
+    ci.itemData = { ...ci.itemData, id: ci.id }
+    ci.uris = Array.isArray(ci.uris) && ci.uris.length ? ci.uris : unique([ci.uri, itemURI(ci.id)])
+  }
+  delete ci.uri
+  return ci
+}
+
 async function refresh(doc, style, call, options, ctx) {
   const [ids, codes] = await call('Document.getFields', [doc, options.fieldType])
-  const library = new Map((await ctx.items()).map((i) => [String(i.id), i]))
+  const lib = await libraryIndex(ctx)
   const items = {}, cites = [], bibs = [], seen = new Set()
   ids.forEach((id, k) => {
     const code = codes[k]
@@ -107,8 +136,7 @@ async function refresh(doc, style, call, options, ctx) {
       seen.add(j.citationID)
       for (const ci of j.citationItems) {
         // The library copy wins, so edits made in zotlet show up on refresh.
-        ci.itemData = { ...(library.get(String(ci.id)) || ci.itemData), id: ci.id }
-        ci.uris ??= [itemURI(ci.id)]
+        matchCitationItem(ci, lib)
         items[String(ci.id)] = ci.itemData
       }
       cites.push({ id, j })
@@ -166,23 +194,24 @@ export async function runSession(cmd, call, session, ctx) {
     if (options.modernData && typeof rawData !== 'string') throw new Error('Invalid document data: expected a string')
     const data = options.modernData ? readData(rawData) : null
     const stored = resolveStyle(data ? data.style?.styleID : /<style id="([^"]+)"/.exec(rawData || '')?.[1], styles)
-    if (options.nativeFieldTypes) {
-      const field = /<pref name="fieldType" value="([^"]+)"/.exec(rawData || '')?.[1] || data?.prefs?.fieldType
-      if (options.nativeFieldTypes.includes(field)) options.fieldType = field
-    }
+    // The field type stored in the document must survive: Zotero refuses a document whose type
+    // does not match the word processor (Word: Field/Bookmark, LibreOffice: ReferenceMark/Bookmark).
+    const docFieldType = data?.prefs?.fieldType || /<pref name="fieldType" value="([^"]+)"/.exec(rawData || '')?.[1] || null
+    options.storedFieldType = docFieldType || options.fieldType
+    if (docFieldType && options.nativeFieldTypes?.includes(docFieldType)) options.fieldType = docFieldType
+    else if (docFieldType === 'Bookmark' && options.bookmarks) options.fieldType = 'Bookmark'
     options.bibliographyStyleSet = data ? !!data.style?.bibliographyStyleHasBeenSet : /bibliographyStyleHasBeenSet="1"/.test(rawData || '')
     let style = stored || (styles.some((s) => s.id === DEFAULT_STYLE) ? DEFAULT_STYLE : styles[0]?.id)
     if (!style) throw new Error('No citation styles are installed')
     let sessionID = data?.sessionID || /<session id="([^"]+)"/.exec(rawData || '')?.[1]
     serializeData = () => {
       const uri = styleURI(style, styles)
-      if (!options.modernData) return prefXml(uri)
       sessionID ||= rid()
       if (!data) {
-        let xml = prefXml(uri, options.fieldType, options.bibliographyStyleSet, sessionID, options.version)
+        let xml = prefXml(uri, options.storedFieldType, options.modernData ? options.bibliographyStyleSet : true, sessionID, options.version)
         const prefs = /<prefs>([\s\S]*?)<\/prefs>/.exec(rawData || '')
         if (prefs) {
-          const field = `<pref name="fieldType" value="${options.fieldType}"/>`
+          const field = `<pref name="fieldType" value="${options.storedFieldType}"/>`
           const existing = /<pref name="fieldType" value="[^"]*"\s*\/>/
           const retained = existing.test(prefs[1]) ? prefs[1].replace(existing, field) : prefs[1] + field
           xml = xml.replace(/<prefs>[\s\S]*?<\/prefs>/, `<prefs>${retained}</prefs>`)
@@ -192,7 +221,7 @@ export async function runSession(cmd, call, session, ctx) {
       return JSON.stringify({
         style: { styleID: uri, ...(data.style?.locale ? { locale: data.style.locale } : {}), hasBibliography: true,
           bibliographyStyleHasBeenSet: options.bibliographyStyleSet },
-        prefs: { ...data.prefs, fieldType: options.fieldType, noteType: 0 }, sessionID,
+        prefs: { ...data.prefs, fieldType: options.storedFieldType, noteType: 0 }, sessionID,
         zoteroVersion: options.version || 'zotlet', dataVersion: 4,
       })
     }
@@ -204,18 +233,32 @@ export async function runSession(cmd, call, session, ctx) {
     }
 
     if (cmd === 'setDocPrefs') {
-      const r = await ctx.pick({ mode: 'style', style })
+      // Bookmarks open in both Word and LibreOffice/GenOffice with Zotero. Existing citations
+      // cannot be converted, so the type can only be chosen while the document has none.
+      const [fieldIds] = await call('Document.getFields', [doc, options.fieldType])
+      const r = await ctx.pick({ mode: 'style', style, bookmarks: options.bookmarks ? options.storedFieldType === 'Bookmark' : undefined,
+        bookmarksLocked: fieldIds.length > 0 })
       if (!r?.style || !styles.some((s) => s.id === r.style)) return (note = 'cancelled')
+      const wanted = options.bookmarks && !fieldIds.length && typeof r.bookmarks === 'boolean'
+        ? (r.bookmarks ? 'Bookmark' : 'ReferenceMark') : options.storedFieldType
+      if (wanted !== options.storedFieldType) {
+        options.storedFieldType = wanted
+        options.fieldType = wanted
+        await call('Document.setDocumentData', [doc, serializeData()])
+      }
       await setStyle(r.style)
     } else if (cmd === 'addEditCitation') {
       const cur = await call('Document.cursorInField', [doc, options.fieldType])
       const old = cur && /^ITEM/.test(cur[1]) ? parseCode(cur[1]) : null
-      const pool = [...await ctx.items()]
+      const lib = await libraryIndex(ctx)
+      const pool = [...lib.items]
       for (const ci of old?.citationItems || []) {
+        matchCitationItem(ci, lib)
         if (!pool.some((it) => String(it.id) === String(ci.id))) pool.push({ ...ci.itemData, id: String(ci.id) })
       }
       if (!pool.length) throw new Error('Your zotlet library is empty. Add references in zotlet first.')
-      const r = await ctx.pick({ mode: 'cite', style, items: pool, selected: (old?.citationItems || []).map((c) => String(c.id)) })
+      // The style menu is only offered for the first citation of a new document.
+      const r = await ctx.pick({ mode: 'cite', style, askStyle: !stored, items: pool, selected: (old?.citationItems || []).map((c) => String(c.id)) })
       const byId = new Map(pool.map((it) => [String(it.id), it]))
       const chosen = (r?.ids || []).map((id) => byId.get(String(id))).filter(Boolean)
       if (!chosen.length) return (note = 'cancelled')
@@ -226,8 +269,8 @@ export async function runSession(cmd, call, session, ctx) {
         citationItems: chosen.map((it) => {
           // Keep locator/prefix/suffix of items that were already in this citation.
           const prev = old?.citationItems?.find((c) => String(c.id) === String(it.id))
-          const { itemData: _d, uris: _u, uri: _x, ...extra } = prev || {}
-          return { ...extra, id: it.id, uris: [itemURI(it.id)], itemData: it }
+          const { itemData: _d, uris: prevUris, uri: _x, ...extra } = prev || {}
+          return { ...extra, id: it.id, uris: unique([...(prevUris || []), itemURI(it.id)]), itemData: it }
         }),
         schema: SCHEMA,
       }
@@ -267,7 +310,7 @@ const execute = promisify(execFile)
 const OFFICE_NAMES = new Set(['soffice', 'soffice.bin', 'libreoffice', 'libreofficedev', 'uno', 'uno.bin'])
 const bareHost = (value) => String(value).replace(/^\[|\]$/g, '').replace(/^::ffff:/i, '')
 const isOffice = (name) => OFFICE_NAMES.has(String(name).toLowerCase())
-const LIBREOFFICE_SESSION = { modernData: true, nativeFieldTypes: ['ReferenceMark', 'Bookmark'],
+const LIBREOFFICE_SESSION = { modernData: true, nativeFieldTypes: ['ReferenceMark', 'Bookmark'], bookmarks: true,
   setBibliographyStyle: true, finalCommit: true, supportedNotes: ['footnote', 'endnote'], version: COMPAT_VERSION }
 
 /** Find the process owning the client end of `socket` in `lsof -Fpcn` output. */
@@ -341,8 +384,8 @@ export function createTcpServer(ctx, { log = () => {}, detectClient = libreOffic
     let buffer = Buffer.alloc(0), tx = 0, closed = false, commands = Promise.resolve()
     const profile = Promise.resolve().then(() => detectClient(sock)).then((owner) => {
       if (owner) log(`TCP client ${owner.command} (PID ${owner.pid}): LibreOffice mode`)
-      return owner ? LIBREOFFICE_SESSION : {}
-    }).catch(() => ({}))
+      return owner ? LIBREOFFICE_SESSION : { bookmarks: true }
+    }).catch(() => ({ bookmarks: true }))
     const waiting = new Map()
     const call = (method, args) => new Promise((resolve, reject) => {
       if (closed || sock.destroyed || sock.writableEnded) { reject(new Error('The word processor closed the connection')); return }

@@ -129,6 +129,54 @@ test('HTML documents (HTTP protocol) get HTML text and the style in document dat
   assert.match(doc.data, /styles\/nature/)
 })
 
+test('round trip with Zotero: the field type is kept, Zotero items are matched by DOI, Zotero URIs stay first', async () => {
+  // A document written by Zotero in Word: fieldType "Field", an item from the Zotero library.
+  const zoteroURI = 'http://zotero.org/users/123/items/ABCD1234'
+  const doc = fakeDocument({ data: '<data data-version="3" zotero-version="7.0.11"><session id="Zs1"/><style id="http://www.zotero.org/styles/apa" hasBibliography="1" bibliographyStyleHasBeenSet="1"/><prefs><pref name="fieldType" value="Field"/><pref name="automaticJournalAbbreviations" value="true"/></prefs></data>' })
+  doc.fields.push({ id: 'z1', text: 'old', code: `ITEM CSL_CITATION ${JSON.stringify({ citationID: 'c1', properties: {}, citationItems: [
+    { id: 9876, uris: [zoteroURI], locator: '5', itemData: { id: 9876, type: 'article-journal', title: 'Zotero copy', DOI: '10.1/HOPPER', author: [{ family: 'Hopper', given: 'G' }], issued: { 'date-parts': [[2019]] } } }] })}` })
+  const lib = [{ ...ITEMS[1], DOI: '10.1/hopper' }, ITEMS[0]]
+  const c = { items: async () => lib, styles, pick: async () => null }
+  await runSession('refresh', doc.rpc, {}, c)
+  assert.match(doc.data, /<pref name="fieldType" value="Field"\/>/, 'Word field type kept, so Zotero + Word still accepts the document')
+  assert.match(doc.data, /automaticJournalAbbreviations/, 'other Zotero prefs kept')
+  const ci = codeOf(doc.fields[0]).citationItems[0]
+  assert.equal(ci.id, 'hopper2019', 'matched to the zotlet item by DOI')
+  assert.equal(ci.locator, '5')
+  assert.deepEqual(ci.uris, [zoteroURI, itemURI('hopper2019')])
+  assert.equal(ci.itemData.title, 'A <i>compiler</i> paper', 'library copy embedded')
+  assert.equal(doc.fields[0].text, '{\\rtf (Hopper, 2019, p. 5)}')
+
+  // Editing it in zotlet preselects the matched item and keeps Zotero's URI.
+  doc.cursor = 'z1'
+  let spec
+  await runSession('addEditCitation', doc.rpc, {}, { ...c, pick: async (s) => { spec = s; return { ids: ['hopper2019', 'lovelace2020'] } } })
+  assert.deepEqual(spec.selected, ['hopper2019'])
+  assert.equal(spec.askStyle, false, 'the document already has a style')
+  assert.deepEqual(codeOf(doc.fields[0]).citationItems[0].uris, [zoteroURI, itemURI('hopper2019')])
+})
+
+test('new documents: style asked with the first citation; bookmarks for Word can be chosen until then', async () => {
+  const doc = fakeDocument()
+  let spec
+  await runSession('setDocPrefs', doc.rpc, { bookmarks: true }, ctx(async (s) => { spec = s; return { style: 'apa', bookmarks: true } }))
+  assert.deepEqual([spec.bookmarks, spec.bookmarksLocked], [false, false])
+  assert.match(doc.data, /<pref name="fieldType" value="Bookmark"\/>/)
+  let inserted = null
+  const rpc = async (m, a) => { if (m.replace('_', '.') === 'Document.insertField') inserted = a[1]; return doc.handle(m, a) }
+  await runSession('addEditCitation', rpc, { bookmarks: true }, ctx(async (s) => { spec = s; return { ids: ['hopper2019'] } }))
+  assert.equal(spec.askStyle, false)
+  assert.equal(inserted, 'Bookmark', 'citations are inserted as bookmarks')
+  await runSession('setDocPrefs', rpc, { bookmarks: true }, ctx(async (s) => { spec = s; return { style: 'apa', bookmarks: false } }))
+  assert.equal(spec.bookmarksLocked, true)
+  assert.match(doc.data, /value="Bookmark"/, 'cannot switch once citations exist')
+
+  const fresh = fakeDocument()
+  await runSession('addEditCitation', fresh.rpc, {}, ctx(async (s) => { spec = s; return { ids: ['hopper2019'] } }))
+  assert.equal(spec.askStyle, true)
+  assert.match(fresh.data, /<pref name="fieldType" value="ReferenceMark"\/>/, 'default stays ReferenceMark (LibreOffice / GenOffice)')
+})
+
 test('style URIs resolve to installed styles', () => {
   assert.equal(resolveStyle('http://www.zotero.org/styles/nature', styles()), 'nature')
   assert.equal(resolveStyle('http://www.zotero.org/styles/unknown-style', styles()), null)

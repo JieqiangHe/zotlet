@@ -67,7 +67,8 @@ const rowCount = (n) => page.waitForFunction((n) => document.querySelectorAll('.
 
 test('library loads with the top bar in the required order', { skip }, async () => {
   const order = await page.$$eval('.topbar > *', (nodes) => nodes.map((n) => n.id || n.className))
-  assert.deepEqual(order, ['brand', 'btn-new', 'search', 'style-select', 'btn-bib', 'dropdown', 'grow', 'btn-theme'])
+  assert.deepEqual(order, ['brand', 'btn-new', 'search', 'grow', 'btn-styles', 'btn-export', 'btn-theme'])
+  assert.equal((await page.$$('.statusbar, #style-select, #btn-bib, .cell.sort')).length, 0, 'removed for simplicity')
   assert.equal((await rowTitles()).length, 2)
   assert.equal(await page.textContent('#count-all'), '2')
   await shot('01-library')
@@ -120,23 +121,14 @@ test('project buttons: create, add references, rename, remove', { skip }, async 
   await shot('05-project')
 })
 
-test('bibliography and all export formats for the current project', { skip }, async () => {
-  await page.selectOption('#style-select', 'apa')
-  await page.click('#btn-bib')
-  await page.waitForSelector('#bib-output .csl-entry')
-  assert.equal(await page.$$eval('#bib-output .csl-entry', (e) => e.length), 1)
-  assert.match(await page.textContent('#bib-scope'), /Drought & heat review/)
-  await shot('06-bibliography')
-  await page.selectOption('#bib-style', 'nature')
-  await page.waitForFunction(() => /^1\./.test(document.querySelector('#bib-output .csl-left-margin')?.textContent || ''))
-  await page.click('#bib-dialog .dialog-foot .primary')
-
-  for (const [format, ext] of [['json', 'json'], ['bibtex', 'bib'], ['ris', 'ris']]) {
-    await page.click('#btn-export')
-    const [download] = await Promise.all([page.waitForEvent('download'), page.click(`#export-menu [data-format="${format}"]`)])
-    assert.equal(download.suggestedFilename(), `Drought & heat review.${ext}`)
-    assert.ok(fs.readFileSync(await download.path(), 'utf8').length > 20)
-  }
+test('export: one click downloads the current project as a zip with all formats', { skip }, async () => {
+  const [download] = await Promise.all([page.waitForEvent('download'), page.click('#btn-export')])
+  assert.equal(download.suggestedFilename(), 'Drought & heat review.zip')
+  const zip = fs.readFileSync(await download.path())
+  assert.equal(zip.readUInt32LE(0), 0x04034b50, 'a zip file')
+  const names = zip.toString('latin1')
+  for (const ext of ['ris', 'json', 'bib']) assert.ok(names.includes(`Drought & heat review.${ext}`), ext)
+  assert.match(await page.getAttribute('#btn-export', 'title'), /project “Drought & heat review”/)
 })
 
 test('deleting a project keeps its references in the library', { skip }, async () => {
@@ -216,10 +208,10 @@ test('every dialog lays out its body and buttons inside the box', { skip }, asyn
     await assertDialogLaidOut('#ref-dialog')
     await page.click('#ref-dialog .dialog-head [data-close]')
 
-    await page.click('#btn-bib')
-    await page.waitForSelector('#bib-output .csl-entry')
-    await assertDialogLaidOut('#bib-dialog')
-    await page.click('#bib-dialog .dialog-foot .primary')
+    await page.click('#btn-styles')
+    await page.waitForSelector('#styles-dialog[open]')
+    await assertDialogLaidOut('#styles-dialog')
+    await page.click('#styles-dialog .dialog-foot .primary')
 
     await page.click('#project-new')
     await assertDialogLaidOut('#name-dialog')
@@ -243,7 +235,7 @@ test('narrow window: no horizontal overflow', { skip }, async () => {
 
 test('citation picker (opened by Word / GenOffice): search, select, insert; style picker', { skip }, async () => {
   const { items } = await createStore({ dir }).snapshot()
-  const result = server.pick({ mode: 'cite', style: 'nature', items, selected: [] })
+  const result = server.pick({ mode: 'cite', style: 'nature', askStyle: true, items, selected: [] })
   await new Promise((r) => setTimeout(r, 20))
   const picker = await page.context().newPage()
   picker.on('pageerror', (e) => page.errors.push(e))
@@ -268,15 +260,16 @@ test('citation picker (opened by Word / GenOffice): search, select, insert; styl
   await picker.waitForSelector('#pick-message:not([hidden])')
   await picker.close().catch(() => {})
 
-  const styleResult = server.pick({ mode: 'style', style: 'nature' })
+  const styleResult = server.pick({ mode: 'style', style: 'nature', bookmarks: false, bookmarksLocked: false })
   await new Promise((r) => setTimeout(r, 20))
   const stylePage = await page.context().newPage()
   await stylePage.goto(opened.shift())
   await stylePage.waitForSelector('#pick-rows .row.selected')
   await stylePage.click('#pick-rows .row:nth-child(2)')
   if (SHOTS) await stylePage.screenshot({ path: path.join(SHOTS, '22-style-picker.png') })
+  await stylePage.check('#pick-bookmarks input')
   await stylePage.click('#pick-ok')
-  assert.equal((await styleResult).style, 'science')
+  assert.deepEqual(await styleResult, { style: 'science', bookmarks: true })
   await stylePage.close().catch(() => {})
 
   // Closing the tab without answering cancels the request.
@@ -289,9 +282,9 @@ test('citation picker (opened by Word / GenOffice): search, select, insert; styl
   assert.equal(await closed, null)
 })
 
-test('get more styles: search the repository, install a journal style, use and remove it', { skip }, async () => {
+test('styles: search the repository, install a journal style, remove it', { skip }, async () => {
   await page.setViewportSize({ width: 1280, height: 760 })
-  await page.selectOption('#style-select', '__more__')
+  await page.click('#btn-styles')
   await page.waitForSelector('#styles-dialog[open] #style-results li')
   await page.fill('#style-query', 'plant physiology')
   await page.waitForFunction(() => document.querySelectorAll('#style-results li').length === 1)
@@ -299,23 +292,13 @@ test('get more styles: search the repository, install a journal style, use and r
   await shot('30-styles-search')
   await page.click('#style-results li button:has-text("Install")')
   await page.waitForSelector('#style-results li .badge')
-  assert.equal(await page.inputValue('#style-select'), 'plant-physiology-and-biochemistry')
   await page.click('#styles-tabs [data-tab="installed"]')
-  await page.waitForSelector('#style-installed li.current')
-  assert.match(await page.textContent('#style-installed li.current'), /uses Elsevier Harvard/)
+  const row = '#style-installed li:has-text("Plant Physiology and Biochemistry")'
+  assert.match(await page.textContent(row), /uses Elsevier Harvard/)
   await assertDialogLaidOut('#styles-dialog')
   await shot('31-styles-installed')
-  await page.click('#styles-dialog .dialog-foot .primary')
-
-  await page.click('#btn-bib')
-  await page.waitForSelector('#bib-output .csl-entry')
-  assert.equal(await page.inputValue('#bib-style'), 'plant-physiology-and-biochemistry')
-  await page.click('#bib-dialog .dialog-foot .primary')
-
-  await page.selectOption('#style-select', '__more__')
-  await page.click('#styles-tabs [data-tab="installed"]')
-  await page.click('#style-installed li.current button:has-text("Remove")')
-  await page.waitForFunction(() => !document.querySelector('#style-select option[value="plant-physiology-and-biochemistry"]'))
+  await page.click(`${row} button:has-text("Remove")`)
+  await page.waitForFunction(() => !/Plant Physiology and Biochemistry/.test(document.querySelector('#style-installed').textContent))
   await page.keyboard.press('Escape')
 })
 
@@ -355,4 +338,25 @@ test('drop PDFs: the DOI is read and the reference imported; type a DOI when non
   await page.waitForSelector('#pdf-results li.warn')
   await page.click('#pdf-dialog .dialog-foot .primary')
   assert.equal((await createStore({ dir }).snapshot()).items.length, before)
+})
+
+test('drop a CSL JSON file (e.g. exported from Zotero) to import its references', { skip }, async () => {
+  const before = (await createStore({ dir }).snapshot()).items.length
+  const json = Buffer.from(JSON.stringify([
+    { id: 'http://zotero.org/users/1/items/AAA', type: 'article-journal', title: 'From Zotero', author: [{ family: 'Curie', given: 'Marie' }], issued: { 'date-parts': [['1903']] }, DOI: '10.5555/zotero-1' },
+    { id: 'x', type: 'book', title: 'Statistical Rethinking (2nd ed.)' },
+    { note: 'no title' },
+  ]))
+  const dataTransfer = await page.evaluateHandle((data) => {
+    const dt = new DataTransfer()
+    dt.items.add(new File([atob(data)], 'Exported Items.json', { type: 'application/json' }))
+    return dt
+  }, json.toString('base64'))
+  await page.dispatchEvent('.table', 'dragenter', { dataTransfer })
+  await page.dispatchEvent('.table', 'drop', { dataTransfer })
+  await page.waitForSelector('#pdf-results li.ok')
+  assert.match(await page.textContent('#pdf-results li'), /Imported 2 references · 1 skipped/)
+  await page.click('#pdf-dialog .dialog-foot .primary')
+  assert.equal((await createStore({ dir }).snapshot()).items.length, before + 2)
+  await page.waitForSelector('.rows .row:has-text("From Zotero")')
 })

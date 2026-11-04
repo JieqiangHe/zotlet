@@ -155,6 +155,24 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
       }
     },
 
+    // A CSL JSON file (e.g. exported from Zotero, or from zotlet). Same normalization as DOI imports.
+    'POST /api/import-csl': async (body) => {
+      const list = Array.isArray(body.items) ? body.items : null
+      if (!list) throw fail('Expected a CSL JSON array of references')
+      if (list.length > 20000) throw fail('That file is too large')
+      const clean = []
+      let skipped = 0
+      for (const raw of list) {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw) || (typeof raw.title !== 'string' && !Array.isArray(raw.title))) { skipped++; continue }
+        try { clean.push(normalizeItem(raw)) } catch { skipped++ }
+      }
+      if (!clean.length) throw fail('No references found in this file (expected CSL JSON)')
+      const projectId = typeof body.projectId === 'string' && body.projectId ? body.projectId : undefined
+      const saved = await store.addItems(clean, { projectId })
+      return { added: saved.filter((r) => r.status === 'added').length, duplicates: saved.filter((r) => r.status === 'duplicate').length,
+        skipped, ids: saved.map((r) => r.id) }
+    },
+
     'POST /api/items/create': async (body) => {
       const fields = Object.fromEntries(Object.entries(validateFields(body.fields, { creating: true })).filter(([, v]) => v !== null))
       const projectId = typeof body.projectId === 'string' && body.projectId ? body.projectId : undefined
@@ -178,7 +196,8 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
       const { spec } = pending(body.id)
       const { projects } = await store.snapshot()
       const items = (spec.items || []).map((item) => Object.fromEntries(PICK_FIELDS.filter((k) => k in item).map((k) => [k, item[k]])))
-      return { mode: spec.mode, style: spec.style, selected: spec.selected || [], items,
+      return { mode: spec.mode, style: spec.style, askStyle: !!spec.askStyle, selected: spec.selected || [], items,
+        bookmarks: spec.bookmarks, bookmarksLocked: !!spec.bookmarksLocked,
         projects: projects.map(({ id, name, itemIds }) => ({ id, name, itemIds })),
         styles: styleList() }
     },
@@ -188,7 +207,7 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
       const style = typeof body.style === 'string' && styles().some((s) => s.id === body.style) ? body.style : undefined
       if (entry.spec.mode === 'style') {
         if (!style) throw fail('Choose a citation style')
-        entry.done({ style })
+        entry.done(typeof body.bookmarks === 'boolean' ? { style, bookmarks: body.bookmarks } : { style })
       } else {
         const ids = stringList(body.ids)
         if (!ids.length) throw fail('Choose at least one reference')
@@ -234,12 +253,13 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
 
   async function exportFile(body, res) {
     const format = FORMATS[body.format]
-    if (!format) throw fail('Choose CSL JSON, BibTeX or RIS')
+    if (!format) throw fail('Choose zip, CSL JSON, BibTeX or RIS')
     const items = await selectItems(body.ids)
     if (!items.length) throw fail('Nothing to export')
-    const name = `${safeFileName(body.name)}.${format.extension}`
-    res.writeHead(200, { 'Content-Type': `${format.mime}; charset=utf-8`, 'Content-Disposition': contentDisposition(name), 'X-Item-Count': String(items.length) })
-    res.end(format.render(items))
+    const base = safeFileName(body.name), name = `${base}.${format.extension}`
+    const binary = format.extension === 'zip'
+    res.writeHead(200, { 'Content-Type': binary ? format.mime : `${format.mime}; charset=utf-8`, 'Content-Disposition': contentDisposition(name), 'X-Item-Count': String(items.length) })
+    res.end(format.render(items, base))
   }
 
   const server = http.createServer(async (req, res) => {
