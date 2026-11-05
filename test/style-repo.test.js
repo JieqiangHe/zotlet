@@ -11,6 +11,7 @@ import { tempDir } from './helpers.js'
 
 const DEPENDENT = fs.readFileSync(new URL('./fixtures/dependent-style.csl', import.meta.url), 'utf8')
 const NATURE = fs.readFileSync(path.join(BUILTIN_STYLES, 'nature.csl'), 'utf8')
+const ELSEVIER_HARVARD = fs.readFileSync(new URL('./fixtures/styles/elsevier-harvard.csl', import.meta.url), 'utf8')
 // An independent style that is not bundled, and a journal style that depends on it.
 const PARENT = NATURE.replace(/<title>[^<]*<\/title>/, '<title>Test Parent Style</title>')
   .replace(/<id>[^<]*<\/id>/, '<id>http://www.zotero.org/styles/test-parent</id>')
@@ -26,7 +27,7 @@ const INDEX = [
 ]
 
 function fakeNet({ offline = false } = {}) {
-  const files = { 'plant-physiology-and-biochemistry': DEPENDENT, 'journal-of-tests': CHILD, 'test-parent': PARENT, 'plant-physiology': NATURE.replace(/styles\/nature</, 'styles/plant-physiology<') }
+  const files = { 'elsevier-harvard': ELSEVIER_HARVARD, 'plant-physiology-and-biochemistry': DEPENDENT, 'journal-of-tests': CHILD, 'test-parent': PARENT, 'plant-physiology': NATURE.replace(/styles\/nature</, 'styles/plant-physiology<') }
   const calls = []
   const fn = async (url) => {
     calls.push(String(url))
@@ -69,12 +70,12 @@ test('the index falls back to the saved copy when offline', async () => {
   await assert.rejects(empty.repo.search('x'), /Cannot reach www\.zotero\.org/)
 })
 
-test('installing a journal style whose parent is bundled', async () => {
+test('installing an Elsevier journal style downloads its parent (Elsevier Harvard is not built in)', async () => {
   const { repo, userDir } = setup()
   const installed = await repo.install('plant-physiology-and-biochemistry')
   assert.deepEqual(installed, { id: 'plant-physiology-and-biochemistry', title: 'Plant Physiology and Biochemistry', parent: 'elsevier-harvard' })
   const style = listStyles(userDir).find((s) => s.id === installed.id)
-  assert.equal(style.file, path.join(BUILTIN_STYLES, 'elsevier-harvard.csl'), 'renders with the parent')
+  assert.equal(style.file, path.join(userDir, 'elsevier-harvard.csl'), 'renders with the downloaded parent')
   const out = formatCitations({ styleId: installed.id, userDir, items: [{ id: 'a', type: 'article-journal', title: 'T', author: [{ family: 'Zhang', given: 'L' }], issued: { 'date-parts': [[2026]] }, 'container-title': 'J' }] })
   assert.match(out.citation.text, /Zhang/)
   assert.match(out.citation.text, /2026/)

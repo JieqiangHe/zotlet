@@ -12,22 +12,28 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">zotlet</div>
-    <button id="btn-new" class="btn primary" title="Add references (N)">
-      <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>New
-    </button>
-    <label class="search">
-      <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
-      <input id="search" type="search" placeholder="Search title, author, journal, DOI…" aria-label="Search references" autocomplete="off" spellcheck="false">
-      <kbd>/</kbd>
-    </label>
-    <span class="grow"></span>
-    <button id="btn-styles" class="btn" title="Download and manage citation styles">Styles</button>
-    <button id="btn-export" class="btn" title="Download CSL JSON + BibTeX + RIS in one zip">Export</button>
-    <button id="btn-theme" class="btn icon" title="Toggle dark mode" aria-label="Toggle dark mode">
-      <svg class="i only-light" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.6A5.5 5.5 0 0 1 6.4 2.5a5.5 5.5 0 1 0 7.1 7.1Z"/></svg>
-      <svg class="i only-dark" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg>
-    </button>
+    <div class="topbar-side">
+      <button id="btn-new" class="btn primary" title="Add references (N)">
+        <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>Add references
+      </button>
+    </div>
+    <div class="topbar-main">
+      <label class="search">
+        <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+        <input id="search" type="search" placeholder="Search title, author, journal, DOI…" aria-label="Search references" autocomplete="off" spellcheck="false">
+        <kbd>/</kbd>
+      </label>
+      <span class="grow"></span>
+      <div class="topbar-actions">
+        <button id="btn-styles" class="btn" title="Download and manage citation styles">Styles</button>
+        <button id="btn-export" class="btn" title="Download CSL JSON + BibTeX + RIS in one zip">Export</button>
+        <span class="topbar-sep" aria-hidden="true"></span>
+        <button id="btn-theme" class="btn icon" title="Toggle dark mode" aria-label="Toggle dark mode">
+          <svg class="i only-light" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.6A5.5 5.5 0 0 1 6.4 2.5a5.5 5.5 0 1 0 7.1 7.1Z"/></svg>
+          <svg class="i only-dark" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg>
+        </button>
+      </div>
+    </div>
   </header>
 
   <div class="layout">
@@ -43,7 +49,7 @@
         <p id="projects-empty" class="nav-empty" hidden>No projects yet.</p>
       </nav>
       <div class="sidebar-actions">
-        <button id="project-new" class="btn sm">
+        <button id="project-new" class="btn sm" title="New project">
           <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg>New
         </button>
         <button id="project-rename" class="btn sm">Rename</button>
@@ -74,10 +80,11 @@
         <div class="table" role="grid" aria-labelledby="view-title">
           <div class="row head" role="row">
             <span class="cell check"><input id="check-all" type="checkbox" aria-label="Select all"></span>
-            <span class="cell" role="columnheader">Title</span>
-            <span class="cell" role="columnheader">Authors</span>
-            <span class="cell num" role="columnheader">Year</span>
-            <span class="cell" role="columnheader">Journal</span>
+            <button class="cell sort" data-sort="title" role="columnheader">Title<span class="arrow"></span></button>
+            <button class="cell sort" data-sort="author" role="columnheader">Authors<span class="arrow"></span></button>
+            <button class="cell sort num" data-sort="year" role="columnheader">Year<span class="arrow"></span></button>
+            <button class="cell sort" data-sort="journal" role="columnheader">Journal<span class="arrow"></span></button>
+            <button class="cell sort" data-sort="added" role="columnheader" title="When the reference was imported">Added<span class="arrow"></span></button>
           </div>
           <div id="rows" class="rows"></div>
           <div id="drop-hint" class="drop-hint" hidden><strong>Drop PDFs or a CSL JSON file to import</strong><span>zotlet reads the DOI inside each PDF; the PDF itself is not kept. CSL JSON comes from Zotero (File → Export Library…).</span></div>

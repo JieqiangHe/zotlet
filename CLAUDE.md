@@ -23,7 +23,7 @@ Focus: compact UI, project-centric organization, reliable DOI import, and clean 
 
 - **Citations**:
   Generate in-text citations and bibliographies using citeproc-js.
-  Support common styles (Nature, Science, Cell, etc.).
+  Built in: Nature, Science and Cell only. Every other style is downloaded under Styles.
 
 - **Word processor citations**:
   Insert and refresh live citations and bibliographies in GenOffice and LibreOffice through the
@@ -42,9 +42,9 @@ Focus: compact UI, project-centric organization, reliable DOI import, and clean 
   - No right-hand detail pane.
 
 - Visual style:
-  Reference the restrained look of [svguest.online](https://svguest.online) for the main area
-  (light gray background, thin borders, small radius, 12 px font, short toolbar).
-  Left project pane can stay simpler.
+  Restrained and compact (thin borders, small radius, 12 px font, short toolbar), with colors
+  inspired by Claude's interface: warm neutral canvas and a clay/terracotta accent, in light and dark.
+  No logo or app name anywhere.
 
 - Density:
   Compact enough for personal daily use, but not so small that text becomes hard to read.
@@ -52,8 +52,11 @@ Focus: compact UI, project-centric organization, reliable DOI import, and clean 
 
 - Dark mode: toggle in the top bar, persisted in localStorage.
 
-- Top bar: clean and ordered (New, Search, Styles, Export, theme toggle). Keep the UI minimal:
-  writing happens in the word processor, zotlet only collects, cites and exports.
+- Top bar: clean and ordered (Add references, Search, Styles, Export, theme toggle), aligned with
+  the panes below. Keep the UI minimal: writing happens in the word processor, zotlet only collects,
+  cites and exports.
+
+- List columns (Title, Authors, Year, Journal, Added) sort by clicking the header; Added = import time.
 
 - Project actions:
   Direct buttons at the bottom of the left pane (`+ New`, `Rename`, `Delete`).
@@ -132,9 +135,11 @@ src/pdf.js         extractDOI(): the article DOI from PDF bytes (for PDFs droppe
 src/open.js        openBrowser().
 public/            index.html, app.js (single ES module), style.css, theme.js (pre-paint theme),
                    pick.html + pick.js (citation/style picker opened by the word processor integration).
-styles/            13 independent CSL styles from the official CSL repo (CC BY-SA 3.0).
+styles/            the built-in styles: nature, science, cell (official CSL repo, CC BY-SA 3.0).
+src/popup.js       the picker as a pop-up app window (Chromium browsers), and switching back to the word processor.
 locales/           locales-en-US.xml (every style is rendered with en-US).
-test/              *.test.js + helpers.js + fixtures/ (recorded Crossref and PubMed records).
+test/              *.test.js + helpers.js + fixtures/ (recorded Crossref and PubMed records; styles/ holds
+                   APA and Elsevier Harvard, used by tests as user-installed / downloadable styles).
 scripts/package.sh builds the zip (source + launchers + node_modules/citeproc).
 start-web.sh       real launcher; start-web.command just execs it (macOS double-click).
 ```
@@ -188,8 +193,15 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
 - The picker shows the style menu only for the first citation of a new document (like Zotero);
   later the style is changed through Document Preferences.
 - Picking happens in the browser: `server.pick(spec)` opens `/pick.html?id=…` and waits for
-  `POST /api/pick/done` (closing the tab cancels; 30 min timeout). The old native `picker.jxa` never
-  existed in the repo, so don't reintroduce it.
+  `POST /api/pick/done` (closing the window cancels; 30 min timeout). The user wants it as a
+  **pop-up window**, also when the web app is open: `openPicker` (src/popup.js) opens a Chromium
+  browser's `--app` window (Chrome, Edge, Brave, Chromium, Vivaldi; `open -na` on macOS), else a
+  normal tab. Before opening, `frontApp()` records the app in front (`lsappinfo`, no permission
+  prompt) and `activateApp()` brings it back (`open -b`) when the picker is done. The old native
+  `picker.jxa` never existed in the repo, so don't reintroduce it.
+- A document whose style is not installed (e.g. APA after the built-in set shrank to three) is never
+  silently switched: `ctx.installStyle(uri)` downloads it from the style repository; if that fails
+  the user gets an alert and the document is left unchanged (Document Preferences still works).
 - A busy port (Zotero running) only prints a warning; the web app still starts.
 
 ## PDFs dropped on the list
@@ -213,20 +225,28 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   then raw.githubusercontent.com (`<name>.csl`, `dependent/<name>.csl`). Installing a journal style
   installs its parent if needed; a parent still used by a journal style cannot be removed; bundled
   styles cannot be removed or replaced. Styles are checked with citeproc before they are saved.
-- No logo: the user does not want one (no favicon, the brand is plain text).
+- No logo and no app name in the UI (no favicon, no brand in the top bar).
 
 ## UI conventions
 
-- Look: light gray canvas (`--bg`), white panels, 1px borders, 4px radius (6px panels/menus),
-  12px base font, 28px controls, 30px rows, 44px top bar. Every color is a CSS variable in `:root`
-  and overridden in `:root[data-theme="dark"]` — never hard-code colors in rules.
-- Top bar order is fixed by the spec: brand, New, Search, (spacer), Styles, Export, theme toggle.
-  `test/ui.test.js` asserts this order. Removed on purpose to keep it minimal (2026-11): the style
-  menu and Bibliography dialog (citing happens in the word processor), column sorting, the status
-  bar, the export format menu, the Edit/Clear selection buttons (double-click / Enter edits, Esc
-  clears). Don't bring them back unless the user asks.
-- The brand block is 212px wide so **New** lines up with the left edge of the list panel
-  (sidebar 220px + 12px gutter). Keep those numbers in sync if you change the sidebar width.
+- Look: warm neutral canvas (`--bg`), warm off-white panels, clay accent (`--accent`, #b05430 light /
+  #d97757 dark), 1px borders, 4px radius (6px panels/menus), 12px base font, 28px controls, 30px rows,
+  44px top bar. Text colors keep ≥ 4.5:1 contrast (muted ≈ 4.5). Every color is a CSS variable in
+  `:root` and overridden in `:root[data-theme="dark"]` (toast and on-danger colors included) —
+  never hard-code colors in rules.
+- Top bar = a grid matching the layout: a 220px column above the sidebar holding **Add references**
+  (`#btn-new`, full width), then Search starting at the list panel's left edge, a spacer, and
+  Styles · Export · | · theme ending at the panel's right edge. `test/ui.test.js` asserts the order
+  and the alignment. Keep `.topbar` and `.layout` column widths in sync (220px; 180px ≤ 860px).
+  Removed on purpose (2026-11): the style menu and Bibliography dialog (citing happens in the word
+  processor), the status bar, the export format menu, the Edit/Clear selection buttons
+  (double-click / Enter edits, Esc clears). Don't bring them back unless the user asks.
+- Sorting: header buttons Title / Authors / Year / Journal / Added; first click A→Z (Year and Added:
+  newest first), second reverses, third returns to the default (newest import first). Saved in
+  `localStorage['zotlet-sort']`. Added sorts by library order (= import order, so it works for old
+  references too); the date shown comes from `web-state.json` `added: { itemId: ISO time }`, recorded
+  by `store.addItems` (older references show no date). Only main-list rows (`.table .row`) have the
+  sixth column; picker rows keep five.
 - Project actions are three direct buttons at the bottom of the sidebar; Rename/Delete are disabled
   when no project is selected. No overflow menus for them (they can get clipped).
 - Export scope: the selection if any, else everything currently visible (library, project, or

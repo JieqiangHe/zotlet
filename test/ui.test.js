@@ -26,6 +26,7 @@ const styleNet = (next) => async (url, init) => {
     ])
   }
   if (String(url) === 'https://www.zotero.org/styles/plant-physiology-and-biochemistry') return new Response(JOURNAL_STYLE)
+  if (String(url) === 'https://www.zotero.org/styles/elsevier-harvard') return new Response(fs.readFileSync(new URL('./fixtures/styles/elsevier-harvard.csl', import.meta.url), 'utf8'))
   return next(url, init)
 }
 const opened = []
@@ -66,9 +67,16 @@ const rowTitles = () => page.$$eval('.rows .row .cell.title', (cells) => cells.m
 const rowCount = (n) => page.waitForFunction((n) => document.querySelectorAll('.rows .row').length === n, n)
 
 test('library loads with the top bar in the required order', { skip }, async () => {
-  const order = await page.$$eval('.topbar > *', (nodes) => nodes.map((n) => n.id || n.className))
-  assert.deepEqual(order, ['brand', 'btn-new', 'search', 'grow', 'btn-styles', 'btn-export', 'btn-theme'])
-  assert.equal((await page.$$('.statusbar, #style-select, #btn-bib, .cell.sort')).length, 0, 'removed for simplicity')
+  const order = await page.$$eval('.topbar .btn, .topbar .search', (nodes) => nodes.map((n) => n.id || n.className))
+  assert.deepEqual(order, ['btn-new', 'search', 'btn-styles', 'btn-export', 'btn-theme'])
+  assert.equal(await page.$('.brand'), null, 'no name or logo in the top bar')
+  // New sits above the projects; search starts at the list panel's left edge.
+  const box = (sel) => page.$eval(sel, (n) => n.getBoundingClientRect().toJSON())
+  const [sidebar, panel, search, theme] = await Promise.all(['.sidebar', '.panel', '.search', '#btn-theme'].map(box))
+  assert.ok(Math.abs(search.left - panel.left) <= 1, `search ${search.left} vs panel ${panel.left}`)
+  assert.ok(Math.abs(theme.right - panel.right) <= 1, `theme ${theme.right} vs panel ${panel.right}`)
+  assert.ok((await box('#btn-new')).right <= sidebar.right)
+  assert.equal((await page.$$('.statusbar, #style-select, #btn-bib')).length, 0, 'removed for simplicity')
   assert.equal((await rowTitles()).length, 2)
   assert.equal(await page.textContent('#count-all'), '2')
   await shot('01-library')
@@ -248,14 +256,14 @@ test('citation picker (opened by Word / GenOffice): search, select, insert; styl
   await picker.click('#pick-rows .row')
   assert.equal(await picker.isDisabled('#pick-ok'), false)
   await picker.fill('#pick-search', '')
-  await picker.selectOption('#pick-style', 'apa')
+  await picker.selectOption('#pick-style', 'cell')
   if (SHOTS) await picker.screenshot({ path: path.join(SHOTS, '20-picker.png') })
   await picker.setViewportSize({ width: 700, height: 600 })
   assert.ok(await picker.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'no horizontal overflow')
   if (SHOTS) await picker.screenshot({ path: path.join(SHOTS, '21-picker-narrow.png') })
   await picker.keyboard.press('Enter')
   const chosen = await result
-  assert.equal(chosen.style, 'apa')
+  assert.equal(chosen.style, 'cell')
   assert.deepEqual(chosen.ids, [picked])
   await picker.waitForSelector('#pick-message:not([hidden])')
   await picker.close().catch(() => {})
@@ -359,4 +367,36 @@ test('drop a CSL JSON file (e.g. exported from Zotero) to import its references'
   await page.click('#pdf-dialog .dialog-foot .primary')
   assert.equal((await createStore({ dir }).snapshot()).items.length, before + 2)
   await page.waitForSelector('.rows .row:has-text("From Zotero")')
+})
+
+test('columns sort, including by import time (Added), and the choice is remembered', { skip }, async () => {
+  await page.setViewportSize({ width: 1280, height: 760 })
+  await page.click('.nav-item[data-project=""]')
+  await page.waitForSelector('.rows .row')
+  const keys = () => page.$$eval('.rows .row', (rows) => rows.map((r) => r.dataset.id))
+  const { items } = await createStore({ dir }).snapshot()
+  const importOrder = items.map((i) => i.id)
+  assert.deepEqual(await keys(), [...importOrder].reverse(), 'default: newest import first')
+
+  await page.click('.cell.sort[data-sort="added"]')
+  assert.deepEqual(await keys(), [...importOrder].reverse(), 'Added: newest first')
+  assert.equal(await page.textContent('.cell.sort[data-sort="added"] .arrow'), '▼')
+  await page.click('.cell.sort[data-sort="added"]')
+  assert.deepEqual(await keys(), importOrder, 'Added again: oldest first')
+  assert.match(await page.textContent(`.rows .row[data-id="${importOrder.at(-1)}"] .cell.added`), /^\d{4}-\d{2}-\d{2}$/)
+  await shot('50-sort-added')
+
+  await page.click('.cell.sort[data-sort="title"]')
+  const titles = await page.$$eval('.rows .row .cell.title', (cells) => cells.map((c) => c.textContent.toLowerCase()))
+  assert.deepEqual(titles, [...titles].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)))
+  await page.click('.cell.sort[data-sort="year"]')
+  const years = await page.$$eval('.rows .row .cell.year', (cells) => cells.map((c) => Number(c.textContent) || 0).filter(Boolean))
+  assert.deepEqual(years, [...years].sort((a, b) => b - a), 'year: newest first')
+
+  await page.reload()
+  await page.waitForSelector('.rows .row')
+  assert.equal(await page.textContent('.cell.sort[data-sort="year"] .arrow'), '▼', 'sort survives a reload')
+  await page.click('.cell.sort[data-sort="year"]')
+  await page.click('.cell.sort[data-sort="year"]')
+  assert.equal(await page.textContent('.cell.sort[data-sort="year"] .arrow'), '', 'third click: back to default')
 })

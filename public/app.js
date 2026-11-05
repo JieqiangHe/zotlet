@@ -13,9 +13,11 @@ const state = {
   items: [],
   projects: [],
   styles: [],
+  added: {}, // itemId -> ISO time it was imported (older references have none)
   paths: {},
   project: store.get('zotlet-project') || '',
   query: '',
+  sort: readSort(),
   selected: new Set(),
   anchor: null, // start of a shift-range
   cursor: null, // row moved by the arrow keys
@@ -39,6 +41,7 @@ async function refresh() {
   const data = await api('state')
   state.items = data.items
   state.projects = data.projects
+  state.added = data.added || {}
   state.paths = data.paths
   state.styles = data.styles
   if (state.project && !state.projects.some((p) => p.id === state.project)) setProject('')
@@ -148,7 +151,26 @@ function computeVisible() {
   }
   const words = state.query.toLowerCase().split(/\s+/).filter(Boolean)
   if (words.length) items = items.filter((i) => { const h = haystack(i); return words.every((w) => h.includes(w)) })
-  return [...items].reverse() // newest first
+  // Library order is import order, so "newest first" and the Added column work for old references too.
+  const order = new Map(state.items.map((i, n) => [i.id, n]))
+  const { key, dir } = state.sort
+  const value = {
+    title: (i) => plain(i.title).toLowerCase(),
+    author: (i) => authorsShort(i).toLowerCase(),
+    year: (i) => Number(yearOf(i)) || 0,
+    journal: (i) => plain(i['container-title'] || i.publisher || '').toLowerCase(),
+  }[key]
+  return [...items].sort((a, b) => {
+    if (key === 'added') return dir * (order.get(a.id) - order.get(b.id))
+    if (value) {
+      const x = value(a), y = value(b)
+      // Empty values always sink to the bottom.
+      if (x === '' || x === 0) { if (y !== '' && y !== 0) return 1 } else if (y === '' || y === 0) return -1
+      else if (x < y) return -dir
+      else if (x > y) return dir
+    }
+    return order.get(b.id) - order.get(a.id) // newest first
+  })
 }
 
 function render() {
@@ -188,7 +210,8 @@ function renderRows() {
       title,
       el('span', { class: 'cell authors', title: authorsFull(item) }, authorsShort(item)),
       el('span', { class: 'cell year num' }, String(yearOf(item))),
-      journal)
+      journal,
+      addedCell(item))
   })
   $('rows').replaceChildren(...rows)
   $('rows').hidden = !rows.length
@@ -231,6 +254,12 @@ function renderChrome() {
   $('list-hint').hidden = n > 0 || state.visible.length === 0
   $('selection-count').textContent = `${n} selected`
   $('btn-remove-from').hidden = !project
+  for (const btn of document.querySelectorAll('.cell.sort')) {
+    const active = btn.dataset.sort === state.sort.key
+    btn.classList.toggle('active', active)
+    btn.querySelector('.arrow').textContent = active ? (state.sort.dir > 0 ? '▲' : '▼') : ''
+    btn.setAttribute('aria-sort', active ? (state.sort.dir > 0 ? 'ascending' : 'descending') : 'none')
+  }
   const all = $('check-all')
   all.checked = n > 0 && n === state.visible.length
   all.indeterminate = n > 0 && n < state.visible.length
@@ -250,6 +279,37 @@ function scope() {
   const ids = state.visible.map((i) => i.id)
   const where = project ? `project “${project.name}”` : 'whole library'
   return { ids, label: state.query ? `${plural(ids.length, 'search result')} in ${where}` : `${where} · ${plural(ids.length, 'reference')}`, name: project ? project.name : 'library' }
+}
+
+// ---------- sorting ----------
+
+// Year and Added start with the newest first; text columns start A→Z.
+const firstDir = (key) => (key === 'year' || key === 'added' ? -1 : 1)
+function readSort() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('zotlet-sort') || 'null')
+    if (saved && ['title', 'author', 'year', 'journal', 'added'].includes(saved.key) && (saved.dir === 1 || saved.dir === -1)) return saved
+  } catch { /* private mode or bad value */ }
+  return { key: '', dir: 1 }
+}
+for (const btn of document.querySelectorAll('.cell.sort')) {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.sort
+    if (state.sort.key !== key) state.sort = { key, dir: firstDir(key) }
+    else if (state.sort.dir === firstDir(key)) state.sort.dir *= -1
+    else state.sort = { key: '', dir: 1 } // third click: back to the default (newest first)
+    store.set('zotlet-sort', JSON.stringify(state.sort))
+    render()
+  })
+}
+
+function addedCell(item) {
+  const at = state.added[item.id]
+  const date = at ? new Date(at) : null
+  const valid = date && !Number.isNaN(date.getTime())
+  const pad = (n) => String(n).padStart(2, '0')
+  return el('span', { class: 'cell added num', title: valid ? `Imported ${date.toLocaleString()}` : 'Imported before zotlet recorded import dates' },
+    valid ? `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` : '')
 }
 
 // ---------- selection & list interaction ----------

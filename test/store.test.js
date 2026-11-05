@@ -109,3 +109,18 @@ test('a corrupt library is reported instead of being overwritten', async () => {
   await assert.rejects(store.addItems([{ title: 'x' }]), /not valid JSON/)
   assert.equal(fs.readFileSync(path.join(dir, 'library.json'), 'utf8'), '{ not json')
 })
+
+test('import time is recorded in web-state.json, not in library.json, and forgotten on delete', async () => {
+  const dir = tempDir()
+  let clock = Date.UTC(2026, 10, 5, 8, 0, 0)
+  const store = createStore({ dir, now: () => new Date(clock) })
+  const [a] = await store.addItems([{ type: 'book', title: 'First' }])
+  clock += 60000
+  const [b, dup] = await store.addItems([{ type: 'book', title: 'Second', DOI: '10.1/x' }, { type: 'book', title: 'Again', DOI: '10.1/X' }])
+  assert.equal(dup.status, 'duplicate')
+  const snap = await store.snapshot()
+  assert.deepEqual(snap.added, { [a.id]: '2026-11-05T08:00:00.000Z', [b.id]: '2026-11-05T08:01:00.000Z' })
+  assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'library.json'), 'utf8')).some((i) => 'added' in i), false)
+  await store.deleteItems([a.id])
+  assert.deepEqual(Object.keys((await store.snapshot()).added), [b.id])
+})

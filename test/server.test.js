@@ -18,6 +18,9 @@ const second = {
 
 before(async () => {
   dir = tempDir()
+  // APA is no longer built in; install the fixture copy as a user style.
+  fs.mkdirSync(path.join(dir, 'styles'))
+  fs.copyFileSync(new URL('./fixtures/styles/apa.csl', import.meta.url), path.join(dir, 'styles', 'apa.csl'))
   fetchMock = fakeFetch({
     dois: { [ELSEVIER]: fixture('elsevier-crossref.json'), [second.DOI]: second },
     pmids: { 31452104: fixture('pubmed.json') },

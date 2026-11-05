@@ -43,7 +43,9 @@ function fakeDocument({ outputFormat = 'rtf', data = '' } = {}) {
   return doc
 }
 
-const styles = () => listStyles()
+// APA is not built in any more; the tests use a copy as a user style (author-date output).
+const FIXTURE_STYLES = new URL('./fixtures/styles', import.meta.url).pathname
+const styles = () => listStyles(FIXTURE_STYLES)
 const ctx = (pick) => ({ items: async () => ITEMS, styles, pick })
 const codeOf = (f) => JSON.parse(f.code.slice(f.code.indexOf('{')))
 
@@ -177,6 +179,25 @@ test('new documents: style asked with the first citation; bookmarks for Word can
   assert.match(fresh.data, /<pref name="fieldType" value="ReferenceMark"\/>/, 'default stays ReferenceMark (LibreOffice / GenOffice)')
 })
 
+test('a document whose style is not installed: download it, or leave the document alone', async () => {
+  const docData = '<data data-version="3" zotero-version="7.0"><session id="s"/><style id="http://www.zotero.org/styles/ieee" hasBibliography="1" bibliographyStyleHasBeenSet="1"/><prefs><pref name="fieldType" value="ReferenceMark"/></prefs></data>'
+  // Offline: an alert, nothing changed (not silently switched to Nature).
+  const doc = fakeDocument({ data: docData })
+  const asked = []
+  const offline = { items: async () => ITEMS, styles, pick: async () => ({ ids: ['hopper2019'] }), installStyle: async (uri) => { asked.push(uri); throw new Error('Cannot reach www.zotero.org') } }
+  await runSession('addEditCitation', doc.rpc, {}, offline)
+  assert.deepEqual(asked, ['http://www.zotero.org/styles/ieee'])
+  assert.match(doc.alerts[0], /uses the citation style "ieee", which is not installed and could not be downloaded \(Cannot reach www\.zotero\.org\)/)
+  assert.equal(doc.fields.length, 0)
+  assert.equal(doc.data, docData)
+  // Online: installed on the fly and used.
+  const extra = []
+  const online = { ...offline, styles: () => [...styles(), ...extra], installStyle: async () => { extra.push({ ...styles().find((x) => x.id === 'nature'), id: 'ieee', uri: 'http://www.zotero.org/styles/ieee' }) } }
+  const note = await runSession('addEditCitation', doc.rpc, {}, online)
+  assert.match(note, /1 citation · ieee/)
+  assert.match(doc.data, /styles\/ieee/)
+})
+
 test('style URIs resolve to installed styles', () => {
   assert.equal(resolveStyle('http://www.zotero.org/styles/nature', styles()), 'nature')
   assert.equal(resolveStyle('http://www.zotero.org/styles/unknown-style', styles()), null)
@@ -193,6 +214,8 @@ test('lsofClient finds the unique owner of the peer socket', () => {
 async function startWithIntegration() {
   const dir = tempDir()
   fs.writeFileSync(path.join(dir, 'library.json'), JSON.stringify(ITEMS))
+  fs.mkdirSync(path.join(dir, 'styles'))
+  fs.copyFileSync(path.join(FIXTURE_STYLES, 'apa.csl'), path.join(dir, 'styles', 'apa.csl'))
   const opened = []
   const server = await startServer({
     port: 0, dir, store: createStore({ dir }), quiet: true,
@@ -244,7 +267,7 @@ test('TCP transport (Word): picker page answers addEditCitation', async () => {
     const spec = await answerPicker(server, opened, (s) => ({ ids: [s.items[0].id], style: 'science' }))
     assert.equal(spec.mode, 'cite')
     assert.deepEqual(spec.items.map((i) => i.id).sort(), ['hopper2019', 'lovelace2020'])
-    assert.ok(spec.styles.length >= 13)
+    assert.ok(spec.styles.some((s) => s.id === "apa"), "user styles are offered")
     await ended
     assert.equal(doc.fields.length, 1)
     assert.match(doc.fields[0].code, /^ITEM CSL_CITATION/)

@@ -9,7 +9,7 @@ import { lookupIdentifier, parseIdentifiers, normalizeItem, ITEM_FIELDS } from '
 import { formatCitations, listStyles } from './citations.js'
 import { FORMATS } from './export.js'
 import { startIntegration } from './integration.js'
-import { openBrowser } from './open.js'
+import { openPicker, frontApp, activateApp } from './popup.js'
 import { createStyleRepository } from './style-repo.js'
 import { extractDOI } from './pdf.js'
 
@@ -85,7 +85,7 @@ export function safeFileName(name) {
 }
 
 export async function startServer({ port = 23121, host = '127.0.0.1', dir = dataDir(), store = createStore({ dir }),
-  fetchImpl = globalThis.fetch, quiet = false, integration = false, openUrl = openBrowser, log = console.log } = {}) {
+  fetchImpl = globalThis.fetch, quiet = false, integration = false, openUrl = openPicker, focus = { front: frontApp, activate: activateApp }, log = console.log } = {}) {
   const token = randomBytes(24).toString('hex')
   const userStyles = path.join(dir, 'styles')
   const styles = () => listStyles(userStyles)
@@ -96,11 +96,18 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
   const picks = new Map()
   function pick(spec) {
     const id = randomBytes(12).toString('hex')
+    // Remember the word processor in front, to switch back to it when the picker is done.
+    const front = Promise.resolve().then(() => focus.front()).catch(() => null)
     return new Promise((resolve) => {
       const entry = { spec, timer: setTimeout(() => entry.done(null), PICK_TIMEOUT) }
-      entry.done = (value) => { clearTimeout(entry.timer); picks.delete(id); resolve(value) }
+      entry.done = (value) => {
+        clearTimeout(entry.timer)
+        picks.delete(id)
+        resolve(value)
+        front.then((app) => { if (app) focus.activate(app) })
+      }
       picks.set(id, entry)
-      openUrl(`${server.url}pick.html?id=${id}`)
+      front.finally(() => openUrl(`${server.url}pick.html?id=${id}`))
     })
   }
   const pending = (id) => {
@@ -312,7 +319,11 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
 
   // Word / LibreOffice / GenOffice plugins (Zotero protocol). Off unless asked for.
   if (integration) {
-    const ctx = { items: async () => (await store.snapshot()).items, styles, pick }
+    const installStyle = async (uri) => {
+      const name = String(uri || '').replace(/[?#].*$/, '').replace(/\/+$/, '').split('/').pop()
+      return (await repository.install(name)).id
+    }
+    const ctx = { items: async () => (await store.snapshot()).items, styles, pick, installStyle }
     server.integration = await startIntegration(ctx, { ...integration, host,
       log: quiet ? () => {} : (line) => log(`${new Date().toTimeString().slice(0, 8)}  ${line}`),
       warn: quiet ? () => {} : log })

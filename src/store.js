@@ -68,6 +68,8 @@ export function createStore({ dir = dataDir(), libraryFile = process.env.ZOTLET_
       p.name = typeof p.name === 'string' && p.name.trim() ? p.name : 'Untitled'
       p.itemIds = Array.isArray(p.itemIds) ? [...new Set(p.itemIds.filter((id) => typeof id === 'string'))] : []
     }
+    // When each reference was imported: { itemId: ISO time }. Kept here so library.json stays CSL-JSON.
+    if (state.added !== undefined && !plain(state.added)) state.added = {}
     return { items, state }
   }
 
@@ -101,6 +103,7 @@ export function createStore({ dir = dataDir(), libraryFile = process.env.ZOTLET_
     return {
       items: visible,
       projects: state.projects.map((p) => ({ id: p.id, name: p.name, created: p.created || null, itemIds: p.itemIds.filter((id) => known.has(id)) })),
+      added: Object.fromEntries(Object.entries(state.added || {}).filter(([id, at]) => known.has(id) && typeof at === 'string')),
       paths: { library: libraryFile, state: stateFile },
     }
   }
@@ -123,6 +126,7 @@ export function createStore({ dir = dataDir(), libraryFile = process.env.ZOTLET_
             item = { id: citationKey(fields, ids), ...fields }
             ids.add(item.id)
             items.push(item)
+            state.added = { ...state.added, [item.id]: now().toISOString() }
           }
           const id = String(item.id)
           if (target && !target.itemIds.includes(id)) target.itemIds.push(id)
@@ -155,6 +159,7 @@ export function createStore({ dir = dataDir(), libraryFile = process.env.ZOTLET_
         const before = items.length
         for (let i = items.length - 1; i >= 0; i--) if (plain(items[i]) && remove.has(items[i].id)) items.splice(i, 1)
         for (const p of state.projects) p.itemIds = p.itemIds.filter((id) => !remove.has(id))
+        if (state.added) for (const id of remove) delete state.added[id]
         return { removed: before - items.length }
       })
     },

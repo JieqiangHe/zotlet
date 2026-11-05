@@ -174,7 +174,7 @@ const COMMANDS = ['addEditCitation', 'addEditBibliography', 'refresh', 'setDocPr
  * Returns a short note for the server log.
  */
 export async function runSession(cmd, call, session, ctx) {
-  const styles = ctx.styles()
+  let styles = ctx.styles()
   const [, doc, capabilities] = await call('Application.getActiveDocument', [3])
   const options = { fieldType: 'ReferenceMark', outputFormat: 'rtf', supportedNotes: [], ...session, ...capabilities }
   const alert = (msg, buttons = 0) => call('Document.displayAlert', [doc, msg, 0, buttons])
@@ -193,7 +193,19 @@ export async function runSession(cmd, call, session, ctx) {
     const rawData = await call('Document.getDocumentData', [doc])
     if (options.modernData && typeof rawData !== 'string') throw new Error('Invalid document data: expected a string')
     const data = options.modernData ? readData(rawData) : null
-    const stored = resolveStyle(data ? data.style?.styleID : /<style id="([^"]+)"/.exec(rawData || '')?.[1], styles)
+    const storedURI = data ? data.style?.styleID : /<style id="([^"]+)"/.exec(rawData || '')?.[1]
+    let stored = resolveStyle(storedURI, styles)
+    if (storedURI && !stored) {
+      // The document uses a style zotlet does not have (e.g. one that is no longer built in):
+      // download it instead of silently switching the document to another style.
+      let reason = null
+      try { await ctx.installStyle?.(storedURI) } catch (error) { reason = error }
+      styles = ctx.styles()
+      stored = resolveStyle(storedURI, styles)
+      if (!stored && cmd !== 'setDocPrefs') {
+        throw new Error(`This document uses the citation style "${String(storedURI).split('/').pop()}", which is not installed${reason ? ` and could not be downloaded (${reason.message})` : ''}. Install it under Styles in zotlet, or choose another style in Document Preferences.`)
+      }
+    }
     // The field type stored in the document must survive: Zotero refuses a document whose type
     // does not match the word processor (Word: Field/Bookmark, LibreOffice: ReferenceMark/Bookmark).
     const docFieldType = data?.prefs?.fieldType || /<pref name="fieldType" value="([^"]+)"/.exec(rawData || '')?.[1] || null
