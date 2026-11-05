@@ -24,9 +24,17 @@ jobs:
           if [ "$GITHUB_REF_TYPE" = tag ]; then test "v$VERSION" = "$GITHUB_REF_NAME"; fi
       - run: npm test
       - run: npm run package
-      - name: Publish the release
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v v="$VERSION" '/^## /{on = ($2 == v); next} on' CHANGELOG.md > notes.md
+          test -s notes.md || echo "zotlet $VERSION" > notes.md
+      - name: Publish the release (if it exists: update its notes only)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v$VERSION" "dist/zotlet-$VERSION.zip" \
-            --target "$GITHUB_SHA" --title "zotlet $VERSION" --generate-notes
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            gh release edit "v$VERSION" --title "zotlet $VERSION" --notes-file notes.md
+          else
+            gh release create "v$VERSION" "dist/zotlet-$VERSION.zip" \
+              --target "$GITHUB_SHA" --title "zotlet $VERSION" --notes-file notes.md
+          fi

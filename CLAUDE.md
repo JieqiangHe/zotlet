@@ -114,7 +114,8 @@ npm install                      # citeproc only
 npm test                         # node:test — unit, API and (if Playwright exists) browser tests
 npm start                        # node zotlet.js web --open
 npm run package                  # dist/zotlet-<version>.zip
-# release: push tag v<version>, or run the "release" workflow by hand (it creates the tag) — .github/workflows/release.yml
+# release: add a "## <version>" section to CHANGELOG.md (= the release notes), then push tag v<version>
+#   or run the "release" workflow by hand (creates the tag; rerun to update the notes) — .github/workflows/release.yml
 ZOTLET_SCREENSHOTS=/some/dir node --test test/ui.test.js   # save UI screenshots for review
 ```
 
@@ -143,6 +144,7 @@ locales/           locales-en-US.xml (every style is rendered with en-US).
 test/              *.test.js + helpers.js + fixtures/ (recorded Crossref and PubMed records; styles/ holds
                    APA and Elsevier Harvard, used by tests as user-installed / downloadable styles).
 scripts/package.sh builds the zip (source + launchers + LICENSE + node_modules/citeproc).
+CHANGELOG.md       release notes, one "## <version>" section per release.
 LICENSE            MIT (styles/ and locales/ keep their CSL license, CC BY-SA 3.0).
 start-web.sh       real launcher; start-web.command just execs it (macOS double-click).
 ```

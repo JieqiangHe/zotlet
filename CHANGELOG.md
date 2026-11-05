@@ -1,0 +1,55 @@
+# Changelog
+
+The release workflow publishes the section of the released version as its GitHub release notes.
+
+## 0.1.0 — 2026-11-05
+
+The first release of zotlet: a small, local reference manager for writing papers. Collect references
+for a project, cite them from your word processor, and export everything when you are done.
+
+### Collect references
+
+- **Projects** in the left pane (`+ New`, `Rename`, `Delete`), one per paper; a reference can be in any
+  number of projects.
+- **Import by DOI or PMID**: paste one or many at once. zotlet asks doi.org, then Crossref and PubMed,
+  and cleans the author data, so Elsevier DOIs and similar import without validation errors.
+- **Drop PDFs** on the list: the DOI is read from the file and the reference imported (the PDF itself
+  is not stored).
+- **Drop a CSL JSON file** exported from Zotero to bring an existing collection over.
+- Search (`/`), sortable columns (Title, Authors, Year, Journal, Added), duplicate detection, and an
+  edit dialog (double-click or Enter).
+
+### Cite while you write
+
+- Live citations and bibliographies in **GenOffice** and **LibreOffice** through the Zotero
+  word-processor plugins: Add/Edit Citation, Add/Edit Bibliography, Refresh, Document Preferences.
+  Quit Zotero first; zotlet uses the same ports (23116, 23119).
+- On macOS the citation picker is a native pop-up over the document, like Zotero's quick format bar;
+  elsewhere it opens in the browser.
+- Documents stay **compatible with Zotero**: citations are Zotero fields with a full copy of each
+  reference, so Zotero (also in Word, when *Also open in Microsoft Word with Zotero* is ticked before the
+  first citation) can open and refresh them.
+
+### Citation styles
+
+- Nature, Science and Cell are built in. Under **Styles**, search and install any of the thousands of
+  styles in the official CSL repository, or add your own `.csl` file.
+- A document whose style you don't have is downloaded automatically, never silently switched.
+
+### Export
+
+- **Export** downloads the selection, project or whole library as one zip with **RIS**, **CSL JSON** and
+  **BibTeX** (importable into Zotero).
+
+### Look and running it
+
+- Compact two-pane interface with light and dark themes (the choice is remembered).
+- Runs on your own computer with your own Node.js (18.17 or newer); nothing else to install. On macOS,
+  double-click `start-web.command`; elsewhere run `start-web.sh` or `npm start`. zotlet opens in the browser
+  at <http://127.0.0.1:23121/>.
+- Your library is plain JSON in `~/.zotlet/`.
+
+> zotlet has been tested in depth with GenOffice so far; LibreOffice uses the same protocol but has had
+> less real-world use.
+
+zotlet is MIT licensed; the bundled CSL styles and locale stay CC BY-SA 3.0.
