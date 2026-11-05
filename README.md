@@ -1,7 +1,8 @@
 # zotlet
 
-A small, local reference manager for writing papers.
-Collect references for a project, cite them from your word processor, and export everything when you are done.
+A tiny, local reference manager for people who find Zotero too big.
+The whole app is a ~300 KB zip that runs on your own Node: collect references for a project, cite them
+from your word processor, and export everything when you are done.
 
 - Import by DOI or PMID, by dropping PDFs (the DOI is read from the file), or from a Zotero CSL JSON export
 - Live citations and bibliographies in **GenOffice** and **LibreOffice** through the Zotero word-processor plugins
