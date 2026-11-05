@@ -150,6 +150,7 @@ kbd {
 .topbar-side #btn-new { width: 100%; justify-content: center; }
 .topbar-main { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0 12px; }
 .topbar-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.topbar-actions .btn:not(.icon) { min-width: 72px; }
 .topbar-sep { width: 1px; height: 18px; margin: 0 2px; background: var(--border); }
 .search {
   position: relative; display: flex; align-items: center;
@@ -210,8 +211,9 @@ kbd {
 .nav-item.active .count { color: var(--accent); }
 .nav-empty { margin: 2px 8px; color: var(--muted); }
 .sidebar-actions {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
-  padding: 8px; border-top: 1px solid var(--border); background: var(--panel-2);
+  /* Same height as the top bar, buttons the same size as every other control. */
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; align-items: center;
+  flex: none; height: 44px; padding: 0 8px; border-top: 1px solid var(--border); background: var(--panel);
 }
 .sidebar-actions .btn { width: 100%; padding: 0 4px; }
 

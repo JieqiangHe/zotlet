@@ -249,6 +249,9 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   sixth column; picker rows keep five.
 - Project actions are three direct buttons at the bottom of the sidebar; Rename/Delete are disabled
   when no project is selected. No overflow menus for them (they can get clipped).
+- Buttons are uniform: every toolbar / sidebar button is a full 28px control (`.btn`; `.btn.sm` only
+  inside the list's selection bar and dialogs). The project buttons are text-only, equal width, in a
+  44px bar that mirrors the top bar; Styles and Export share a min width.
 - Export scope: the selection if any, else everything currently visible (library, project, or
   search results); shown in the Export button's tooltip and the toast. Export is one zip
   (`toZip` in src/export.js: RIS + CSL JSON + BibTeX + README). Dropping a CSL JSON file imports it
