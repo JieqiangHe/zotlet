@@ -1,21 +1,83 @@
 # zotlet
 
-A minimal, personal reference manager.
+A small, local reference manager for writing papers.
+Collect references for a project, cite them from your word processor, and export everything when you are done.
 
-Collect references for a paper, cite them while you write, export everything when you are done. Everything runs locally.
+- Import by DOI or PMID, by dropping PDFs (the DOI is read from the file), or from a Zotero CSL JSON export
+- Live citations and bibliographies in **GenOffice** and **LibreOffice** through the Zotero word-processor plugins
+- Documents stay compatible with Zotero, so they can be refreshed in Zotero later
+- Thousands of citation styles from the official CSL repository (Nature, Science and Cell are built in)
+- One-click export of a project as RIS, CSL JSON and BibTeX
 
-**Run** — requires Node.js 18.17+: double-click `start-web.command` (macOS), or `npm install && npm start`. The app opens at <http://127.0.0.1:23121/>; `Ctrl+C` in the terminal stops it.
+Everything runs on your own computer. Your library is plain JSON in `~/.zotlet/`.
 
-**1. Collect** — make a project per paper (left pane). Use **Add references** (DOI / PMID), drag PDFs onto the list (zotlet reads the DOI inside; the PDF is not kept), or drag in a CSL JSON file exported from Zotero. If doi.org / Crossref cannot be reached, zotlet looks the DOI up in PubMed. Click a column header to sort, including **Added** (import time).
+> **Status:** zotlet has been tested in depth only with **GenOffice** so far.
+> LibreOffice uses the same protocol but has had less real-world use.
 
-**2. Cite** — quit Zotero, keep zotlet running, and use the Zotero buttons in GenOffice or LibreOffice: *Add/Edit Citation* pops up a picker window (search, click, Enter) and returns you to your document; *Add/Edit Bibliography*, *Refresh*, *Document Preferences* (style) work as in Zotero. The picker is a separate pop-up window when Chrome, Edge, Brave, Chromium or Vivaldi is installed; otherwise it opens as a browser tab. Nature, Science and Cell are built in; **Styles** in the top bar downloads any other style (~10,000 journals, like Zotero). A document that uses a style you don't have gets it downloaded automatically.
+## Getting started
 
-So far zotlet has only been tested in depth with **GenOffice**. LibreOffice uses the same Zotero plugin protocol but has had less real-world testing.
+You need [Node.js](https://nodejs.org) 18.17 or newer.
 
-**3. Export** — **Export** downloads the current project (or your selection) as one zip: RIS, CSL JSON and BibTeX, with a note on importing into Zotero.
+- **macOS:** double-click `start-web.command`.
+- **Any platform:** run `npm install`, then `npm start`.
 
-**Moving to Zotero / Word** — documents use Zotero's own field codes and carry a full copy of each cited reference, so Zotero can open and refresh them; import the exported `.ris` into Zotero to have the references there too. Microsoft Word talks only to Zotero, not to zotlet. If a document will also be edited in Word with Zotero, tick *Also open in Microsoft Word with Zotero* in *Document Preferences* **before the first citation** (citations are then stored as bookmarks, which both Word and LibreOffice-type editors accept).
+zotlet opens in your browser at <http://127.0.0.1:23121/>. Keep the terminal window open while you work;
+press `Ctrl+C` there to stop zotlet.
 
-**Data** lives in `~/.zotlet/` (`library.json`: references as CSL-JSON; `web-state.json`: projects; `styles/`: downloaded styles). Start with `--no-word` to turn the word-processor service off.
+## Writing a paper with zotlet
 
-**Develop**: `npm test` runs the tests, and `npm run package` builds a zip. [CLAUDE.md](CLAUDE.md) covers the requirements and design.
+1. **Make a project** for the paper in the left pane.
+2. **Add references** to it:
+   - click **Add references** and paste DOIs or PMIDs, or
+   - drag PDFs onto the list (only the DOI is read; the PDF is not stored), or
+   - drag in a CSL JSON file exported from Zotero.
+3. **Cite while you write.** Quit Zotero first, keep zotlet running, and use the Zotero toolbar in GenOffice:
+   - *Add/Edit Citation* pops up a picker: search, select, press Enter. You are returned to your document.
+   - *Add/Edit Bibliography* inserts the reference list; *Refresh* updates it.
+   - *Document Preferences* changes the citation style.
+4. **Export** when the paper is done: **Export** downloads the project (or the selected references) as one
+   zip with RIS, CSL JSON and BibTeX.
+
+Click a column header to sort the list; **Added** sorts by import time.
+
+## Citation styles
+
+Nature, Science and Cell are built in. To add a journal's style, click **Styles**, search for the journal and
+click **Install**, or add a `.csl` file you already have. If you open a document that uses a style you
+don't have, zotlet downloads it automatically.
+
+## Moving a document to Zotero or Word
+
+Citations are stored as standard Zotero fields with a full copy of each reference, so Zotero can open and
+refresh a zotlet document. To have the references in your Zotero library too, import the exported `.ris`
+file (Zotero: *File → Import…*).
+
+Microsoft Word only talks to Zotero, not to zotlet. If the document will also be edited in Word with Zotero,
+open *Document Preferences* **before inserting the first citation** and tick
+*Also open in Microsoft Word with Zotero*. This stores citations as bookmarks, which both Word and
+LibreOffice-style editors accept.
+
+## Troubleshooting
+
+- **A DOI cannot be imported.** zotlet asks doi.org first, then Crossref and PubMed. If all three fail,
+  check your connection and try again; the error message names the problem.
+- **The citation buttons do nothing.** Make sure zotlet is running and Zotero is closed: both use the same
+  ports (23116 and 23119), and zotlet prints a warning if they are taken.
+- **The picker opens as a browser tab, not a pop-up.** The pop-up window needs Chrome, Edge, Brave,
+  Chromium or Vivaldi installed; with Safari only, a tab is used.
+
+## Command line
+
+```bash
+node zotlet.js web [--port N] [--open] [--no-word]   # start zotlet (--no-word: no word-processor service)
+node zotlet.js add <DOI|PMID>...                     # import references
+node zotlet.js ls [words]                            # list or search the library
+```
+
+Data lives in `~/.zotlet/`: `library.json` (references, CSL JSON), `web-state.json` (projects) and `styles/`
+(downloaded styles). To keep it elsewhere, set `ZOTLET_HOME` (data then goes to `$ZOTLET_HOME/.zotlet/`).
+
+## Development
+
+`npm test` runs the unit, API and browser tests; `npm run package` builds a distributable zip.
+[CLAUDE.md](CLAUDE.md) describes the requirements and design.
