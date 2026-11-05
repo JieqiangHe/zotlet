@@ -28,7 +28,7 @@ jobs:
         run: |
           awk -v v="$VERSION" '/^## /{on = ($2 == v); next} on' CHANGELOG.md > notes.md
           test -s notes.md || echo "zotlet $VERSION" > notes.md
-      - name: Publish the release (if it exists: update its notes only)
+      - name: Publish the release (an existing one only gets new notes)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
