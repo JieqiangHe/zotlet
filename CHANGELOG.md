@@ -4,8 +4,10 @@ The release workflow publishes the section of the released version as its GitHub
 
 ## 0.1.0 — 2026-11-05
 
-The first release of zotlet: a small, local reference manager for writing papers. Collect references
-for a project, cite them from your word processor, and export everything when you are done.
+The first release of zotlet: a tiny, local reference manager for people who find Zotero too big.
+The app itself is a ~300 KB zip. It does need [Node.js](https://nodejs.org) (about 100 MB installed),
+which many people already have; zotlet uses that one and brings no runtime of its own.
+Collect references for a project, cite them from your word processor, and export everything when you are done.
 
 ### Collect references
 
@@ -44,7 +46,7 @@ for a project, cite them from your word processor, and export everything when yo
 ### Look and running it
 
 - Compact two-pane interface with light and dark themes (the choice is remembered).
-- Runs on your own computer with your own Node.js (18.17 or newer); nothing else to install. On macOS,
+- Runs on your own computer with your own Node.js (18.17 or newer, about 100 MB); nothing else to install. On macOS,
   double-click `start-web.command`; elsewhere run `start-web.sh` or `npm start`. zotlet opens in the browser
   at <http://127.0.0.1:23121/>.
 - Your library is plain JSON in `~/.zotlet/`.
