@@ -32,7 +32,8 @@ press `Ctrl+C` there to stop zotlet.
    - drag PDFs onto the list (only the DOI is read; the PDF is not stored), or
    - drag in a CSL JSON file exported from Zotero.
 3. **Cite while you write.** Quit Zotero first, keep zotlet running, and use the Zotero toolbar in GenOffice:
-   - *Add/Edit Citation* pops up a picker: search, select, press Enter. You are returned to your document.
+   - *Add/Edit Citation* pops up a search bar over your document, like Zotero's: type, press Enter to
+     add a reference (repeat for more), press Enter again to insert. Esc cancels; ⌫ removes the last one.
    - *Add/Edit Bibliography* inserts the reference list; *Refresh* updates it.
    - *Document Preferences* changes the citation style.
 4. **Export** when the paper is done: **Export** downloads the project (or the selected references) as one
@@ -63,8 +64,9 @@ LibreOffice-style editors accept.
   check your connection and try again; the error message names the problem.
 - **The citation buttons do nothing.** Make sure zotlet is running and Zotero is closed: both use the same
   ports (23116 and 23119), and zotlet prints a warning if they are taken.
-- **The picker opens as a browser tab, not a pop-up.** The pop-up window needs Chrome, Edge, Brave,
-  Chromium or Vivaldi installed; with Safari only, a tab is used.
+- **The citation picker opens in the browser instead of as a pop-up.** The pop-up is native on macOS;
+  if it cannot start, zotlet falls back to the browser (the terminal says why). Set `ZOTLET_PICKER=web`
+  to always use the browser picker.
 
 ## Command line
 

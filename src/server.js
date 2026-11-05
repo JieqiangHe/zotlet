@@ -10,6 +10,7 @@ import { formatCitations, listStyles } from './citations.js'
 import { FORMATS } from './export.js'
 import { startIntegration } from './integration.js'
 import { openPicker, frontApp, activateApp } from './popup.js'
+import { nativePick, nativeAvailable } from './quickformat.js'
 import { createStyleRepository } from './style-repo.js'
 import { extractDOI } from './pdf.js'
 
@@ -85,7 +86,8 @@ export function safeFileName(name) {
 }
 
 export async function startServer({ port = 23121, host = '127.0.0.1', dir = dataDir(), store = createStore({ dir }),
-  fetchImpl = globalThis.fetch, quiet = false, integration = false, openUrl = openPicker, focus = { front: frontApp, activate: activateApp }, log = console.log } = {}) {
+  fetchImpl = globalThis.fetch, quiet = false, integration = false, openUrl = openPicker, focus = { front: frontApp, activate: activateApp }, log = console.log,
+  nativePicker = nativeAvailable() ? nativePick : null } = {}) {
   const token = randomBytes(24).toString('hex')
   const userStyles = path.join(dir, 'styles')
   const styles = () => listStyles(userStyles)
@@ -94,17 +96,33 @@ export async function startServer({ port = 23121, host = '127.0.0.1', dir = data
 
   // Pending picker requests from the word processor integration, answered by public/pick.html.
   const picks = new Map()
-  function pick(spec) {
-    const id = randomBytes(12).toString('hex')
+  // The citation / style picker. On macOS a native pop-up (src/quickformat.jxa.js, like Zotero's
+  // quick format bar); elsewhere, or if that fails, the browser picker (public/pick.html).
+  async function pick(spec) {
     // Remember the word processor in front, to switch back to it when the picker is done.
     const front = Promise.resolve().then(() => focus.front()).catch(() => null)
+    const back = () => front.then((app) => { if (app) focus.activate(app) })
+    if (nativePicker) {
+      try {
+        const result = await nativePicker(spec, styles(), { projects: (await store.snapshot()).projects })
+        back()
+        return result
+      } catch (error) {
+        if (!quiet) log(`Native picker unavailable (${error.message}); using the browser picker.`)
+      }
+    }
+    return webPick(spec, front, back)
+  }
+
+  function webPick(spec, front, back) {
+    const id = randomBytes(12).toString('hex')
     return new Promise((resolve) => {
       const entry = { spec, timer: setTimeout(() => entry.done(null), PICK_TIMEOUT) }
       entry.done = (value) => {
         clearTimeout(entry.timer)
         picks.delete(id)
         resolve(value)
-        front.then((app) => { if (app) focus.activate(app) })
+        back()
       }
       picks.set(id, entry)
       front.finally(() => openUrl(`${server.url}pick.html?id=${id}`))

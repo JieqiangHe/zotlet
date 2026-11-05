@@ -136,7 +136,8 @@ src/open.js        openBrowser().
 public/            index.html, app.js (single ES module), style.css, theme.js (pre-paint theme),
                    pick.html + pick.js (citation/style picker opened by the word processor integration).
 styles/            the built-in styles: nature, science, cell (official CSL repo, CC BY-SA 3.0).
-src/popup.js       the picker as a pop-up app window (Chromium browsers), and switching back to the word processor.
+src/quickformat.js + quickformat.jxa.js  the native macOS citation picker (Zotero-style quick format bar).
+src/popup.js       browser-picker fallback as a pop-up app window (Chromium), and switching back to the word processor.
 locales/           locales-en-US.xml (every style is rendered with en-US).
 test/              *.test.js + helpers.js + fixtures/ (recorded Crossref and PubMed records; styles/ holds
                    APA and Elsevier Harvard, used by tests as user-installed / downloadable styles).
@@ -192,13 +193,18 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   first and the zotlet URI is appended, so both Zotero and zotlet find the item.
 - The picker shows the style menu only for the first citation of a new document (like Zotero);
   later the style is changed through Document Preferences.
-- Picking happens in the browser: `server.pick(spec)` opens `/pick.html?id=…` and waits for
-  `POST /api/pick/done` (closing the window cancels; 30 min timeout). The user wants it as a
-  **pop-up window**, also when the web app is open: `openPicker` (src/popup.js) opens a Chromium
-  browser's `--app` window (Chrome, Edge, Brave, Chromium, Vivaldi; `open -na` on macOS), else a
-  normal tab. Before opening, `frontApp()` records the app in front (`lsappinfo`, no permission
-  prompt) and `activateApp()` brings it back (`open -b`) when the picker is done. The old native
-  `picker.jxa` never existed in the repo, so don't reintroduce it.
+- Picking: the user wants a **native pop-up like Zotero's quick format bar, not the browser**.
+  `server.pick(spec)` on macOS runs `src/quickformat.jxa.js` with `/usr/bin/osascript -l JavaScript`
+  (Cocoa via the JXA bridge, nothing to install): a floating panel over the word processor with a
+  search field and a result list; Enter adds the highlighted reference, Enter on an empty search
+  (or ⌘Enter) inserts, ⌫ on an empty search removes the last one, Esc cancels; a style menu only for
+  a new document's first citation; style mode lists styles (+ the bookmarks checkbox). The request /
+  answer is JSON (`src/quickformat.js`: `nativeSpec`, `parseResult`, both tested); the Cocoa part can
+  only be run on a Mac (tests syntax-check it). Any failure falls back to the browser picker
+  (`/pick.html?id=…`, answered by `POST /api/pick/done`, closing it cancels, 30 min timeout), which
+  `openPicker` (src/popup.js) shows as a Chromium `--app` window when possible, else a tab.
+  `ZOTLET_PICKER=web` forces the browser picker. Before picking, `frontApp()` records the app in front
+  (`lsappinfo`, no permission prompt); `activateApp()` brings it back (`open -b`) afterwards.
 - A document whose style is not installed (e.g. APA after the built-in set shrank to three) is never
   silently switched: `ctx.installStyle(uri)` downloads it from the style repository; if that fails
   the user gets an alert and the document is left unchanged (Document Preferences still works).
