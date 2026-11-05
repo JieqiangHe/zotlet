@@ -9,14 +9,21 @@ export function tempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'zotlet-test-'))
 }
 
-/** A fake `fetch` serving DOI and PubMed lookups from a table. Records requested URLs. */
-export function fakeFetch({ dois = {}, pmids = {} } = {}) {
+/**
+ * A fake `fetch` serving DOI and PubMed lookups from a table. Records requested URLs.
+ * `pubmedSearch` maps "<term>[<field>]" (NCBI E-utilities) to PMIDs; `unreachable` hosts fail like a dead network.
+ */
+export function fakeFetch({ dois = {}, pmids = {}, pubmedSearch = {}, unreachable = [] } = {}) {
   const calls = []
   const fn = async (url) => {
     calls.push(String(url))
     const u = new URL(url)
+    if (unreachable.includes(u.hostname)) throw new TypeError('fetch failed', { cause: { code: 'ETIMEDOUT' } })
     let body
-    if (u.hostname === 'doi.org') body = dois[decodeURIComponent(u.pathname.slice(1)).toLowerCase()]
+    if (u.hostname === 'eutils.ncbi.nlm.nih.gov') {
+      const term = u.searchParams.get('term') || ''
+      body = { esearchresult: { idlist: pubmedSearch[term.toLowerCase()] || [] } }
+    } else if (u.hostname === 'doi.org') body = dois[decodeURIComponent(u.pathname.slice(1)).toLowerCase()]
     else if (u.hostname === 'api.crossref.org') body = dois[decodeURIComponent(u.pathname.replace(/^\/works\//, '').replace(/\/transform\/.*$/, '')).toLowerCase()]
     else if (u.hostname === 'api.ncbi.nlm.nih.gov') body = pmids[u.searchParams.get('id')]
     if (body === undefined) return new Response('not found', { status: 404 })

@@ -252,6 +252,10 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   tested with `fakeFetch` + fixtures. `startServer({ fetchImpl })` and `lookupDOI(doi, fetchImpl)`
   take an injectable fetch for exactly this reason. `test/fixtures/elsevier-crossref.json` mirrors the
   shape doi.org returns for Elsevier DOIs (the acceptance-check DOI `10.1016/j.plaphy.2026.111729`).
+- DOI lookup order (`lookupDOI`): doi.org; if that fails, Crossref's API and PubMed in parallel
+  (Crossref wins). PubMed = NCBI E-utilities `esearch` (`<doi>[doi]`, then `[aid]`) → PMID → the
+  ctxp CSL record, accepted only if its DOI matches. Added because doi.org/Crossref are often slow or
+  unreachable for the user. `fakeFetch` takes `pubmedSearch` and `unreachable` hosts to test this.
 - `fetch()` cannot override `Host`; the Host-header test uses `http.get`.
 - Playwright is loaded with `createRequire` and the browser tests skip themselves when it is absent.
   After any UI change, run them with `ZOTLET_SCREENSHOTS` and look at the PNGs (light, dark, dialogs,

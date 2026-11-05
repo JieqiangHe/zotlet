@@ -106,3 +106,49 @@ test('lookupPMID prefers Crossref metadata but keeps PubMed ids', async () => {
   assert.deepEqual(only.issued, { 'date-parts': [[2019, 8, 27]] })
   assert.ok(!('id' in only) && !('source' in only))
 })
+
+// PubMed record shape from api.ncbi.nlm.nih.gov/lit/ctxp (CSL).
+const PUBMED_HR = {
+  id: 'pmid:37427035', type: 'article-journal', title: '4-methylumbelliferone (4-MU) enhances drought tolerance of apple by regulating rhizosphere microbial diversity and root architecture.',
+  'container-title': 'Horticulture research', 'container-title-short': 'Hortic Res', volume: '10', issue: '7', page: 'uhad099',
+  author: [{ family: 'He', given: 'Jieqiang' }, { family: 'Ma', given: 'Fengwang' }], issued: { 'date-parts': [[2023, 7]] },
+  DOI: '10.1093/hr/uhad099', PMID: '37427035', PMCID: 'PMC10327542', ISSN: '2662-6810',
+}
+
+test('DOI lookup falls back to PubMed when doi.org and Crossref cannot be reached', async () => {
+  const fetchImpl = fakeFetch({ unreachable: ['doi.org', 'api.crossref.org'], pubmedSearch: { '10.1093/hr/uhad099[doi]': ['37427035'] }, pmids: { 37427035: PUBMED_HR } })
+  const item = await lookupDOI('10.1093/hr/uhad099', fetchImpl)
+  assert.equal(item.DOI, '10.1093/hr/uhad099')
+  assert.equal(item.PMID, '37427035')
+  assert.equal(item.PMCID, 'PMC10327542')
+  assert.equal(item['container-title'], 'Horticulture research')
+  assert.equal(item.page, 'uhad099')
+  assert.deepEqual(item.issued, { 'date-parts': [[2023, 7]] })
+  assert.ok(fetchImpl.calls.some((u) => u.startsWith('https://eutils.ncbi.nlm.nih.gov/')))
+})
+
+test('PubMed fallback: second search field, DOI must match, errors mention every source', async () => {
+  // Found only through the [aid] field.
+  const viaAid = fakeFetch({ unreachable: ['doi.org', 'api.crossref.org'], pubmedSearch: { '10.1093/hr/uhad099[aid]': ['37427035'] }, pmids: { 37427035: PUBMED_HR } })
+  assert.equal((await lookupDOI('10.1093/hr/uhad099', viaAid)).PMID, '37427035')
+  // A hit whose DOI differs is not accepted.
+  const wrong = fakeFetch({ unreachable: ['doi.org', 'api.crossref.org'], pubmedSearch: { '10.1093/plcell/koaf284[doi]': ['37427035'] }, pmids: { 37427035: PUBMED_HR } })
+  await assert.rejects(lookupDOI('10.1093/plcell/koaf284', wrong), /Cannot reach doi\.org .*also tried Crossref and PubMed/)
+  // Nothing anywhere: a plain "not found".
+  await assert.rejects(lookupDOI('10.1093/plcell/koaf284', fakeFetch()), /DOI 10\.1093\/plcell\/koaf284 was not found/)
+})
+
+test('Crossref wins over PubMed when both answer; doi.org success asks nothing else', async () => {
+  const crossrefRecord = { type: 'journal-article', title: ['From Crossref'], DOI: '10.1093/hr/uhad099', 'container-title': ['Horticulture Research'] }
+  const both = fakeFetch({ unreachable: ['doi.org'], dois: { '10.1093/hr/uhad099': crossrefRecord }, pubmedSearch: { '10.1093/hr/uhad099[doi]': ['37427035'] }, pmids: { 37427035: PUBMED_HR } })
+  assert.equal((await lookupDOI('10.1093/hr/uhad099', both)).title, 'From Crossref')
+  const direct = fakeFetch({ dois: { '10.1093/hr/uhad099': crossrefRecord } })
+  await lookupDOI('10.1093/hr/uhad099', direct)
+  assert.deepEqual(direct.calls.map((u) => new URL(u).hostname), ['doi.org'])
+})
+
+test('PMID lookup still prefers Crossref and falls back to the PubMed record', async () => {
+  const offline = fakeFetch({ unreachable: ['doi.org', 'api.crossref.org'], pmids: { 37427035: PUBMED_HR } })
+  const item = await lookupPMID('37427035', offline)
+  assert.deepEqual([item.title, item.PMID, item.DOI], [PUBMED_HR.title.slice(0, -1), '37427035', '10.1093/hr/uhad099'])
+})

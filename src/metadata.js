@@ -202,39 +202,90 @@ async function getJSON(fetchImpl, url, accept) {
 
 const doiPath = (doi) => doi.split('/').map(encodeURIComponent).join('/')
 
-export async function lookupDOI(doi, fetchImpl = fetch) {
-  const errors = []
-  for (const url of [`https://doi.org/${doiPath(doi)}`,
-    `https://api.crossref.org/works/${doiPath(doi)}/transform/application/vnd.citationstyles.csl+json`]) {
-    try {
-      const data = await getJSON(fetchImpl, url, 'application/vnd.citationstyles.csl+json')
-      const item = normalizeItem(data)
-      item.DOI = item.DOI || doi
-      return item
-    } catch (error) { errors.push(error) }
+const crossrefURLs = (doi) => [`https://doi.org/${doiPath(doi)}`,
+  `https://api.crossref.org/works/${doiPath(doi)}/transform/application/vnd.citationstyles.csl+json`]
+
+async function crossrefItem(url, doi, fetchImpl) {
+  const item = normalizeItem(await getJSON(fetchImpl, url, 'application/vnd.citationstyles.csl+json'))
+  item.DOI = item.DOI || doi
+  return item
+}
+
+/** The raw PubMed CSL record for a PMID, or null. */
+async function pubmedRecord(pmid, fetchImpl) {
+  let data = await getJSON(fetchImpl, `https://api.ncbi.nlm.nih.gov/lit/ctxp/v1/pubmed/?format=csl&id=${pmid}`, 'application/json')
+  if (Array.isArray(data)) data = data[0]
+  return data && typeof data === 'object' && (data.title || data.DOI) ? data : null
+}
+
+function pubmedItem(data, pmid) {
+  const item = normalizeItem(data)
+  // PubMed titles end with a period; styles add their own punctuation.
+  if (/[^.]\.$/.test(item.title)) item.title = item.title.slice(0, -1)
+  item.PMID = String(pmid)
+  if (typeof data.PMCID === 'string' && data.PMCID.trim()) item.PMCID = data.PMCID.trim()
+  return item
+}
+
+/**
+ * Backup for DOIs when doi.org / Crossref cannot be reached: find the PMID with NCBI E-utilities,
+ * then read the PubMed record. Only a record carrying the same DOI is accepted.
+ */
+export async function lookupDOIviaPubMed(doi, fetchImpl = fetch) {
+  let pmids = []
+  for (const field of ['doi', 'aid']) {
+    const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=5&term=${encodeURIComponent(`${doi}[${field}]`)}`
+    const data = await getJSON(fetchImpl, url, 'application/json')
+    pmids = (data?.esearchresult?.idlist || []).filter((id) => /^\d{1,9}$/.test(String(id)))
+    if (pmids.length) break
   }
+  for (const pmid of pmids) {
+    const data = await pubmedRecord(pmid, fetchImpl)
+    if (data && normalizeDOI(data.DOI || '').toLowerCase() === doi.toLowerCase()) {
+      const item = pubmedItem(data, pmid)
+      item.DOI = doi
+      return item
+    }
+  }
+  throw Object.assign(new Error('Not in PubMed'), { status: 404 })
+}
+
+/**
+ * DOI → CSL item. doi.org first; if that fails, Crossref and PubMed are asked at the same time
+ * (so an unreachable Crossref costs one timeout, not two) and Crossref's richer record wins.
+ */
+export async function lookupDOI(doi, fetchImpl = fetch) {
+  const [primary, crossref] = crossrefURLs(doi)
+  let first
+  try { return await crossrefItem(primary, doi, fetchImpl) } catch (error) { first = error }
+  const [fromCrossref, fromPubMed] = await Promise.allSettled([crossrefItem(crossref, doi, fetchImpl), lookupDOIviaPubMed(doi, fetchImpl)])
+  if (fromCrossref.status === 'fulfilled') return fromCrossref.value
+  if (fromPubMed.status === 'fulfilled') return fromPubMed.value
+  const errors = [first, fromCrossref.reason, fromPubMed.reason]
   if (errors.every((e) => e.status === 404)) throw new Error(`DOI ${doi} was not found`)
-  throw errors.find((e) => e.status !== 404) || errors[0]
+  const reason = errors.find((e) => e.status !== 404)
+  throw new Error(`${reason.message} (also tried Crossref and PubMed)`)
 }
 
 export async function lookupPMID(pmid, fetchImpl = fetch) {
   let data
   try {
-    data = await getJSON(fetchImpl, `https://api.ncbi.nlm.nih.gov/lit/ctxp/v1/pubmed/?format=csl&id=${pmid}`, 'application/json')
+    data = await pubmedRecord(pmid, fetchImpl)
   } catch (error) {
     if (error.status === 404) throw new Error(`PMID ${pmid} was not found`)
     throw error
   }
-  if (Array.isArray(data)) data = data[0]
-  if (!data || typeof data !== 'object' || (!data.title && !data.DOI)) throw new Error(`PMID ${pmid} was not found`)
+  if (!data) throw new Error(`PMID ${pmid} was not found`)
   let item
   const doi = normalizeDOI(data.DOI || '')
   if (doi) {
     // Crossref metadata is usually richer (full journal names, pages); keep PubMed IDs on top.
-    try { item = await lookupDOI(doi, fetchImpl) } catch { /* fall back to PubMed */ }
+    for (const url of crossrefURLs(doi)) {
+      try { item = await crossrefItem(url, doi, fetchImpl); break } catch { /* next, then PubMed itself */ }
+    }
   }
-  item ||= normalizeItem(data)
-  item.PMID = pmid
+  if (!item) return pubmedItem(data, pmid)
+  item.PMID = String(pmid)
   if (typeof data.PMCID === 'string' && data.PMCID.trim()) item.PMCID = data.PMCID.trim()
   return item
 }
