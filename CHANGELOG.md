@@ -4,9 +4,10 @@ The release workflow publishes the section of the released version as its GitHub
 
 ## 0.1.0 — 2026-11-05
 
-The first release of zotlet: a tiny, local reference manager for people who find Zotero too big.
-The app itself is a ~300 KB zip. It does need [Node.js](https://nodejs.org) (about 100 MB installed),
-which many people already have; zotlet uses that one and brings no runtime of its own.
+The first release of zotlet: a tiny, local reference manager. If Zotero is more than you need, zotlet
+covers the basics in a ~300 KB app, built on Zotero's word-processor plugins and open formats (CSL), so your
+documents and references move freely between the two. It does need [Node.js](https://nodejs.org) (about
+100 MB installed), which many people already have; zotlet uses that one and brings no runtime of its own.
 Collect references for a project, cite them from your word processor, and export everything when you are done.
 
 ### Collect references
@@ -54,4 +55,6 @@ Collect references for a project, cite them from your word processor, and export
 > zotlet has been tested in depth with GenOffice so far; LibreOffice uses the same protocol but has had
 > less real-world use.
 
-zotlet is MIT licensed; the bundled CSL styles and locale stay CC BY-SA 3.0.
+zotlet is an independent project, not affiliated with Zotero; thanks to the Zotero project and the CSL
+community, whose plugins, styles and formats it uses. zotlet is MIT licensed; the bundled CSL styles and
+locale stay CC BY-SA 3.0.

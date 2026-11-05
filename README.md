@@ -1,8 +1,9 @@
 # zotlet
 
-A tiny, local reference manager for people who find Zotero too big.
-The app itself is a ~300 KB zip. It does need [Node.js](https://nodejs.org) (about 100 MB installed),
-which many people already have; zotlet uses that one and brings no runtime of its own.
+A tiny, local reference manager. If Zotero is more than you need, zotlet covers the basics in a
+~300 KB app, built on Zotero's word-processor plugins and open formats (CSL), so your documents and
+references move freely between the two. It does need [Node.js](https://nodejs.org) (about 100 MB
+installed), which many people already have; zotlet uses that one and brings no runtime of its own.
 Collect references for a project, cite them from your word processor, and export everything when you are done.
 
 - Import by DOI or PMID, by dropping PDFs (the DOI is read from the file), or from a Zotero CSL JSON export
@@ -89,6 +90,10 @@ with the version's section of [CHANGELOG.md](CHANGELOG.md) as its notes.
 [CLAUDE.md](CLAUDE.md) describes the requirements and design.
 
 ## License
+
+zotlet is an independent project, not affiliated with Zotero. It owes a lot to the
+[Zotero](https://www.zotero.org) project and the [CSL](https://citationstyles.org) community, whose
+plugins, styles and formats it uses — thank you.
 
 zotlet is released under the [MIT License](LICENSE). The bundled citation styles in `styles/` and the
 locale in `locales/` come from the CSL project and keep their own license (CC BY-SA 3.0).
