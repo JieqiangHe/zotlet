@@ -34,7 +34,7 @@ for a project, cite them from your word processor, and export everything when yo
 
 - Nature, Science and Cell are built in. Under **Styles**, search and install any of the thousands of
   styles in the official CSL repository, or add your own `.csl` file.
-- A document whose style you don't have is downloaded automatically, never silently switched.
+- If a document uses a style you don't have, zotlet downloads it instead of silently switching styles.
 
 ### Export
 
