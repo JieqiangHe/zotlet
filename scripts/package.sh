@@ -16,7 +16,7 @@ if [ -e "$STAGE" ]; then rm -r "dist/$NAME"; fi
 if [ -e "$STAGE.zip" ]; then rm "dist/$NAME.zip"; fi
 mkdir -p "$STAGE/node_modules"
 
-cp -R zotlet.js package.json package-lock.json README.md start-web.command start-web.sh src public styles locales "$STAGE/"
+cp -R zotlet.js package.json package-lock.json README.md LICENSE start-web.command start-web.sh src public styles locales "$STAGE/"
 cp -R node_modules/citeproc "$STAGE/node_modules/"
 chmod +x "$STAGE/start-web.command" "$STAGE/start-web.sh" "$STAGE/zotlet.js"
 

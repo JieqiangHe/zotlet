@@ -141,7 +141,8 @@ src/popup.js       browser-picker fallback as a pop-up app window (Chromium), an
 locales/           locales-en-US.xml (every style is rendered with en-US).
 test/              *.test.js + helpers.js + fixtures/ (recorded Crossref and PubMed records; styles/ holds
                    APA and Elsevier Harvard, used by tests as user-installed / downloadable styles).
-scripts/package.sh builds the zip (source + launchers + node_modules/citeproc).
+scripts/package.sh builds the zip (source + launchers + LICENSE + node_modules/citeproc).
+LICENSE            MIT (styles/ and locales/ keep their CSL license, CC BY-SA 3.0).
 start-web.sh       real launcher; start-web.command just execs it (macOS double-click).
 ```
 

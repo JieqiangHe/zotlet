@@ -83,3 +83,8 @@ Data lives in `~/.zotlet/`: `library.json` (references, CSL JSON), `web-state.js
 
 `npm test` runs the unit, API and browser tests; `npm run package` builds a distributable zip.
 [CLAUDE.md](CLAUDE.md) describes the requirements and design.
+
+## License
+
+zotlet is released under the [MIT License](LICENSE). The bundled citation styles in `styles/` and the
+locale in `locales/` come from the CSL project and keep their own license (CC BY-SA 3.0).

@@ -2,6 +2,7 @@
   "name": "zotlet",
   "version": "1.0.0",
   "description": "A minimal, personal reference manager: projects, DOI/PMID import, citeproc citations, CSL JSON/BibTeX/RIS export",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "bin": {
