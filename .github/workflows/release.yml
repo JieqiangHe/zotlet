@@ -1,9 +1,11 @@
-# Push a tag v<version> (matching package.json) to build dist/zotlet-<version>.zip
-# with scripts/package.sh and publish it as a GitHub release.
+# Build dist/zotlet-<version>.zip with scripts/package.sh and publish it as the
+# GitHub release v<version> (version from package.json). Runs when a tag v* is
+# pushed, or by hand (Actions → release → Run workflow), which creates the tag.
 name: release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 permissions:
   contents: write
 jobs:
@@ -15,14 +17,16 @@ jobs:
         with:
           node-version: 20
       - run: npm ci --omit=dev --no-audit --no-fund
-      - name: Check the tag matches package.json
-        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - name: Version
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          if [ "$GITHUB_REF_TYPE" = tag ]; then test "v$VERSION" = "$GITHUB_REF_NAME"; fi
       - run: npm test
       - run: npm run package
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          gh release create "$GITHUB_REF_NAME" "dist/zotlet-$VERSION.zip" \
-            --title "zotlet $VERSION" --generate-notes
+          gh release create "v$VERSION" "dist/zotlet-$VERSION.zip" \
+            --target "$GITHUB_SHA" --title "zotlet $VERSION" --generate-notes

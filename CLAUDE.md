@@ -114,7 +114,7 @@ npm install                      # citeproc only
 npm test                         # node:test — unit, API and (if Playwright exists) browser tests
 npm start                        # node zotlet.js web --open
 npm run package                  # dist/zotlet-<version>.zip
-git tag v<version> && git push origin v<version>   # CI (.github/workflows/release.yml) publishes the zip as a GitHub release
+# release: push tag v<version>, or run the "release" workflow by hand (it creates the tag) — .github/workflows/release.yml
 ZOTLET_SCREENSHOTS=/some/dir node --test test/ui.test.js   # save UI screenshots for review
 ```
 

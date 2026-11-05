@@ -82,7 +82,7 @@ Data lives in `~/.zotlet/`: `library.json` (references, CSL JSON), `web-state.js
 ## Development
 
 `npm test` runs the unit, API and browser tests; `npm run package` builds a distributable zip.
-Pushing a tag `v<version>` (matching `package.json`) publishes that zip as a GitHub release.
+The `release` GitHub Actions workflow (run by hand, or by pushing a tag `v<version>`) publishes that zip as a GitHub release.
 [CLAUDE.md](CLAUDE.md) describes the requirements and design.
 
 ## License
