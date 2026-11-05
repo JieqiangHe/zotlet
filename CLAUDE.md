@@ -324,3 +324,5 @@ subsystems and was unreliable. What was found and what was done:
 - Put behavior in `src/` where it is testable; keep `public/app.js` to UI wiring.
 - Add or update a test with every fix; run `npm test` before committing.
 - Don't commit `dist/`, `node_modules/` or anything from a real `~/.zotlet`.
+- When a change is done and `npm test` passes, push it straight to `main` (the user's standing
+  request); a working branch, if any, is kept in sync with `main`.
