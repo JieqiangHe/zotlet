@@ -244,7 +244,7 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
 - Sorting: header buttons Title / Authors / Year / Journal / Added; first click A→Z (Year and Added:
   newest first), second reverses, third returns to the default (newest import first). Saved in
   `localStorage['zotlet-sort']`. Added sorts by library order (= import order, so it works for old
-  references too); the date shown comes from `web-state.json` `added: { itemId: ISO time }`, recorded
+  references too); the time shown (local, to the second: `YYYY-MM-DD HH:MM:SS`) comes from `web-state.json` `added: { itemId: ISO time }`, recorded
   by `store.addItems` (older references show no date). Only main-list rows (`.table .row`) have the
   sixth column; picker rows keep five.
 - Project actions are three direct buttons at the bottom of the sidebar; Rename/Delete are disabled

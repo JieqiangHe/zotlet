@@ -309,7 +309,8 @@ function addedCell(item) {
   const valid = date && !Number.isNaN(date.getTime())
   const pad = (n) => String(n).padStart(2, '0')
   return el('span', { class: 'cell added num', title: valid ? `Imported ${date.toLocaleString()}` : 'Imported before zotlet recorded import dates' },
-    valid ? `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` : '')
+    // Down to the second, in local time, so the latest additions are easy to spot.
+    valid ? `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}` : '')
 }
 
 // ---------- selection & list interaction ----------

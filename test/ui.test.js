@@ -383,7 +383,7 @@ test('columns sort, including by import time (Added), and the choice is remember
   assert.equal(await page.textContent('.cell.sort[data-sort="added"] .arrow'), '▼')
   await page.click('.cell.sort[data-sort="added"]')
   assert.deepEqual(await keys(), importOrder, 'Added again: oldest first')
-  assert.match(await page.textContent(`.rows .row[data-id="${importOrder.at(-1)}"] .cell.added`), /^\d{4}-\d{2}-\d{2}$/)
+  assert.match(await page.textContent(`.rows .row[data-id="${importOrder.at(-1)}"] .cell.added`), /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
   await shot('50-sort-added')
 
   await page.click('.cell.sort[data-sort="title"]')
