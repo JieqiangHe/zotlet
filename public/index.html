@@ -20,8 +20,11 @@
     <div class="topbar-main">
       <label class="search">
         <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
-        <input id="search" type="search" placeholder="Search title, author, journal, DOI…" aria-label="Search references" autocomplete="off" spellcheck="false">
-        <kbd>/</kbd>
+        <input id="search" type="search" placeholder="Search all references…" aria-label="Search references" title="Title, author, journal, year or DOI" autocomplete="off" spellcheck="false">
+        <kbd title="Press / to search">/</kbd>
+        <button id="search-clear" type="button" class="search-clear" aria-label="Clear search" title="Clear (Esc)" hidden>
+          <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m5 5 6 6M11 5l-6 6"/></svg>
+        </button>
       </label>
       <span class="grow"></span>
       <div class="topbar-actions">

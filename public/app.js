@@ -228,7 +228,7 @@ function renderEmpty() {
     iconPaths = ICONS.search
     title = 'No matches'
     text = `Nothing in ${project ? `“${project.name}”` : 'your library'} matches “${state.query}”.`
-    action = el('button', { class: 'btn', onclick: () => { $('search').value = ''; state.query = ''; render() } }, 'Clear search')
+    action = el('button', { class: 'btn', onclick: clearSearch }, 'Clear search')
   } else if (project) {
     iconPaths = ICONS.folder
     title = 'This project is empty'
@@ -254,6 +254,8 @@ function renderChrome() {
   $('list-hint').hidden = n > 0 || state.visible.length === 0
   $('selection-count').textContent = `${n} selected`
   $('btn-remove-from').hidden = !project
+  // The search box says where it searches.
+  $('search').placeholder = project ? `Search in “${project.name}”…` : 'Search all references…'
   for (const btn of document.querySelectorAll('.cell.sort')) {
     const active = btn.dataset.sort === state.sort.key
     btn.classList.toggle('active', active)
@@ -358,13 +360,22 @@ $('check-all').addEventListener('change', (e) => {
 })
 
 let searchTimer
+function clearSearch() {
+  clearTimeout(searchTimer)
+  $('search').value = ''
+  $('search-clear').hidden = true
+  state.query = ''
+  render()
+}
 $('search').addEventListener('input', (e) => {
+  $('search-clear').hidden = !e.target.value
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => { state.query = e.target.value.trim(); render() }, 80)
 })
 $('search').addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { e.target.value = ''; state.query = ''; render(); e.target.blur() }
+  if (e.key === 'Escape') { clearSearch(); e.target.blur() }
 })
+$('search-clear').addEventListener('click', () => { clearSearch(); $('search').focus() })
 
 // Drag references onto a project.
 $('rows').addEventListener('dragstart', (e) => {

@@ -152,16 +152,31 @@ kbd {
 .topbar-actions { display: flex; align-items: center; gap: 6px; flex: none; }
 .topbar-actions .btn:not(.icon) { min-width: 72px; }
 .topbar-sep { width: 1px; height: 18px; margin: 0 2px; background: var(--border); }
+/* Search: a soft filled field that gains the accent ring on focus. */
 .search {
   position: relative; display: flex; align-items: center;
-  flex: 0 1 460px; min-width: 140px;
+  flex: 0 1 480px; min-width: 140px;
 }
-.search .i { position: absolute; left: 8px; color: var(--muted); pointer-events: none; }
-.search input { padding-left: 27px; padding-right: 28px; background: var(--panel-2); }
-.search input:focus { background: var(--panel); }
+.search > .i { position: absolute; left: 10px; color: var(--muted); pointer-events: none; transition: color .12s; }
+.search input {
+  height: 30px; padding-left: 32px; padding-right: 34px;
+  border-color: transparent; border-radius: var(--radius-lg);
+  background: var(--hover); transition: background-color .12s, border-color .12s, box-shadow .12s;
+}
+.search input:hover { border-color: var(--border-strong); }
+.search input:focus { background: var(--panel); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.search:focus-within > .i { color: var(--accent); }
+.search input::placeholder { color: var(--muted); }
 .search input::-webkit-search-cancel-button { display: none; }
-.search kbd { position: absolute; right: 6px; pointer-events: none; }
+.search kbd { position: absolute; right: 8px; pointer-events: none; border-color: var(--border-strong); background: var(--panel); }
 .search input:focus ~ kbd, .search input:not(:placeholder-shown) ~ kbd { display: none; }
+.search-clear {
+  position: absolute; right: 5px; display: flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; padding: 0; border: 0; border-radius: 10px;
+  background: transparent; color: var(--muted); cursor: pointer;
+}
+.search-clear:hover { background: var(--border); color: var(--text); }
+.search-clear .i { width: 12px; height: 12px; stroke-width: 1.8; }
 
 /* ---------- menus ---------- */
 .dropdown { position: relative; flex: none; }

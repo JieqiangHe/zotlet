@@ -165,6 +165,16 @@ test('search filters the list and shows an empty state', { skip }, async () => {
   await shot('07-no-match')
   await page.click('#empty button')
   await rowCount(4)
+  assert.equal(await page.inputValue('#search'), '')
+  // The clear button appears while there is text, and Esc / the button clear it.
+  assert.ok(await page.isHidden('#search-clear'))
+  await page.fill('#search', 'zea')
+  await rowCount(1)
+  await shot('07b-search-typed')
+  await page.click('#search-clear')
+  await rowCount(4)
+  assert.ok(await page.isHidden('#search-clear'))
+  assert.equal(await page.getAttribute('#search', 'placeholder'), 'Search all references…')
 })
 
 test('dark mode toggle persists across reloads', { skip }, async () => {

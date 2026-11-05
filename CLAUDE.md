@@ -241,6 +241,10 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   Removed on purpose (2026-11): the style menu and Bibliography dialog (citing happens in the word
   processor), the status bar, the export format menu, the Edit/Clear selection buttons
   (double-click / Enter edits, Esc clears). Don't bring them back unless the user asks.
+- Search box: soft filled field (`--hover` background, no border at rest), accent border + ring and
+  accent icon on focus, `/` hint, a clear (×) button while it has text (`clearSearch()` is shared
+  with Esc and the no-match empty state). Its placeholder names the scope: `Search in “<project>”…`
+  or `Search all references…`.
 - Sorting: header buttons Title / Authors / Year / Journal / Added; first click A→Z (Year and Added:
   newest first), second reverses, third returns to the default (newest import first). Saved in
   `localStorage['zotlet-sort']`. Added sorts by library order (= import order, so it works for old
