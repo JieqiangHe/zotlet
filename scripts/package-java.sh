@@ -1,6 +1,6 @@
 #!/bin/sh
 # Package the Java version of zotlet (no Node needed; a Java 11+ runtime runs it):
-#   dist/zotlet-<version>.plugin     TBtools plugin (Install Plugin in TBtools)
+#   dist/zotlet-<version>.plugin     TBtools plugin (Install Plugin in TBtools), copied to ./zotlet.plugin
 #   dist/zotlet-java-<version>.zip   stand-alone: double-click start-java.command (macOS) or run start-java.sh
 # The plugin shell is compiled against TBtools' main jar when TBTOOLS_JAR points to it
 # (e.g. /Applications/TBtools-II.app/Contents/java/app/TBtools_JRE1.6.jar), else against a stub
@@ -56,5 +56,8 @@ cp -R "$APP"/. "$BUILD/$NAME/"
 cp start-java.sh start-java.command README.md "$BUILD/$NAME/"
 chmod +x "$BUILD/$NAME/start-java.sh" "$BUILD/$NAME/start-java.command"
 (cd "$BUILD" && zip -qrX "../../dist/$NAME.zip" "$NAME")
+
+# The plugin is also kept at the top of the repository, like svguest.plugin (README links to it).
+cp "dist/zotlet-$VERSION.plugin" zotlet.plugin
 
 echo "Built dist/zotlet-$VERSION.plugin ($(du -h "dist/zotlet-$VERSION.plugin" | cut -f1)) and dist/$NAME.zip ($(du -h "dist/$NAME.zip" | cut -f1))"

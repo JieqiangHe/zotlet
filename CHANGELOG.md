@@ -2,15 +2,25 @@
 
 The release workflow publishes the section of the released version as its GitHub release notes.
 
-## Unreleased
+## 0.2.0 — 2026-11-12
 
-### zotlet without Node: Java version and TBtools plugin
+zotlet without Node: it now also runs on Java, and as a plugin in TBtools.
 
-- zotlet now also runs on **Java 11+**, with the same page, data folder (`~/.zotlet`) and word-processor
-  service (TCP 23116, HTTP 23119). Citations are formatted by the same citeproc-js, run by Rhino.
-- **TBtools-II plugin** (`zotlet-<version>.plugin`): zotlet opens as a TBtools tab and runs on TBtools' own
-  Java. The tab's file chooser and downloads use native Open / Save dialogs (Export, Add .csl file).
-- **Stand-alone Java zip** (`zotlet-java-<version>.zip`) with `start-java.command` / `start-java.sh`.
+### Use it in TBtools
+
+- **TBtools-II plugin** (`zotlet.plugin`, also attached as `zotlet-0.2.0.plugin`): install it with
+  *Install Plugin* and zotlet opens as a TBtools tab, running on TBtools' own Java. GenOffice and
+  LibreOffice cite from it while TBtools is open. Export and *Add .csl file* use native Save / Open dialogs.
+- Works around TBtools' browser license on Macs with the Intel build of TBtools (it picks the Apple-silicon
+  key on every Mac, so the built-in browser refused to start); if TBtools' browser still cannot start,
+  zotlet opens in your web browser and keeps running inside TBtools.
+
+### Or with your own Java
+
+- zotlet runs on **Java 11+** with the same page, data folder (`~/.zotlet`) and word-processor service
+  (TCP 23116, HTTP 23119). Citations are formatted by the same citeproc-js, run by Rhino.
+- Download the repository (or `zotlet-java-0.2.0.zip`) and double-click `start-java.command`, or run
+  `./start-java.sh`; in a copy of the repository the first start builds zotlet.
 - Every API answer, export file and word-processor session (GenOffice, LibreOffice, the HTTP protocol, and
   Word documents written by Zotero) is checked against the Node version by the test suite.
 

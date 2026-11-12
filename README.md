@@ -2,9 +2,13 @@
 
 A tiny, local reference manager. If Zotero is more than you need, zotlet covers the basics in a
 ~300 KB app, built on Zotero's word-processor plugins and open formats (CSL), so your documents and
-references move freely between the two. It does need [Node.js](https://nodejs.org) (about 100 MB
-installed), which many people already have; zotlet uses that one and brings no runtime of its own.
+references move freely between the two. It runs on the [Node.js](https://nodejs.org) or the Java you
+already have, and brings no runtime of its own.
 Collect references for a project, cite them from your word processor, and export everything when you are done.
+
+[TBtools-II](https://github.com/CJ-Chen/TBtools-II) users can use [`zotlet.plugin`](zotlet.plugin) directly:
+install it with *Install Plugin* in TBtools, and zotlet runs inside TBtools as a tab, on TBtools' own Java.
+Nothing else to install.
 
 - Import by DOI or PMID, by dropping PDFs (the DOI is read from the file), or from a Zotero CSL JSON export
 - Live citations and bibliographies in **GenOffice** and **LibreOffice** through the Zotero word-processor plugins
@@ -26,7 +30,7 @@ You need [Node.js](https://nodejs.org) 18.17 or newer, or Java 11 or newer (see 
 
 ### In TBtools (no Node needed)
 
-Install `zotlet-<version>.plugin` with *Install Plugin* in TBtools-II. Everything then happens inside
+Install [`zotlet.plugin`](zotlet.plugin) (also attached to each release) with *Install Plugin* in TBtools-II. Everything then happens inside
 TBtools: zotlet runs on TBtools' own Java, its page opens as a TBtools tab, and GenOffice / LibreOffice cite
 from it while TBtools is open. Nothing else to install.
 

@@ -343,7 +343,8 @@ Node version stays; both serve the same `public/` and read/write the same `~/.zo
   Open/Save dialogs (file input, downloads) and the macOS full-width punctuation fix. Checked here only by
   loading the plugin through its own class loader with a stub panel (no JxBrowser in the sandbox);
   drag-and-drop of files onto the list inside JxBrowser is unverified.
-- The user wants the whole workflow **inside TBtools** (the plugin); running from a downloaded copy of
+- `zotlet.plugin` (repository root, linked from the README) is the plugin to install; releases attach
+  `zotlet-<v>.plugin` too. The user wants the whole workflow **inside TBtools** (the plugin); running from a downloaded copy of
   the repository with their own Java (`start-java.command` / `start-java.sh`, which builds
   `java/build/lib/zotlet.jar` on first start or when `java/src` changed) is the alternative.
 - First run in TBtools-II 2.568 **Intel build on a Mac** (12 Nov 2026): `new WebGuiJPanel(...)` threw
@@ -384,6 +385,9 @@ subsystems and was unreliable. What was found and what was done:
 - Keep it small: no frameworks, no bundler, no new runtime dependencies without a strong reason.
 - Put behavior in `src/` where it is testable; keep `public/app.js` to UI wiring.
 - Add or update a test with every fix; run `npm test` before committing.
-- Don't commit `dist/`, `node_modules/` or anything from a real `~/.zotlet`.
+- Don't commit `dist/`, `node_modules/` or anything from a real `~/.zotlet`. The exception is
+  `zotlet.plugin` at the top of the repository (the user's request, like svguest.plugin): after changing
+  `java/`, `public/`, `styles/` or `locales/`, rebuild it with
+  `TBTOOLS_JAR=<TBtools main jar or its classes> sh scripts/package-java.sh` and commit it.
 - When a change is done and `npm test` passes, push it straight to `main` (the user's standing
   request); a working branch, if any, is kept in sync with `main`.
