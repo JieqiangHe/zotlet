@@ -98,7 +98,16 @@ public class PluginInject {
             p.setPreferredSize(new Dimension(1100, 720));
             return p;
         }
-        JPanel p = new WebGuiJPanel(url, false);
+        JPanel p;
+        try {
+            p = browserPanel(url);
+        } catch (Throwable e) {
+            // TBtools' built-in browser could not start (seen: JxBrowser InvalidLicenseException in
+            // WebGuiJPanel.getEngine). zotlet itself is running, so register the plugin anyway and
+            // show the page in the system browser.
+            e.printStackTrace();
+            return fallbackPanel(url, e);
+        }
         p.setPreferredSize(new Dimension(1100, 720));
         if (!hook(p)) p.addHierarchyListener(new HierarchyListener() {
             public void hierarchyChanged(HierarchyEvent e) {
@@ -112,6 +121,83 @@ public class PluginInject {
 
     public String getPluginName() {
         return dir.getName();
+    }
+
+    /**
+     * TBtools' browser panel. If its engine refuses the license, try once more after giving JxBrowser
+     * TBtools' own key explicitly (the alternative recorded in svguest's TBtools plugin notes).
+     */
+    private static JPanel browserPanel(String url) throws Throwable {
+        try {
+            return new WebGuiJPanel(url, false);
+        } catch (Throwable first) {
+            if (!mentions(first, "License")) throw first;
+            try {
+                Class<?> hub = Class.forName("toolsKit.LicenseHub.GetLicense", true, PluginInject.class.getClassLoader());
+                Object key = hub.getMethod("getJxBroswerLicense").invoke(null);
+                if (!(key instanceof String) || ((String) key).isEmpty()) throw first;
+                System.setProperty("jxbrowser.license.key", (String) key);
+                System.err.println("zotlet: retrying TBtools' browser with its license key set explicitly");
+            } catch (Throwable notAvailable) {
+                throw first;
+            }
+            return new WebGuiJPanel(url, false);
+        }
+    }
+
+    private static boolean mentions(Throwable e, String word) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t.getClass().getName().contains(word) || String.valueOf(t.getMessage()).contains(word)) return true;
+            if (t.getCause() == t) break;
+        }
+        return false;
+    }
+
+    private static String rootMessage(Throwable e) {
+        Throwable t = e;
+        while (t.getCause() != null && t.getCause() != t) t = t.getCause();
+        String m = t.getMessage();
+        return t.getClass().getSimpleName() + (m == null ? "" : ": " + m);
+    }
+
+    /** zotlet runs, but without TBtools' browser: a note and a button that opens the page in the system browser. */
+    private static JPanel fallbackPanel(String url, Throwable why) {
+        JPanel p = new JPanel(new java.awt.GridBagLayout());
+        javax.swing.JButton open = new javax.swing.JButton("Open zotlet in the web browser");
+        open.addActionListener(e -> openInBrowser(url));
+        JPanel box = new JPanel();
+        box.setLayout(new javax.swing.BoxLayout(box, javax.swing.BoxLayout.Y_AXIS));
+        JLabel text = new JLabel("<html><body style='width:460px'><b>zotlet is running</b> at " + escape(url)
+            + "<br><br>TBtools' built-in browser could not start (" + escape(rootMessage(why)) + "), so zotlet opens in your web browser instead."
+            + " Citing from GenOffice / LibreOffice works as usual while TBtools is open.</body></html>");
+        text.setAlignmentX(Component.LEFT_ALIGNMENT);
+        open.setAlignmentX(Component.LEFT_ALIGNMENT);
+        box.add(text);
+        box.add(javax.swing.Box.createVerticalStrut(16));
+        box.add(open);
+        p.add(box);
+        p.setPreferredSize(new Dimension(1100, 720));
+        // Open the page once, the first time the tab is shown.
+        p.addHierarchyListener(new HierarchyListener() {
+            public void hierarchyChanged(HierarchyEvent e) {
+                if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) == 0 || !p.isShowing()) return;
+                p.removeHierarchyListener(this);
+                openInBrowser(url);
+            }
+        });
+        return p;
+    }
+
+    private static void openInBrowser(String url) {
+        try {
+            if (java.awt.Desktop.isDesktopSupported() && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.BROWSE)) {
+                java.awt.Desktop.getDesktop().browse(new java.net.URI(url));
+                return;
+            }
+        } catch (Throwable e) { /* try the command line */ }
+        String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
+        String[] cmd = os.startsWith("mac") ? new String[]{"open", url} : os.startsWith("windows") ? new String[]{"rundll32", "url.dll,FileProtocolHandler", url} : new String[]{"xdg-open", url};
+        try { new ProcessBuilder(cmd).start(); } catch (Throwable e) { System.err.println("zotlet: open " + url + " in your web browser"); }
     }
 
     private static String escape(String s) {

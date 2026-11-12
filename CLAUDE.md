@@ -342,7 +342,14 @@ Node version stays; both serve the same `public/` and read/write the same `~/.zo
   property `zotlet.plugin.url`. The tab is `WebGuiJPanel(url, false)`; the JxBrowser hooks give native
   Open/Save dialogs (file input, downloads) and the macOS full-width punctuation fix. Checked here only by
   loading the plugin through its own class loader with a stub panel (no JxBrowser in the sandbox);
-  not yet run in TBtools, and drag-and-drop of files onto the list inside JxBrowser is unverified.
+  drag-and-drop of files onto the list inside JxBrowser is unverified.
+- First run in TBtools-II 2.568 (macOS, 12 Nov 2026): zotlet started, but `new WebGuiJPanel(...)` threw
+  `com.teamdev.jxbrowser.engine.InvalidLicenseException: Invalid license` from `WebGuiJPanel.getEngine`,
+  so TBtools said "Install finished but no plugin menu could be registered". Cause not known (TBtools' jar
+  could not be downloaded here). Now `browserPanel()` retries once with
+  `jxbrowser.license.key = toolsKit.LicenseHub.GetLicense.getJxBroswerLicense()`, and if the browser still
+  fails, `fallbackPanel()` registers the plugin anyway: a note with the URL and a button, and the page
+  opens in the system browser (the server and the word-processor ports keep running inside TBtools).
 
 ## History: the 2026-11 rebuild
 
