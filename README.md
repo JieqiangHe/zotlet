@@ -6,9 +6,6 @@ It is built on Zotero's word-processor plugins and open formats (CSL), so your d
 move freely between the two. zotlet is a small Java app: it runs on the Java (11 or newer) already on your
 computer and opens in your browser.
 
-[TBtools-II](https://github.com/CJ-Chen/TBtools-II) users can also use [`zotlet.plugin`](zotlet.plugin)
-directly: zotlet then runs inside TBtools as a tab, on TBtools' own Java.
-
 - Import by DOI or PMID, by dropping PDFs (the DOI is read from the file), or from a Zotero CSL JSON export
 - Live citations and bibliographies in **GenOffice** and **LibreOffice** through the Zotero word-processor plugins
 - Documents stay compatible with Zotero, so they can be refreshed in Zotero (also in Word) later
@@ -34,12 +31,13 @@ You need Java 11 or newer (a JDK, e.g. `brew install openjdk` on macOS).
 zotlet opens in your browser at <http://127.0.0.1:23121/>. Keep the terminal window open while you work;
 press `Ctrl+C` there to stop zotlet.
 
-### As a TBtools plugin
+### As a TBtools plugin (optional)
 
-In TBtools-II, choose *Install Plugin* and pick [`zotlet.plugin`](zotlet.plugin) (also attached to every
-release), then open zotlet from TBtools' plugin menu. It opens as a TBtools tab and runs while TBtools is
-open; GenOffice / LibreOffice cite from it as usual. To update, remove the old zotlet under
-*Plugin → Manage Plugins*, then install the new file.
+[TBtools-II](https://github.com/CJ-Chen/TBtools-II) users can also run zotlet inside TBtools, as a tab,
+on TBtools' own Java: choose *Install Plugin* and pick [`zotlet.plugin`](zotlet.plugin) (also attached to
+every release), then open zotlet from TBtools' plugin menu. It runs while TBtools is open; GenOffice /
+LibreOffice cite from it as usual. To update, remove the old zotlet under *Plugin → Manage Plugins*, then
+install the new file.
 
 ## Writing a paper with zotlet
 
