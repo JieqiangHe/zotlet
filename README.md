@@ -7,16 +7,17 @@ move freely between the two. zotlet is a small Java app: it runs on the Java (11
 computer and opens in your browser.
 
 - Import by DOI or PMID, by dropping PDFs (the DOI is read from the file), or from a Zotero CSL JSON export
-- Live citations and bibliographies in **GenOffice** and **LibreOffice** through the Zotero word-processor plugins
-- Documents stay compatible with Zotero, so they can be refreshed in Zotero (also in Word) later
+- Live citations and bibliographies in **Microsoft Word** (macOS, Windows), **GenOffice** and **LibreOffice**
+  through Zotero's word-processor plugins — Zotero itself does not need to be installed
+- Documents stay compatible with Zotero, so they can be refreshed in Zotero later
 - Thousands of citation styles from the official CSL repository (Nature, Science and Cell are built in)
 - One-click export of a project as RIS, CSL JSON and BibTeX
 
 Everything runs on your own computer. Your library is plain JSON in `~/.zotlet/`, the same whether you
 start zotlet yourself or in TBtools.
 
-> **Status:** the Java version and the TBtools plugin are new in 0.2.0. Citing was first tested in depth
-> with **GenOffice**; LibreOffice uses the same protocol but has had less real-world use.
+> **Status:** citing was first tested in depth with **GenOffice**. The Java version and the TBtools plugin
+> are new in 0.2; Microsoft Word support is new and has had little real-world use yet.
 
 ## Getting started
 
@@ -47,7 +48,7 @@ install the new file.
    - drag PDFs onto the list (only the DOI is read; the PDF is not stored), or
    - drag in a CSL JSON file exported from Zotero.
 3. **Cite while you write.** Quit Zotero first, keep zotlet running (as a plugin: keep TBtools open), and use
-   the Zotero toolbar in GenOffice:
+   the Zotero toolbar (or, in Word, the Zotero tab):
    - *Add/Edit Citation* pops up a search bar over your document, like Zotero's: type, press Enter to
      add a reference (repeat for more), press Enter again to insert. Esc cancels; ⌫ removes the last one.
    - *Add/Edit Bibliography* inserts the reference list; *Refresh* updates it.
@@ -63,19 +64,30 @@ Nature, Science and Cell are built in. To add a journal's style, click **Styles*
 click **Install**, or add a `.csl` file you already have. If you open a document that uses a style you
 don't have, zotlet downloads it automatically.
 
-## Moving a document to Zotero or Word
+## Microsoft Word
+
+zotlet puts Zotero's Word template into Word when it starts (it does nothing if the Zotero tab is already
+there, e.g. from Zotero). Restart Word once; the **Zotero** tab then talks to zotlet whenever zotlet runs and
+Zotero does not. The buttons work as in GenOffice; notes and annotations are not supported.
+
+- **macOS** asks once whether zotlet (or Terminal / TBtools) may control Microsoft Word: allow it. On macOS 15
+  and later, if the template cannot be copied, Finder opens the template and Word's startup folder: drag
+  `Zotero.dotm` into the folder, then restart Word. `java -jar lib/zotlet.jar word-install` does the same step again.
+- **Windows** needs nothing else (zotlet uses the PowerShell that comes with Windows).
+
+## Moving a document to Zotero
 
 Citations are stored as standard Zotero fields with a full copy of each reference, so Zotero can open and
 refresh a zotlet document. To have the references in your Zotero library too, import the exported `.ris`
 file (Zotero: *File → Import…*).
 
-Microsoft Word only talks to Zotero, not to zotlet. If the document will also be edited in Word with Zotero,
-open *Document Preferences* **before inserting the first citation** and tick
-*Also open in Microsoft Word with Zotero*. This stores citations as bookmarks, which both Word and
-LibreOffice-style editors accept.
+A document started in GenOffice or LibreOffice that will also be edited in Word: open *Document Preferences*
+**before inserting the first citation** and tick *Also open in Microsoft Word with Zotero*. This stores
+citations as bookmarks, which both Word and LibreOffice-style editors accept.
 
 ## Troubleshooting
 
+- **Word: something goes wrong.** Details are in `~/.zotlet/word.log`; please send it with a report.
 - **The citation buttons do nothing.** Make sure zotlet is running (as a TBtools plugin: TBtools is open and
   the zotlet tab was opened once) and Zotero is closed: both use the same ports (23116 and 23119), and zotlet
   prints a warning if they are taken (in TBtools: in its debug log, lines starting with `zotlet:`).
@@ -95,6 +107,7 @@ LibreOffice-style editors accept.
 java -jar lib/zotlet.jar web [--port N] [--open] [--no-word]   # start zotlet
 java -jar lib/zotlet.jar add <DOI|PMID>...                     # import references
 java -jar lib/zotlet.jar ls [words]                            # list or search the library
+java -jar lib/zotlet.jar word-install                          # put the Zotero tab into Microsoft Word
 ```
 
 In a copy of the repository the jar is `java/build/lib/zotlet.jar` (built by `start-java.sh` or
@@ -112,7 +125,10 @@ set `ZOTLET_HOME` (data then goes to `$ZOTLET_HOME/.zotlet/`).
   TBtools plugin (also copied to `zotlet.plugin`) and the Java zip. Set `TBTOOLS_JAR` to TBtools' main jar
   to compile the plugin against it.
 - `npm test` runs the tests (Node is used for testing only): end-to-end checks of the API, exports and
-  word-processor sessions against recorded answers, browser tests with Playwright, and unit checks.
+  word-processor sessions against recorded answers, Word sessions through a stand-in for Word, the TBtools
+  plugin packaged and loaded as TBtools does, browser tests with Playwright, and unit checks.
+- Setting up a machine, packaging and releasing are described step by step in
+  [`.claude/skills/zotlet-package/SKILL.md`](.claude/skills/zotlet-package/SKILL.md) (also usable by coding agents).
 - The `release` GitHub Actions workflow (run by hand, or by pushing a tag `v<version>`) builds the plugin and
   the zip and publishes them as a GitHub release, with the version's section of
   [CHANGELOG.md](CHANGELOG.md) as its notes.
@@ -127,6 +143,6 @@ plugins, styles and formats it uses, and to [TBtools](https://github.com/CJ-Chen
 the plugin — thank you.
 
 zotlet is released under the [MIT License](LICENSE). The bundled citation styles in `styles/` and the
-locale in `locales/` come from the CSL project and keep their own license (CC BY-SA 3.0). The Java version
-and the plugin include [citeproc-js](https://github.com/Juris-M/citeproc-js) (CPAL / AGPL) and
-[Rhino](https://github.com/mozilla/rhino) (MPL 2.0); see `THIRD-PARTY.txt` in the packages.
+locale in `locales/` come from the CSL project and keep their own license (CC BY-SA 3.0). zotlet includes
+[citeproc-js](https://github.com/Juris-M/citeproc-js) (CPAL / AGPL), [Rhino](https://github.com/mozilla/rhino)
+(MPL 2.0) and Zotero's Word templates (GPL 3 or later, `java/word/NOTICE.md`); see `THIRD-PARTY.txt` in the packages.

@@ -35,6 +35,7 @@ public final class Main {
             + "             [--no-word]           … without the LibreOffice/GenOffice citation service\n"
             + "  zotlet add <DOI|PMID>...         import references from the command line\n"
             + "  zotlet ls [words]                list or search the library\n"
+            + "  zotlet word-install              put the Zotero tab into Microsoft Word (macOS, Windows)\n"
             + "  zotlet help                      show this message\n\n"
             + dim("Data folder: " + Store.dataDir());
     }
@@ -121,7 +122,7 @@ public final class Main {
             List<String> ports = new ArrayList<>();
             if (word.tcp != null) ports.add(String.valueOf(word.tcp.getLocalPort()));
             if (word.http != null) ports.add(String.valueOf(word.http.getLocalPort()));
-            System.out.println(dim("LibreOffice / GenOffice citations: on (ports " + String.join(", ", ports) + ")"));
+            System.out.println(dim("LibreOffice / GenOffice" + (Word.mode().isEmpty() ? "" : " / Word") + " citations: on (ports " + String.join(", ", ports) + ")"));
         }
         System.out.println(dim("Keep this window open while you use zotlet. Press Ctrl+C to stop."));
         System.out.flush();
@@ -195,6 +196,12 @@ public final class Main {
                 case "web": web(args); break;
                 case "add": add(args); break;
                 case "ls": ls(args); break;
+                case "word-install": {
+                    Word.Install r = Word.install(Home.find(), true);
+                    System.out.println((r.ok ? green("✓ ") : red("✗ ")) + r.message);
+                    if (!r.ok) System.exit(1);
+                    break;
+                }
                 default:
                     System.out.println(help());
                     if (!Arrays.asList("help", "-h", "--help").contains(cmd)) System.exit(1);
@@ -215,8 +222,12 @@ public final class Main {
      */
     public static synchronized String startEmbedded(String appHome) throws Exception {
         if (embedded != null) return embedded.url;
-        if (isZotlet(DEFAULT_PORT) && pageWorks(DEFAULT_PORT)) return "http://127.0.0.1:" + DEFAULT_PORT + "/";
+        int port = envPort("ZOTLET_PORT", DEFAULT_PORT);
+        if (port != 0 && isZotlet(port) && pageWorks(port)) return "http://127.0.0.1:" + port + "/";
         Server.Options o = new Server.Options();
+        o.port = port;
+        o.tcpPort = envPort("ZOTLET_TCP_PORT", Integration.TCP_PORT);
+        o.httpPort = envPort("ZOTLET_HTTP_PORT", Integration.HTTP_PORT);
         if (appHome != null) o.home = Home.at(java.nio.file.Paths.get(appHome));
         o.integration = true;
         o.log = (line) -> System.out.println("zotlet: " + line);
@@ -228,6 +239,10 @@ public final class Main {
         }
         System.out.println("zotlet: " + embedded.url + " (data: " + embedded.store.libraryFile + ")");
         return embedded.url;
+    }
+
+    private static int envPort(String name, int fallback) {
+        try { return Integer.parseInt(System.getenv(name).trim()); } catch (Exception e) { return fallback; }
     }
 
     /** Stop the zotlet started by startEmbedded (the plugin calls this when its folder was replaced). */

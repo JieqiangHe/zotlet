@@ -201,7 +201,26 @@ public final class Server {
         SimpleDateFormat clock = new SimpleDateFormat("HH:mm:ss");
         Consumer<String> log = options.quiet ? (line) -> {} : (line) -> options.log.accept(clock.format(new Date()) + "  " + line);
         Consumer<String> warn = options.quiet ? (line) -> {} : options.log;
-        integration = Integration.start(ctx, options.host, options.tcpPort, options.httpPort, log, warn, options.detectClient);
+        integration = Integration.start(ctx, options.host, options.tcpPort, options.httpPort, log, warn, options.detectClient,
+            Word.mode().isEmpty() ? null : options.home.word, options.dir);
+        if (!Word.mode().isEmpty() && !"0".equals(System.getenv("ZOTLET_WORD_INSTALL"))) installWordPlugin(warn);
+    }
+
+    /**
+     * Put the Zotero tab into Word if it is not there. The first time a copy is refused (macOS 15
+     * protects Office's folder), Finder shows the file and the folder so the user can drag it.
+     */
+    private void installWordPlugin(Consumer<String> warn) {
+        Thread t = new Thread(() -> {
+            Path asked = options.dir.resolve(".word-install-asked");
+            Word.Install result = Word.install(options.home, !Files.exists(asked));
+            if (!result.ok) {
+                try { Files.createDirectories(options.dir); Files.write(asked, new byte[0]); } catch (IOException e) { /* only a reminder */ }
+            }
+            if (!options.quiet && (!result.ok || !result.message.startsWith("the Zotero tab is already"))) warn.accept("Word: " + result.message);
+        }, "zotlet-word-install");
+        t.setDaemon(true);
+        t.start();
     }
 
     // ---------- request handling ----------

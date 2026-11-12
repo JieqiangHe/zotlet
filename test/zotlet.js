@@ -15,6 +15,8 @@ const JAR = path.join(ROOT, 'java', 'build', 'lib', 'zotlet.jar')
 export function buildOrSkip() {
   const hasJava = spawnSync('javac', ['-version']).status === 0 && spawnSync('java', ['-version']).status === 0
   if (!hasJava) return 'no JDK installed'
+  // npm test builds once before the test files run (they run one after another).
+  if (process.env.ZOTLET_SKIP_BUILD && fs.existsSync(JAR)) return false
   const built = spawnSync('sh', [path.join(ROOT, 'scripts', 'build-java.sh')], { cwd: ROOT, encoding: 'utf8' })
   return built.status === 0 ? false : `the Java build failed: ${built.stderr || built.stdout}`
 }
@@ -34,11 +36,11 @@ export async function startInternet(internet) {
 }
 
 /** zotlet, started like the launcher does (ZOTLET_HOME is the folder holding .zotlet). */
-export function javaServer(dir, { libreOffice = false, fetchBase } = {}) {
+export function javaServer(dir, { libreOffice = false, fetchBase, env = {} } = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn('java', ['-jar', JAR, 'web', '--port', '0', '--tcp-port', '0', '--http-port', '0'], {
       env: { ...process.env, ZOTLET_HOME: path.dirname(dir), ZOTLET_FETCH_BASE: fetchBase || '',
-        ZOTLET_PICKER: 'web', ZOTLET_OPEN_LOG: 'stdout', ZOTLET_TEST_CLIENT: libreOffice ? 'soffice' : '', NO_COLOR: '1' },
+        ZOTLET_PICKER: 'web', ZOTLET_OPEN_LOG: 'stdout', ZOTLET_TEST_CLIENT: libreOffice ? 'soffice' : '', NO_COLOR: '1', ZOTLET_WORD_MODE: '', ZOTLET_WORD_INSTALL: '0', ...env },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
     const opened = [], info = {}
@@ -63,6 +65,7 @@ export function javaServer(dir, { libreOffice = false, fetchBase } = {}) {
       }
     })
     child.on('exit', (code) => reject(new Error(`java exited (${code}): ${err}`)))
+    setTimeout(() => { child.kill(); reject(new Error(`zotlet did not start within 60 s: ${err}`)) }, 60000).unref()
   })
 }
 

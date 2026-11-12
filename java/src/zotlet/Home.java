@@ -11,7 +11,7 @@ import java.nio.file.Paths;
  * in the source tree they are in the repository (citeproc in java/build, downloaded by scripts/build-java.sh).
  */
 public final class Home {
-    public final Path root, pub, styles, locale, citeproc, quickformat;
+    public final Path root, pub, styles, locale, citeproc, quickformat, word;
 
     private Home(Path root) {
         this.root = root;
@@ -21,6 +21,7 @@ public final class Home {
         this.citeproc = first(root.resolve("citeproc").resolve("citeproc_commonjs.js"),
             root.resolve("java").resolve("build").resolve("citeproc").resolve("citeproc_commonjs.js"));
         this.quickformat = first(root.resolve("quickformat.jxa.js"), root.resolve("java").resolve("quickformat.jxa.js"));
+        this.word = Files.isDirectory(root.resolve("word")) ? root.resolve("word") : root.resolve("java").resolve("word");
     }
 
     private static Path first(Path... options) {

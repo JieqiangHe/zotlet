@@ -9,7 +9,8 @@ set -eu
 cd "$(dirname "$0")/.."
 
 VERSION="$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' package.json | head -1)"
-sh scripts/build-java.sh
+# (ZOTLET_SKIP_BUILD: the tests built it already.)
+if [ -z "${ZOTLET_SKIP_BUILD:-}" ] || [ ! -f java/build/lib/zotlet.jar ]; then sh scripts/build-java.sh; fi
 
 BUILD=java/build
 APP="$BUILD/app"
@@ -19,12 +20,16 @@ mkdir -p "$APP/lib" "$APP/citeproc" dist
 # The application folder, shared by the plugin and the stand-alone zip.
 cp -R public styles locales "$APP/"
 cp java/quickformat.jxa.js LICENSE "$APP/"
+mkdir -p "$APP/word"
+cp -R java/word/. "$APP/word/"
 cp "$BUILD/lib/zotlet.jar" "$BUILD"/lib/rhino-*.jar "$APP/lib/"
 cp "$BUILD/citeproc/citeproc_commonjs.js" "$BUILD/citeproc/LICENSE" "$APP/citeproc/"
 cat > "$APP/THIRD-PARTY.txt" <<'EOF'
 citeproc/   citeproc-js by Frank Bennett, CPAL 1.0 / AGPL 3.0 (citeproc/LICENSE)
 lib/rhino-*.jar   Rhino JavaScript engine, Mozilla Public License 2.0 (https://github.com/mozilla/rhino)
 styles/, locales/   Citation Style Language styles and locale, CC BY-SA 3.0
+word/mac/, word/win/   Zotero's Word templates (Zotero.dotm, Zotero.scpt) from zotero.org, GNU GPL 3 or later:
+                    github.com/zotero/zotero-word-for-mac-integration, github.com/zotero/zotero-word-for-windows-integration
 EOF
 
 # ---------- TBtools plugin ----------
@@ -58,6 +63,7 @@ chmod +x "$BUILD/$NAME/start-java.sh" "$BUILD/$NAME/start-java.command"
 (cd "$BUILD" && zip -qrX "../../dist/$NAME.zip" "$NAME")
 
 # The plugin is also kept at the top of the repository, like svguest.plugin (README links to it).
-cp "dist/zotlet-$VERSION.plugin" zotlet.plugin
+# (--no-repo-copy: tests, which must not replace it with a build against the stub.)
+if [ "${1:-}" != "--no-repo-copy" ]; then cp "dist/zotlet-$VERSION.plugin" zotlet.plugin; fi
 
 echo "Built dist/zotlet-$VERSION.plugin ($(du -h "dist/zotlet-$VERSION.plugin" | cut -f1)) and dist/$NAME.zip ($(du -h "dist/$NAME.zip" | cut -f1))"

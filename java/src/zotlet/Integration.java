@@ -357,7 +357,9 @@ public final class Integration {
             String storedFieldType = (String) options.get("storedFieldType");
             if (data == null) {
                 Object version = options.get("version");
-                String xml = prefXml(uri, storedFieldType, Json.truthy(options.get("modernData")) ? Json.truthy(options.get("bibliographyStyleSet")) : true,
+                // GenOffice documents always said "set" (what worked for the user); Word tracks it like Zotero.
+                boolean tracked = Json.truthy(options.get("modernData")) || Json.truthy(options.get("trackBibliographyStyle"));
+                String xml = prefXml(uri, storedFieldType, tracked ? Json.truthy(options.get("bibliographyStyleSet")) : true,
                     sessionID, Json.truthy(version) ? Json.jsString(version) : "zotlet");
                 Matcher prefs = PREFS.matcher(rawData == null ? "" : rawData);
                 if (prefs.find()) {
@@ -885,6 +887,8 @@ public final class Integration {
         final Consumer<String> log;
         volatile Transaction transaction;
 
+        Path wordDir, dataDir;
+
         HttpIntegration(Ctx ctx, Consumer<String> log) { this.ctx = ctx; this.log = log; }
 
         void handle(Socket socket) {
@@ -902,6 +906,13 @@ public final class Integration {
                 String host = request.header("host");
                 if (host == null || !LOCAL_HOST.matcher(host).matches()) { send.send(400, "text/plain", "Invalid Host header\n"); return; }
                 String pathname = request.path.split("\\?", 2)[0];
+                if (pathname.equals("/integration/macWordCommand") && wordDir != null) {
+                    // Word for Mac (Zotero's template): answer at once, then work on the document.
+                    Map<String, String> query = query(request.path);
+                    send.send(200, "text/plain", "");
+                    Word.runMac(query.getOrDefault("command", ""), query.get("document"), wordDir, dataDir, ctx, log);
+                    return;
+                }
                 String[][] endpoint = PATHS.get(pathname);
                 if (endpoint == null) { send.send(404, "text/plain", "No endpoint found\n"); return; }
                 String method = request.method;
@@ -1019,6 +1030,21 @@ public final class Integration {
         }
     }
 
+    /** The query of a request path, decoded. */
+    static Map<String, String> query(String path) {
+        Map<String, String> out = new LinkedHashMap<>();
+        int q = path.indexOf('?');
+        if (q < 0) return out;
+        for (String part : path.substring(q + 1).split("&")) {
+            if (part.isEmpty()) continue;
+            int eq = part.indexOf('=');
+            String k = eq < 0 ? part : part.substring(0, eq), v = eq < 0 ? "" : part.substring(eq + 1);
+            try { out.putIfAbsent(Text.decodeURIComponent(k.replace('+', ' ')), Text.decodeURIComponent(v.replace('+', ' '))); }
+            catch (IllegalArgumentException e) { /* skip */ }
+        }
+        return out;
+    }
+
     private static String md5(String s) {
         try {
             byte[] h = MessageDigest.getInstance("MD5").digest(s.getBytes(StandardCharsets.UTF_8));
@@ -1054,13 +1080,21 @@ public final class Integration {
      * message instead of failing the whole app.
      */
     public static Integration start(Ctx ctx, String host, int tcpPort, int httpPort, Consumer<String> log, Consumer<String> warn, Detector detect) {
+        return start(ctx, host, tcpPort, httpPort, log, warn, detect, null, null);
+    }
+
+    /** As above; with `wordDir` (zotlet's word/ folder) Microsoft Word can cite too (see Word.java). */
+    public static Integration start(Ctx ctx, String host, int tcpPort, int httpPort, Consumer<String> log, Consumer<String> warn, Detector detect,
+                                    Path wordDir, Path dataDir) {
         Integration in = new Integration(listen(host, tcpPort, warn), listen(host, httpPort, warn));
         Detector detector = detect != null ? detect : Integration::libreOfficeClient;
         if (in.tcp != null) in.accept(in.tcp, socket -> {
             try { new TcpClient(socket, ctx, log, detector).read(); } catch (IOException e) { /* gone */ }
         });
         HttpIntegration web = new HttpIntegration(ctx, log);
+        if (wordDir != null && Word.mode().equals("mac")) { web.wordDir = wordDir; web.dataDir = dataDir; }
         if (in.http != null) in.accept(in.http, web::handle);
+        if (wordDir != null && Word.mode().equals("windows")) in.wordHelper = Word.startWindows(wordDir, dataDir, ctx, log, warn);
         return in;
     }
 
@@ -1079,7 +1113,13 @@ public final class Integration {
         t.start();
     }
 
+    private Word.Helper wordHelper;
+
+    /** Is Word's Windows helper running (with its ZoteroMessageWindow)? */
+    public boolean wordListening() { return wordHelper != null && wordHelper.alive(); }
+
     public void close() {
+        if (wordHelper != null) wordHelper.close();
         for (ServerSocket s : new ServerSocket[]{tcp, http}) if (s != null) try { s.close(); } catch (IOException e) { /* ignore */ }
         pool.shutdownNow();
         try { pool.awaitTermination(1, TimeUnit.SECONDS); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }

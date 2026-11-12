@@ -27,8 +27,10 @@ Focus: compact UI, project-centric organization, reliable DOI import, and clean 
 
 - **Word processor citations**:
   Insert and refresh live citations and bibliographies in GenOffice and LibreOffice through the
-  Zotero word-processor plugin protocol (TCP 23116, HTTP 23119). Documents must stay usable with
-  Zotero itself, in Word and in GenOffice (Zotero field codes, embedded item data, field type kept).
+  Zotero word-processor plugin protocol (TCP 23116, HTTP 23119), and in Microsoft Word on macOS and
+  Windows through Zotero's Word template, without Zotero installed (2026-11, the user's request).
+  Documents must stay usable with Zotero itself, in Word and in GenOffice (Zotero field codes,
+  embedded item data, field type kept).
 
 - **Export**:
   One click downloads the current selection (or project / whole library) as a zip with
@@ -144,14 +146,19 @@ java/src/zotlet/   the app (Java 11, java.base + java.desktop only):
   Picker.java        native macOS picker (runs java/quickformat.jxa.js), browser-picker window, frontApp/activateApp.
   Json.java, Text.java  JSON and string handling with JavaScript semantics; Home.java finds the app's files.
 java/quickformat.jxa.js  the native macOS citation picker (Zotero-style quick format bar), run by osascript.
+java/word/         Microsoft Word: Zotero's templates (mac/, win/), word-mac.js and word-win.ps1 helpers, NOTICE.md;
+                   Word.java runs them.
 java/plugin/       the TBtools plugin shell (Plugin/PluginInject.java); java/plugin-stub/ a compile stub of
-                   TBtools' WebGuiJPanel; java/test/UnitTest.java unit checks; java/build/ is generated.
+                   TBtools' WebGuiJPanel; java/test/UnitTest.java unit checks, VerifyPlugin.java + tbtools/
+                   (TBtools stand-ins) for the plugin test; java/build/ is generated.
+.claude/skills/zotlet-package/  how to set up a machine, build, test, package and release (SKILL.md, check-env.sh).
 public/            index.html, app.js (single ES module), style.css, theme.js (pre-paint theme),
                    pick.html + pick.js (citation/style picker opened by the word processor integration).
 styles/            the built-in styles: nature, science, cell (official CSL repo, CC BY-SA 3.0).
 locales/           locales-en-US.xml (every style is rendered with en-US).
 test/              app.test.js (end to end against golden.json), ui.test.js (Playwright), unit.test.js,
-                   zotlet.js (starts the jar, fake internet, fake word processor), helpers.js, fixtures/.
+                   word.test.js + fake-word.mjs, plugin.test.js, zotlet.js (starts the jar, fake internet,
+                   fake word processor), helpers.js, fixtures/.
 scripts/           build-java.sh, package-java.sh.
 start-java.sh      the launcher; start-java.command just execs it (macOS double-click).
 zotlet.plugin      the TBtools plugin, committed (README links to it).
@@ -194,8 +201,7 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   LibreOffice and GenOffice. 8-byte header (transaction id, length) + JSON; a command arrives as id 0,
   then zotlet issues `Document_getFields`-style RPCs. LibreOffice is detected from the peer process
   (`/proc` on Linux, `lsof` on macOS) and gets the newer data format; other clients (GenOffice) get
-  the older one that worked for the user. Microsoft Word talks to Zotero through its own plugin
-  channel (a pipe), not this port — zotlet cannot serve Word directly.
+  the older one that worked for the user. Microsoft Word is served differently (see "Microsoft Word").
 - **HTTP 23119** (`/connector/document/execCommand` + `respond`): each response carries the next RPC.
 - Commands: `addEditCitation`, `addEditBibliography`, `refresh`, `setDocPrefs`, `removeCodes`.
   Field codes are Zotero's (`ITEM CSL_CITATION {…}`, `BIBL … CSL_BIBLIOGRAPHY`) with full `itemData`,
@@ -225,6 +231,44 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   silently switched: `ctx.installStyle(uri)` downloads it from the style repository; if that fails
   the user gets an alert and the document is left unchanged (Document Preferences still works).
 - A busy port (Zotero running) only prints a warning; the web app still starts.
+
+## Microsoft Word
+
+The user wanted Word to work on computers without Zotero (macOS 15, Word 16.9x first; Windows too).
+How Zotero's Word plugins reach Zotero, read from zotero-word-for-mac-integration and
+…-for-windows-integration (their templates are in `java/word/`, unchanged, GPL; `java/word/NOTICE.md`):
+
+- **macOS**: `Zotero.dotm` (in Word's startup folder
+  `~/Library/Group Containers/UBF8T346G9.Office/User Content.localized/Startup.localized/Word`) runs, per
+  button, `curl http://127.0.0.1:23119/integration/macWordCommand?agent=MacWord16&command=…&document=<Word.app>`
+  (through `~/Library/Application Scripts/com.microsoft.Word/Zotero.scpt` when needed) and expects 200
+  within 2 s. Zotero then drives Word with Apple Events (its ObjC dylib). zotlet answers that URL on its
+  HTTP integration port (`Integration.HttpIntegration`) and starts `java/word/word-mac.js` with
+  `osascript -l JavaScript`: JavaScript for the protocol, AppleScript snippets (variables start with
+  `z` so they never clash with Word's terms) for Word, ported from Zotero's `build/src/*.m`: fields are
+  PRINTDATE fields re-found by position, codes ` ADDIN ZOTERO_<code> `, rich text pasted from the
+  clipboard (Word is sandboxed), clipboard restored, document data in custom properties `ZOTERO_PREF_n`
+  (255-char chunks), unlink = raw event `«event sWRD2489»`, Track Changes off during a command.
+- **Windows**: `Zotero.dotm` (in `%APPDATA%\Microsoft\Word\STARTUP`) looks for a window of class
+  `ZoteroMessageWindow` and sends `zotero.exe … -ZoteroIntegrationCommand X -ZoteroIntegrationDocument "path"`
+  as WM_COPYDATA (UTF-8, dwData 1). `java/word/word-win.ps1` (Windows PowerShell 5.1, always present;
+  C# via Add-Type for the hidden window and message boxes) opens that window, reports commands as
+  `{"event":"command"}` lines, and does the document RPCs through COM, ported from Zotero's
+  `document.cpp` / `field.cpp`: QUOTE fields (type 35) whose code is then replaced, rich text by
+  `Range.InsertFile` of a temporary RTF, bookmarks re-added after text changes.
+- `Word.java`: the helper process (one JSON line per request/answer, `{ id, method, args }` →
+  `{ id, result | error }`), the session (`Integration.runSession` with Word's options: Field/Bookmark,
+  RTF, `trackBibliographyStyle` so the Bibliography paragraph style is set once, as Zotero does),
+  button presses run one at a time, and `install()`: copy the template (and the Mac script) unless a
+  `Zotero.dotm` is already there; on macOS 15 the copy into Office's container may be refused, then
+  (once, marker `~/.zotlet/.word-install-asked`) Finder shows the file and the folder to drag.
+  `zotlet word-install` runs it by hand; the server runs it at start (`ZOTLET_WORD_INSTALL=0` turns it off).
+- Unsupported buttons (Add Note, annotations, citation explorer) get an alert.
+- Tests: `test/word.test.js` drives the whole path with `test/fake-word.mjs` standing in for the helper
+  (`ZOTLET_WORD_HELPER`, `ZOTLET_WORD_MODE=mac|windows`). The AppleScript and COM parts are checked
+  only on real machines: PowerShell 7 parses the script and compiles its C#, and its JSON shapes were
+  checked with fake COM objects; nothing here has run against Word yet. `~/.zotlet/word.log`
+  (`ZOTLET_WORD_LOG`) records the Mac helper's AppleScript errors with the failing snippet.
 
 ## PDFs dropped on the list
 
@@ -308,6 +352,11 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   - `test/ui.test.js`: the page in Chromium against the jar (pickers are opened through a TCP command).
   - `test/unit.test.js`: `java/test/UnitTest.java` (picker request/answer, lsof parsing, JSON numbers)
     and a syntax check of `java/quickformat.jxa.js`.
+  - `test/word.test.js`: Microsoft Word (see that section).
+  - `test/plugin.test.js`: packages the plugin and loads it as TBtools does (`java/test/VerifyPlugin.java`,
+    TBtools stand-ins in `java/test/tbtools/`): start, closed class loader, second tab, reinstall, the
+    Intel-build licence work-around, the fallback panel; with `TBTOOLS_JAR`, TBtools' own loader too.
+- Packaging and releasing, step by step for people and agents: `.claude/skills/zotlet-package/SKILL.md`.
 - The sandbox has no route to doi.org / Crossref / NCBI / zotero.org: zotlet reads `ZOTLET_FETCH_BASE`
   (https://host/path → <base>/host/path) and the tests serve a fake internet there (`startInternet` +
   `fakeFetch` + fixtures). `test/fixtures/elsevier-crossref.json` mirrors what doi.org returns for the
@@ -340,8 +389,8 @@ runtime lacks them), checked against it request by request, and then the Node ap
 - Test hooks (env): `ZOTLET_FETCH_BASE` (https://host/path → <base>/host/path, a local mock),
   `ZOTLET_OPEN_LOG=stdout` (print picker URLs), `ZOTLET_TEST_CLIENT=soffice` (treat TCP clients as
   LibreOffice), `--tcp-port` / `--http-port`.
-- Build: `scripts/build-java.sh` (javac, Rhino from Maven Central and citeproc from node_modules or the
-  npm registry, both SHA-256 pinned) → `java/build/lib/`. `scripts/package-java.sh` → `dist/zotlet-<v>.plugin`
+- Build: `scripts/build-java.sh` (javac, Rhino from Maven Central and citeproc from the npm registry,
+  both SHA-256 pinned) → `java/build/lib/`. `scripts/package-java.sh` → `dist/zotlet-<v>.plugin`
   and `dist/zotlet-java-<v>.zip` (+ `start-java.command` / `start-java.sh`, which find a JDK incl. Homebrew,
   SDKMAN and micromamba envs). Set `TBTOOLS_JAR` to compile the plugin against TBtools' real jar
   (`/Applications/TBtools-II.app/Contents/java/app/TBtools_JRE1.6.jar`); otherwise a stub of `WebGuiJPanel` is used.

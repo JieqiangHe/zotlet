@@ -9,6 +9,6 @@
     "start": "sh start-java.sh",
     "build": "sh scripts/build-java.sh",
     "package": "sh scripts/package-java.sh",
-    "test": "node --test"
+    "test": "sh scripts/build-java.sh && ZOTLET_SKIP_BUILD=1 node --test --test-concurrency=1 test/*.test.js"
   }
 }
