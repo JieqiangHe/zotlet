@@ -343,13 +343,19 @@ Node version stays; both serve the same `public/` and read/write the same `~/.zo
   Open/Save dialogs (file input, downloads) and the macOS full-width punctuation fix. Checked here only by
   loading the plugin through its own class loader with a stub panel (no JxBrowser in the sandbox);
   drag-and-drop of files onto the list inside JxBrowser is unverified.
-- First run in TBtools-II 2.568 (macOS, 12 Nov 2026): zotlet started, but `new WebGuiJPanel(...)` threw
-  `com.teamdev.jxbrowser.engine.InvalidLicenseException: Invalid license` from `WebGuiJPanel.getEngine`,
-  so TBtools said "Install finished but no plugin menu could be registered". Cause not known (TBtools' jar
-  could not be downloaded here). Now `browserPanel()` retries once with
-  `jxbrowser.license.key = toolsKit.LicenseHub.GetLicense.getJxBroswerLicense()`, and if the browser still
-  fails, `fallbackPanel()` registers the plugin anyway: a note with the URL and a button, and the page
-  opens in the system browser (the server and the word-processor ports keep running inside TBtools).
+- The user wants the whole workflow **inside TBtools** (the plugin); running from a downloaded copy of
+  the repository with their own Java (`start-java.command` / `start-java.sh`, which builds
+  `java/build/lib/zotlet.jar` on first start or when `java/src` changed) is the alternative.
+- First run in TBtools-II 2.568 **Intel build on a Mac** (12 Nov 2026): `new WebGuiJPanel(...)` threw
+  JxBrowser's `InvalidLicenseException` and TBtools said "no plugin menu could be registered". Decompiled
+  (classes the user sent): `WebGuiJPanel(url, b)` sets `jxbrowser.license.key` from
+  `toolsKit.LicenseHub.GetLicense.getJxBroswerLicense()`, which returns the key of JxBrowser 7.22 (the
+  Apple-silicon build) whenever `os.name` contains "mac", whatever the build; `getEngine()` keeps one
+  static Engine and checks the license when creating it. So `browserPanel()` on a license error asks
+  GetLicense for its other key (with `os.name` briefly set to Linux), creates the shared engine with it
+  through `WebGuiJPanel.getEngine()`, and builds the panel again; TBtools' keys are never copied into
+  zotlet. If the browser still fails, `fallbackPanel()` registers the plugin anyway (URL + button, page in
+  the system browser; the server and the word-processor ports keep running inside TBtools).
 
 ## History: the 2026-11 rebuild
 

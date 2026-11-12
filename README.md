@@ -24,21 +24,24 @@ You need [Node.js](https://nodejs.org) 18.17 or newer, or Java 11 or newer (see 
 - **macOS:** double-click `start-web.command`.
 - **Any platform:** run `npm install`, then `npm start`.
 
-### Without Node: the Java version and the TBtools plugin
+### In TBtools (no Node needed)
 
-zotlet also runs on Java, with the same page, the same data folder and the same word-processor service:
+Install `zotlet-<version>.plugin` with *Install Plugin* in TBtools-II. Everything then happens inside
+TBtools: zotlet runs on TBtools' own Java, its page opens as a TBtools tab, and GenOffice / LibreOffice cite
+from it while TBtools is open. Nothing else to install.
 
-- **TBtools-II:** install `zotlet-<version>.plugin` with *Install Plugin* in TBtools. zotlet then opens as a
-  TBtools tab and uses TBtools' own Java; nothing else to install. Keep the tab (and TBtools) open while you
-  cite from GenOffice or LibreOffice.
-- **Stand-alone:** unzip `zotlet-java-<version>.zip` and double-click `start-java.command` (macOS) or run
-  `./start-java.sh`. It uses the Java already on your computer.
+### With your own Java
 
-Build both with `sh scripts/package-java.sh` (needs a JDK 11+; it downloads the Rhino JavaScript engine and
-citeproc-js once). Citations are formatted by the same citeproc-js as in the Node version, run by Rhino.
+Java 11 or newer (a JDK; e.g. `brew install openjdk`) is enough, without Node:
 
-zotlet opens in your browser at <http://127.0.0.1:23121/>. Keep the terminal window open while you work;
-press `Ctrl+C` there to stop zotlet.
+- download the repository (or the `zotlet-java-<version>.zip` release) and double-click
+  `start-java.command` on macOS, or run `./start-java.sh`. In a copy of the repository the first start
+  builds zotlet (it downloads the Rhino JavaScript engine and citeproc-js once), so it needs `javac`
+  and an internet connection the first time.
+
+Citations are formatted by the same citeproc-js as in the Node version, run by Rhino. Build the plugin
+and the zip with `sh scripts/package-java.sh` (set `TBTOOLS_JAR` to TBtools' main jar to compile the
+plugin against it).
 
 ## Writing a paper with zotlet
 

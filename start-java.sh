@@ -33,7 +33,25 @@ if [ -z "$JAVA" ]; then
   exit 1
 fi
 
-if ! "$JAVA" -cp lib/zotlet.jar zotlet.Main help >/dev/null 2>&1; then
+# A release (or the TBtools plugin folder) has lib/zotlet.jar. In a copy of the repository, build
+# java/build/lib/zotlet.jar first (needs a JDK; downloads Rhino and citeproc-js once), and again
+# whenever the Java sources changed.
+JAR=lib/zotlet.jar
+if [ ! -f "$JAR" ] && [ -d java/src ]; then
+  JAR=java/build/lib/zotlet.jar
+  if [ ! -f "$JAR" ] || [ -n "$(find java/src -newer "$JAR" -type f 2>/dev/null | head -1)" ]; then
+    echo "Building zotlet (one time)…"
+    JAVAC="$(dirname "$JAVA")/javac"
+    if [ -x "$JAVAC" ]; then export PATH="$(dirname "$JAVA"):$PATH"; fi
+    if ! sh scripts/build-java.sh; then
+      echo "Could not build zotlet. It needs a JDK 11+ (with javac) and, the first time, an internet connection."
+      pause "Press Enter to close this window…"
+      exit 1
+    fi
+  fi
+fi
+
+if ! "$JAVA" -cp "$JAR" zotlet.Main help >/dev/null 2>&1; then
   echo "zotlet needs Java 11 or newer; this one does not run it:"
   "$JAVA" -version
   pause "Press Enter to close this window…"
@@ -41,7 +59,7 @@ if ! "$JAVA" -cp lib/zotlet.jar zotlet.Main help >/dev/null 2>&1; then
 fi
 
 echo "Starting zotlet with $JAVA"
-"$JAVA" -jar lib/zotlet.jar web --open "$@"
+"$JAVA" -jar "$JAR" web --open "$@"
 status=$?
 pause "zotlet has stopped. Press Enter to close this window…"
 exit $status

@@ -124,25 +124,55 @@ public class PluginInject {
     }
 
     /**
-     * TBtools' browser panel. If its engine refuses the license, try once more after giving JxBrowser
-     * TBtools' own key explicitly (the alternative recorded in svguest's TBtools plugin notes).
+     * TBtools' browser panel. WebGuiJPanel sets jxbrowser.license.key from
+     * toolsKit.LicenseHub.GetLicense.getJxBroswerLicense(), which picks the key by "is this a Mac"
+     * only: on every Mac it returns the key for the JxBrowser 7.22 of the Apple-silicon build. In the
+     * Intel build on a Mac (TBtools-II 2.568) that key does not fit the bundled JxBrowser and the shared
+     * engine fails with InvalidLicenseException. Then ask GetLicense for its other key (as on a non-Mac
+     * system), create TBtools' shared engine with it (WebGuiJPanel.getEngine() keeps it), and build
+     * the panel again. TBtools' keys are taken from TBtools at run time, never stored here.
      */
     private static JPanel browserPanel(String url) throws Throwable {
         try {
             return new WebGuiJPanel(url, false);
         } catch (Throwable first) {
             if (!mentions(first, "License")) throw first;
+            String other;
             try {
-                Class<?> hub = Class.forName("toolsKit.LicenseHub.GetLicense", true, PluginInject.class.getClassLoader());
-                Object key = hub.getMethod("getJxBroswerLicense").invoke(null);
-                if (!(key instanceof String) || ((String) key).isEmpty()) throw first;
-                System.setProperty("jxbrowser.license.key", (String) key);
-                System.err.println("zotlet: retrying TBtools' browser with its license key set explicitly");
+                other = otherLicense();
             } catch (Throwable notAvailable) {
+                notAvailable.printStackTrace();
+                throw first;
+            }
+            if (other == null || other.equals(System.getProperty("jxbrowser.license.key"))) throw first;
+            System.err.println("zotlet: TBtools' browser refused the macOS license key; trying TBtools' other key");
+            System.setProperty("jxbrowser.license.key", other);
+            try {
+                // Creates and keeps the shared engine with this key (reflection: its type is JxBrowser's Engine).
+                WebGuiJPanel.class.getMethod("getEngine").invoke(null);
+            } catch (Throwable second) {
+                second.printStackTrace();
                 throw first;
             }
             return new WebGuiJPanel(url, false);
         }
+    }
+
+    /** The key GetLicense returns on a system that is not macOS (asked by briefly changing os.name). */
+    private static String otherLicense() throws Exception {
+        Class<?> hub = Class.forName("toolsKit.LicenseHub.GetLicense", true, PluginInject.class.getClassLoader());
+        Method get = hub.getMethod("getJxBroswerLicense");
+        String os = System.getProperty("os.name");
+        Object key;
+        synchronized (System.getProperties()) {
+            try {
+                System.setProperty("os.name", "Linux");
+                key = get.invoke(null);
+            } finally {
+                System.setProperty("os.name", os);
+            }
+        }
+        return key instanceof String && !((String) key).isEmpty() ? (String) key : null;
     }
 
     private static boolean mentions(Throwable e, String word) {
