@@ -2,7 +2,7 @@
 
 The release workflow publishes the section of the released version as its GitHub release notes.
 
-## Unreleased
+## 0.2.1 — 2026-11-12
 
 - zotlet is now Java only: the Node version (`zotlet.js`, `src/`, `start-web.command`) is removed. Its
   behaviour is kept as recorded answers that the tests check the Java version against.
