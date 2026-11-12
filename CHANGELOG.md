@@ -2,12 +2,14 @@
 
 The release workflow publishes the section of the released version as its GitHub release notes.
 
-## Unreleased
+## 0.3.0 — 2026-11-12
 
 - **Microsoft Word** (macOS and Windows) without Zotero: zotlet puts Zotero's Word template into Word and
   answers its Zotero tab — Add/Edit Citation, Bibliography, Refresh, Document Preferences, Unlink — through
   Word's own scripting (AppleScript on macOS, COM via the PowerShell that comes with Windows). Documents stay
   Zotero documents (Word fields), so Zotero can open them too. New command: `zotlet word-install`.
+- Word support is new: it was checked against a stand-in for Word, not yet in daily use. If something goes
+  wrong, `~/.zotlet/word.log` has the details — please send it with a report.
 - The TBtools plugin is now packaged and loaded the way TBtools does in the tests (start, closed class
   loader, second tab, reinstall, licence work-around, fallback panel).
 - Building, testing and releasing are written down as a skill (`.claude/skills/zotlet-package`).
