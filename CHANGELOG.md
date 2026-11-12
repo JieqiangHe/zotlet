@@ -2,6 +2,18 @@
 
 The release workflow publishes the section of the released version as its GitHub release notes.
 
+## Unreleased
+
+### zotlet without Node: Java version and TBtools plugin
+
+- zotlet now also runs on **Java 11+**, with the same page, data folder (`~/.zotlet`) and word-processor
+  service (TCP 23116, HTTP 23119). Citations are formatted by the same citeproc-js, run by Rhino.
+- **TBtools-II plugin** (`zotlet-<version>.plugin`): zotlet opens as a TBtools tab and runs on TBtools' own
+  Java. The tab's file chooser and downloads use native Open / Save dialogs (Export, Add .csl file).
+- **Stand-alone Java zip** (`zotlet-java-<version>.zip`) with `start-java.command` / `start-java.sh`.
+- Every API answer, export file and word-processor session (GenOffice, LibreOffice, the HTTP protocol, and
+  Word documents written by Zotero) is checked against the Node version by the test suite.
+
 ## 0.1.0 — 2026-11-05
 
 The first release of zotlet: a tiny, local reference manager. If Zotero is more than you need, zotlet

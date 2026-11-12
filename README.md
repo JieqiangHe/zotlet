@@ -19,10 +19,23 @@ Everything runs on your own computer. Your library is plain JSON in `~/.zotlet/`
 
 ## Getting started
 
-You need [Node.js](https://nodejs.org) 18.17 or newer.
+You need [Node.js](https://nodejs.org) 18.17 or newer, or Java 11 or newer (see below).
 
 - **macOS:** double-click `start-web.command`.
 - **Any platform:** run `npm install`, then `npm start`.
+
+### Without Node: the Java version and the TBtools plugin
+
+zotlet also runs on Java, with the same page, the same data folder and the same word-processor service:
+
+- **TBtools-II:** install `zotlet-<version>.plugin` with *Install Plugin* in TBtools. zotlet then opens as a
+  TBtools tab and uses TBtools' own Java; nothing else to install. Keep the tab (and TBtools) open while you
+  cite from GenOffice or LibreOffice.
+- **Stand-alone:** unzip `zotlet-java-<version>.zip` and double-click `start-java.command` (macOS) or run
+  `./start-java.sh`. It uses the Java already on your computer.
+
+Build both with `sh scripts/package-java.sh` (needs a JDK 11+; it downloads the Rhino JavaScript engine and
+citeproc-js once). Citations are formatted by the same citeproc-js as in the Node version, run by Rhino.
 
 zotlet opens in your browser at <http://127.0.0.1:23121/>. Keep the terminal window open while you work;
 press `Ctrl+C` there to stop zotlet.
@@ -85,6 +98,8 @@ Data lives in `~/.zotlet/`: `library.json` (references, CSL JSON), `web-state.js
 ## Development
 
 `npm test` runs the unit, API and browser tests; `npm run package` builds a distributable zip.
+With a JDK installed, `npm test` also builds the Java version (`java/src`) and checks that it answers every
+API request and word-processor session exactly like the Node version (`test/java.test.js`).
 The `release` GitHub Actions workflow (run by hand, or by pushing a tag `v<version>`) publishes that zip as a GitHub release,
 with the version's section of [CHANGELOG.md](CHANGELOG.md) as its notes.
 [CLAUDE.md](CLAUDE.md) describes the requirements and design.

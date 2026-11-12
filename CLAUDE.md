@@ -114,6 +114,7 @@ npm install                      # citeproc only
 npm test                         # node:test — unit, API and (if Playwright exists) browser tests
 npm start                        # node zotlet.js web --open
 npm run package                  # dist/zotlet-<version>.zip
+sh scripts/package-java.sh       # Java version: dist/zotlet-<version>.plugin (TBtools) + dist/zotlet-java-<version>.zip
 # release: add a "## <version>" section to CHANGELOG.md (= the release notes), then push tag v<version>
 #   or run the "release" workflow by hand (creates the tag; rerun to update the notes) — .github/workflows/release.yml
 ZOTLET_SCREENSHOTS=/some/dir node --test test/ui.test.js   # save UI screenshots for review
@@ -147,6 +148,10 @@ scripts/package.sh builds the zip (source + launchers + LICENSE + node_modules/c
 CHANGELOG.md       release notes, one "## <version>" section per release.
 LICENSE            MIT (styles/ and locales/ keep their CSL license, CC BY-SA 3.0).
 start-web.sh       real launcher; start-web.command just execs it (macOS double-click).
+java/src/zotlet/   the Java version (see "Java version and TBtools plugin"); java/plugin/ the TBtools plugin shell,
+                   java/plugin-stub/ a compile-time stub of TBtools' WebGuiJPanel; java/build/ is generated.
+start-java.sh      launcher of the stand-alone Java version; start-java.command execs it.
+scripts/build-java.sh, scripts/package-java.sh   build java/build/lib, package dist/zotlet-<v>.plugin + zotlet-java-<v>.zip.
 ```
 
 ## Invariants — do not break these
@@ -299,6 +304,45 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   700px-wide window). The narrow test asserts there is no horizontal overflow.
 - Every bundled style is rendered in `citations.test.js`; add a new style to `styles/` and that test
   covers it automatically.
+
+## Java version and TBtools plugin (2026-11)
+
+The user asked for zotlet without Node, as a TBtools-II plugin like their svguest (TBtools ships Java and
+JxBrowser, no Node). `java/src/zotlet/` is a port of `src/` to Java 11 (`--release 11`, java.base +
+java.desktop only: no `java.net.http`, no `jdk.httpserver`, in case TBtools' runtime lacks them). The
+Node version stays; both serve the same `public/` and read/write the same `~/.zotlet` files.
+
+- **Parity is the rule.** `test/java.test.js` builds the Java version (skipped without a JDK) and sends the
+  same API requests, exports, PDFs, style installs and word-processor sessions (GenOffice TCP, LibreOffice
+  TCP, HTTP 23119, Word documents written by Zotero) to a Node and a Java server, comparing the answers
+  and the resulting documents after normalizing random ids. Change both versions together and extend that test.
+- `Json.java` writes exactly like `JSON.stringify` (key order, number format, 2-space pretty print);
+  `Text.java` has JavaScript's `\s`, `trim`, `encodeURIComponent` / `decodeURIComponent` (Java's differ).
+- **citeproc-js runs in Rhino 1.7.15.1** (pure Java, MPL 2.0; `lib/rhino-*.jar`), loaded from
+  `citeproc/citeproc_commonjs.js` with `java/src/zotlet/engine.js` as glue (JSON strings in and out).
+  Rhino is ~20x slower than V8 at building an engine (APA: ~5 s), so engines are cached per style file
+  (+ mtime/size) and reused; `engine.js` also short-cuts citeproc's macro lookup (a full-tree walk per
+  macro). Two citeproc instances (`Citations.js` and `plainJs`) render the formatted and the plain-text
+  pass of a refresh at the same time. `Citations.warm()` prepares Nature and the two newest user styles at start.
+- TCP frames are written in one `write` with `TCP_NODELAY`: a separate header write cost ~40 ms per
+  document RPC (Nagle + delayed ACK; an 80-citation refresh took 9 s instead of 2 s).
+- Test hooks (env): `ZOTLET_FETCH_BASE` (https://host/path → <base>/host/path, a local mock),
+  `ZOTLET_OPEN_LOG=stdout` (print picker URLs), `ZOTLET_TEST_CLIENT=soffice` (treat TCP clients as
+  LibreOffice), `--tcp-port` / `--http-port`.
+- Build: `scripts/build-java.sh` (javac, Rhino from Maven Central and citeproc from node_modules or the
+  npm registry, both SHA-256 pinned) → `java/build/lib/`. `scripts/package-java.sh` → `dist/zotlet-<v>.plugin`
+  and `dist/zotlet-java-<v>.zip` (+ `start-java.command` / `start-java.sh`, which find a JDK incl. Homebrew,
+  SDKMAN and micromamba envs). Set `TBTOOLS_JAR` to compile the plugin against TBtools' real jar
+  (`/Applications/TBtools-II.app/Contents/java/app/TBtools_JRE1.6.jar`); otherwise a stub of `WebGuiJPanel` is used.
+- **Plugin** (`java/plugin/Plugin/PluginInject.java`, adapted from svguest's `jh-html-to-tbtools-plugin`
+  skill): TBtools loads the first top-level `*.jar` (`zotlet-plugin.jar`) and may close its class loader
+  after `generatePanel()`, so zotlet runs from `lib/` in its own never-closed `URLClassLoader` (parent: the
+  platform loader). `Main.startEmbedded(home)` starts the server once per JVM on 23121 with the
+  integration on (or reuses a zotlet already answering there); later tabs reuse it via the system
+  property `zotlet.plugin.url`. The tab is `WebGuiJPanel(url, false)`; the JxBrowser hooks give native
+  Open/Save dialogs (file input, downloads) and the macOS full-width punctuation fix. Checked here only by
+  loading the plugin through its own class loader with a stub panel (no JxBrowser in the sandbox);
+  not yet run in TBtools, and drag-and-drop of files onto the list inside JxBrowser is unverified.
 
 ## History: the 2026-11 rebuild
 
