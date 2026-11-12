@@ -343,10 +343,12 @@ Node version stays; both serve the same `public/` and read/write the same `~/.zo
   Open/Save dialogs (file input, downloads) and the macOS full-width punctuation fix. Checked here only by
   loading the plugin through its own class loader with a stub panel (no JxBrowser in the sandbox);
   drag-and-drop of files onto the list inside JxBrowser is unverified.
-- `zotlet.plugin` (repository root, linked from the README) is the plugin to install; releases attach
-  `zotlet-<v>.plugin` too. The user wants the whole workflow **inside TBtools** (the plugin); running from a downloaded copy of
-  the repository with their own Java (`start-java.command` / `start-java.sh`, which builds
-  `java/build/lib/zotlet.jar` on first start or when `java/src` changed) is the alternative.
+- **Positioning (the user, 12 Nov 2026): zotlet is a Java app; TBtools is just one way to run it, as a
+  plugin.** The README is written for the Java version: start it with your own Java
+  (`start-java.command` / `start-java.sh`, which builds `java/build/lib/zotlet.jar` on first start or when
+  `java/src` changed); TBtools-II users can also use `zotlet.plugin` (repository root; releases attach
+  `zotlet-<v>.plugin`), where the whole workflow happens inside TBtools. The Node app is kept as the
+  reference implementation for the parity tests and is only mentioned under Development.
 - First run in TBtools-II 2.568 **Intel build on a Mac** (12 Nov 2026): `new WebGuiJPanel(...)` threw
   JxBrowser's `InvalidLicenseException` and TBtools said "no plugin menu could be registered". Decompiled
   (classes the user sent): `WebGuiJPanel(url, b)` sets `jxbrowser.license.key` from
