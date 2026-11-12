@@ -66,16 +66,16 @@ Focus: compact UI, project-centric organization, reliable DOI import, and clean 
 
 ### Technical Constraints
 
-- **Runtime**: Node.js server + static frontend.
-  Do **not** bundle a Node binary. The user will use their own system `node`.
+- **Runtime** (changed 2026-11, the user's request): a Java 11+ server + static frontend. No Node.
+  Do **not** bundle a Java runtime: the user's own `java` runs it, or TBtools' Java when zotlet is
+  installed as a TBtools plugin (one way to run it, like the user's svguest).
 
 - **Packaging**:
-  Produce a plain zip that contains only the application source + a simple launcher script
-  (`start-web.command` / `start-web.sh`).
-  The launcher must call the system `node` and open the browser.
+  A plain zip with the application + a simple launcher script (`start-java.command` / `start-java.sh`),
+  and `zotlet.plugin` for TBtools-II. The launcher calls the system `java` and opens the browser.
 
 - **Platform**: macOS ARM is the primary target, but the package itself should be architecture-agnostic
-  (no prebuilt Node).
+  (no prebuilt runtime).
 
 - **Launcher behavior**:
   Do not force-close the Terminal window.
@@ -87,7 +87,7 @@ Focus: compact UI, project-centric organization, reliable DOI import, and clean 
 ### Non-Goals
 
 - No silent / background-only launcher.
-- No bundled Node binary.
+- No bundled Java or Node runtime.
 - No three-pane Zotero clone.
 - No attempt to re-implement the full Zotero connector (web page saving, translators).
 
@@ -97,61 +97,67 @@ Focus: compact UI, project-centric organization, reliable DOI import, and clean 
 - Creating, renaming, and deleting a project works from the left-pane buttons.
 - Citing from GenOffice/LibreOffice and the zip export work for both the whole library and a single project.
 - Dark mode toggle persists across reloads.
-- Double-clicking the launcher on a machine that already has `node` in `PATH` starts the server and opens the browser.
+- Double-clicking the launcher on a machine that already has a JDK starts the server and opens the browser.
+- Installing `zotlet.plugin` in TBtools-II opens zotlet as a TBtools tab.
 
 ## What zotlet is
 
 A minimal, personal reference manager: projects on the left, one reference list in the center
 (no right-hand detail pane), DOI/PMID import, citeproc-js citations, CSL JSON / BibTeX / RIS export,
 and live citations in GenOffice / LibreOffice through the Zotero plugin protocol (documents stay usable in Zotero + Word).
-Runtime is the user's own system `node` (>= 18.17) + a static frontend. The only npm dependency is
-`citeproc`. No build step, no framework, no bundled Node binary.
+It is a Java 11 app (`java/src/zotlet/`) + a static frontend (`public/`); citeproc-js runs inside it on
+Rhino. Its only dependencies are Rhino and citeproc-js, downloaded by `scripts/build-java.sh`. No
+framework, no bundled runtime. TBtools-II users can run it as a plugin (`zotlet.plugin`).
+
+Until 0.2.0 zotlet was a Node app (`zotlet.js`, `src/*.js`); it was ported to Java and then removed at the
+user's request ("delete what is not needed"). Its behaviour is preserved in `test/fixtures/golden.json`
+(see Testing notes); the code is in git history before that removal.
 
 ## Commands
 
 ```bash
-npm install                      # citeproc only
-npm test                         # node:test — unit, API and (if Playwright exists) browser tests
-npm start                        # node zotlet.js web --open
-npm run package                  # dist/zotlet-<version>.zip
-sh scripts/package-java.sh       # Java version: dist/zotlet-<version>.plugin (TBtools) + dist/zotlet-java-<version>.zip
-# release: add a "## <version>" section to CHANGELOG.md (= the release notes), then push tag v<version>
-#   or run the "release" workflow by hand (creates the tag; rerun to update the notes) — .github/workflows/release.yml
+./start-java.sh                  # build (first time / after changes) and start: java -jar java/build/lib/zotlet.jar web --open
+sh scripts/build-java.sh         # java/build/lib/zotlet.jar (+ Rhino, citeproc-js)
+sh scripts/package-java.sh       # dist/zotlet-<version>.plugin (TBtools, also copied to ./zotlet.plugin) + dist/zotlet-java-<version>.zip
+npm test                         # node:test (Node is a test tool only): end-to-end, unit and (if Playwright exists) browser tests
+# release: add a "## <version>" section to CHANGELOG.md (= the release notes), bump package.json, then run
+#   the "release" workflow by hand (it creates the tag; this sandbox cannot push tags) — .github/workflows/release.yml
 ZOTLET_SCREENSHOTS=/some/dir node --test test/ui.test.js   # save UI screenshots for review
 ```
 
-Use a throwaway data folder when running the app by hand: `ZOTLET_HOME=/tmp/x node zotlet.js web`.
-Never point experiments at the real `~/.zotlet`.
+Use a throwaway data folder when running the app by hand:
+`ZOTLET_HOME=/tmp/x java -jar java/build/lib/zotlet.jar web`. Never point experiments at the real `~/.zotlet`.
 
 ## Layout
 
 ```text
-zotlet.js          CLI: web | add | ls | help. `web` detects an already-running zotlet on the port.
-src/server.js      http server on 127.0.0.1: static files from public/, JSON API under /api/.
-src/store.js       library.json + web-state.json persistence (atomic, serialized, re-read per write).
-src/metadata.js    identifier parsing, doi.org / Crossref / PubMed lookup, CSL normalization, citation keys.
-src/citations.js   style discovery (styles/ + ~/.zotlet/styles) and citeproc formatting.
-src/export.js      CSL JSON, BibTeX, RIS writers.
-src/integration.js GenOffice/LibreOffice: Zotero plugin protocol on TCP 23116 + HTTP 23119, document session.
-src/style-repo.js  "Get more styles": Zotero's style index (styles.json), download/install, add .csl file, remove.
-src/pdf.js         extractDOI(): the article DOI from PDF bytes (for PDFs dropped on the list).
-src/open.js        openBrowser().
+java/src/zotlet/   the app (Java 11, java.base + java.desktop only):
+  Main.java          CLI: web | add | ls | help; `web` detects an already-running zotlet; startEmbedded() for TBtools.
+  Server.java        http server on 127.0.0.1 (own HTTP parsing, HttpLite.java): public/ + JSON API under /api/.
+  Store.java         library.json + web-state.json persistence (atomic, serialized, re-read per write).
+  Metadata.java      identifier parsing, doi.org / Crossref / PubMed lookup (Net.java), CSL normalization, citation keys.
+  Citations.java     style discovery (styles/ + ~/.zotlet/styles) and citeproc formatting (Js.java + engine.js on Rhino).
+  Export.java        CSL JSON, BibTeX, RIS writers and the zip.
+  Integration.java   GenOffice/LibreOffice: Zotero plugin protocol on TCP 23116 + HTTP 23119, document session.
+  StyleRepo.java     "Get more styles": Zotero's style index, download/install, add .csl file, remove.
+  Pdf.java           extractDOI(): the article DOI from PDF bytes (for PDFs dropped on the list).
+  Picker.java        native macOS picker (runs java/quickformat.jxa.js), browser-picker window, frontApp/activateApp.
+  Json.java, Text.java  JSON and string handling with JavaScript semantics; Home.java finds the app's files.
+java/quickformat.jxa.js  the native macOS citation picker (Zotero-style quick format bar), run by osascript.
+java/plugin/       the TBtools plugin shell (Plugin/PluginInject.java); java/plugin-stub/ a compile stub of
+                   TBtools' WebGuiJPanel; java/test/UnitTest.java unit checks; java/build/ is generated.
 public/            index.html, app.js (single ES module), style.css, theme.js (pre-paint theme),
                    pick.html + pick.js (citation/style picker opened by the word processor integration).
 styles/            the built-in styles: nature, science, cell (official CSL repo, CC BY-SA 3.0).
-src/quickformat.js + quickformat.jxa.js  the native macOS citation picker (Zotero-style quick format bar).
-src/popup.js       browser-picker fallback as a pop-up app window (Chromium), and switching back to the word processor.
 locales/           locales-en-US.xml (every style is rendered with en-US).
-test/              *.test.js + helpers.js + fixtures/ (recorded Crossref and PubMed records; styles/ holds
-                   APA and Elsevier Harvard, used by tests as user-installed / downloadable styles).
-scripts/package.sh builds the zip (source + launchers + LICENSE + node_modules/citeproc).
+test/              app.test.js (end to end against golden.json), ui.test.js (Playwright), unit.test.js,
+                   zotlet.js (starts the jar, fake internet, fake word processor), helpers.js, fixtures/.
+scripts/           build-java.sh, package-java.sh.
+start-java.sh      the launcher; start-java.command just execs it (macOS double-click).
+zotlet.plugin      the TBtools plugin, committed (README links to it).
+package.json       version (read by the scripts and the release workflow) and the test script only.
 CHANGELOG.md       release notes, one "## <version>" section per release.
 LICENSE            MIT (styles/ and locales/ keep their CSL license, CC BY-SA 3.0).
-start-web.sh       real launcher; start-web.command just execs it (macOS double-click).
-java/src/zotlet/   the Java version (see "Java version and TBtools plugin"); java/plugin/ the TBtools plugin shell,
-                   java/plugin-stub/ a compile-time stub of TBtools' WebGuiJPanel; java/build/ is generated.
-start-java.sh      launcher of the stand-alone Java version; start-java.command execs it.
-scripts/build-java.sh, scripts/package-java.sh   build java/build/lib, package dist/zotlet-<v>.plugin + zotlet-java-<v>.zip.
 ```
 
 ## Invariants — do not break these
@@ -161,8 +167,8 @@ scripts/build-java.sh, scripts/package-java.sh   build java/build/lib, package d
    data the form cannot represent (name particles, extra CSL fields, Zotero leftovers) survives.
 2. **Unknown keys in web-state.json are preserved** (older versions stored `roots`, `files`, `links`,
    `activeProject`, …). Projects are `{ id, name, itemIds, created }` plus whatever else was there.
-3. **All incoming metadata goes through `normalizeItem`** (`src/metadata.js`), manual entry included
-   (`validateFields` in `src/server.js` reuses it). Names keep only `family`, `given`, `literal`,
+3. **All incoming metadata goes through `normalizeItem`** (`Metadata.java`), manual entry included
+   (`Server.validateFields` reuses it). Names keep only `family`, `given`, `literal`,
    `suffix`, `dropping-particle`, `non-dropping-particle` as strings. This is what makes Elsevier
    DOIs (authors with `sequence`, `affiliation`, `ORCID`, `authenticated-orcid`, `role`) import cleanly.
    Existing library items are never re-normalized.
@@ -171,15 +177,16 @@ scripts/build-java.sh, scripts/package-java.sh   build java/build/lib, package d
 5. **Security**: bind to 127.0.0.1, reject foreign `Host` headers (DNS rebinding), and require the
    per-process token from `<meta name="zotlet-token">` in the `X-Zotlet-Token` header on every
    `/api/*` call except `/api/ping`. Strict CSP: no inline scripts (that is why theme.js is a file).
-6. **Launcher**: uses the system `node` (also probes Homebrew/Volta/nvm paths, since double-clicked
-   `.command` files don't always load the shell profile), installs citeproc only if missing, never
-   closes the Terminal window, and waits for Enter after the server stops.
+6. **Launcher**: uses the system `java` (JAVA_HOME, `/usr/libexec/java_home`, PATH, then Homebrew /
+   SDKMAN / micromamba paths, since double-clicked `.command` files don't always load the shell
+   profile), builds the jar in a copy of the repository when needed, never closes the Terminal
+   window, and waits for Enter after the server stops.
 7. **Two panes only.** Do not add a right-hand detail pane; editing happens in a dialog.
 
 ## Word processor integration
 
-`zotlet.js web` starts `src/integration.js` next to the web app (`startServer({ integration: {} })`;
-`--no-word` or `ZOTLET_NO_WORD=1` turns it off; tests pass ports 0). It is the protocol of Zotero's
+`zotlet web` starts `Integration.java` next to the web app (`--no-word` or `ZOTLET_NO_WORD=1` turns it
+off; `--tcp-port` / `--http-port` change the ports, tests pass 0). It is the protocol of Zotero's
 plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which the user relies on:
 
 - **TCP 23116** is Zotero's *LibreOffice* plugin protocol (checked against
@@ -203,15 +210,15 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
 - The picker shows the style menu only for the first citation of a new document (like Zotero);
   later the style is changed through Document Preferences.
 - Picking: the user wants a **native pop-up like Zotero's quick format bar, not the browser**.
-  `server.pick(spec)` on macOS runs `src/quickformat.jxa.js` with `/usr/bin/osascript -l JavaScript`
+  `Server.pick(spec)` on macOS runs `java/quickformat.jxa.js` with `/usr/bin/osascript -l JavaScript`
   (Cocoa via the JXA bridge, nothing to install): a floating panel over the word processor with a
   search field and a result list; Enter adds the highlighted reference, Enter on an empty search
   (or ⌘Enter) inserts, ⌫ on an empty search removes the last one, Esc cancels; a style menu only for
   a new document's first citation; style mode lists styles (+ the bookmarks checkbox). The request /
-  answer is JSON (`src/quickformat.js`: `nativeSpec`, `parseResult`, both tested); the Cocoa part can
+  answer is JSON (`Picker.nativeSpec`, `Picker.parseResult`, both in java/test/UnitTest.java); the Cocoa part can
   only be run on a Mac (tests syntax-check it). Any failure falls back to the browser picker
   (`/pick.html?id=…`, answered by `POST /api/pick/done`, closing it cancels, 30 min timeout), which
-  `openPicker` (src/popup.js) shows as a Chromium `--app` window when possible, else a tab.
+  `Picker.openPicker` shows as a Chromium `--app` window when possible, else a tab.
   `ZOTLET_PICKER=web` forces the browser picker. Before picking, `frontApp()` records the app in front
   (`lsappinfo`, no permission prompt); `activateApp()` brings it back (`open -b`) afterwards.
 - A document whose style is not installed (e.g. APA after the built-in set shrank to three) is never
@@ -231,7 +238,7 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
 
 ## Citation styles
 
-- `listStyles()` returns bundled styles, then `~/.zotlet/styles`. A dependent (journal) style is listed
+- `Citations.listStyles()` returns bundled styles, then `~/.zotlet/styles`. A dependent (journal) style is listed
   with `file` = its parent's file (what to render with), `path` = its own file and `parent` = parent id;
   one whose parent is missing is left out. Always render from `style.file`.
 - The style menu ends with "Get more styles…", which opens the styles dialog (search, Installed tab,
@@ -273,7 +280,7 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   44px bar that mirrors the top bar; Styles and Export share a min width.
 - Export scope: the selection if any, else everything currently visible (library, project, or
   search results); shown in the Export button's tooltip and the toast. Export is one zip
-  (`toZip` in src/export.js: RIS + CSL JSON + BibTeX + README). Dropping a CSL JSON file imports it
+  (`Export.toZip`: RIS + CSL JSON + BibTeX + README). Dropping a CSL JSON file imports it
   (`POST /api/import-csl`, every item through `normalizeItem`).
 - Empty states (empty library, empty project, no search matches) are centered in the list panel,
   hide the column header, and offer one action.
@@ -290,32 +297,36 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
 
 ## Testing notes
 
-- The sandbox this was built in had no route to doi.org / api.crossref.org / NCBI, so lookups are
-  tested with `fakeFetch` + fixtures. `startServer({ fetchImpl })` and `lookupDOI(doi, fetchImpl)`
-  take an injectable fetch for exactly this reason. `test/fixtures/elsevier-crossref.json` mirrors the
-  shape doi.org returns for Elsevier DOIs (the acceptance-check DOI `10.1016/j.plaphy.2026.111729`).
-- DOI lookup order (`lookupDOI`): doi.org; if that fails, Crossref's API and PubMed in parallel
-  (Crossref wins). PubMed = NCBI E-utilities `esearch` (`<doi>[doi]`, then `[aid]`) → PMID → the
-  ctxp CSL record, accepted only if its DOI matches. Added because doi.org/Crossref are often slow or
-  unreachable for the user. `fakeFetch` takes `pubmedSearch` and `unreachable` hosts to test this.
+- Node (and Playwright) are test tools only. `npm test` builds the jar and runs:
+  - `test/app.test.js`: API requests, every export format, PDFs, style installs and word-processor sessions
+    (GenOffice TCP, LibreOffice TCP, HTTP 23119, Word documents written by Zotero, a document whose style
+    is missing) against a real zotlet process; every answer and document, after normalizing random ids,
+    times and paths, must equal `test/fixtures/golden.json`. That file was recorded from the Node
+    implementation the user had used with GenOffice, before it was removed. When behaviour changes on
+    purpose, update the golden entries by hand (or record them again from the jar) and say so in the commit.
+    It also checks data-file invariants and the PubMed fallback directly.
+  - `test/ui.test.js`: the page in Chromium against the jar (pickers are opened through a TCP command).
+  - `test/unit.test.js`: `java/test/UnitTest.java` (picker request/answer, lsof parsing, JSON numbers)
+    and a syntax check of `java/quickformat.jxa.js`.
+- The sandbox has no route to doi.org / Crossref / NCBI / zotero.org: zotlet reads `ZOTLET_FETCH_BASE`
+  (https://host/path → <base>/host/path) and the tests serve a fake internet there (`startInternet` +
+  `fakeFetch` + fixtures). `test/fixtures/elsevier-crossref.json` mirrors what doi.org returns for the
+  acceptance-check DOI `10.1016/j.plaphy.2026.111729`.
+- DOI lookup order (`Metadata.lookupDOI`): doi.org; if that fails, Crossref's API and PubMed in parallel
+  (Crossref wins). PubMed = NCBI E-utilities `esearch` (`<doi>[doi]`, then `[aid]`) → PMID → the ctxp CSL
+  record, accepted only if its DOI matches.
 - `fetch()` cannot override `Host`; the Host-header test uses `http.get`.
-- Playwright is loaded with `createRequire` and the browser tests skip themselves when it is absent.
-  After any UI change, run them with `ZOTLET_SCREENSHOTS` and look at the PNGs (light, dark, dialogs,
-  700px-wide window). The narrow test asserts there is no horizontal overflow.
-- Every bundled style is rendered in `citations.test.js`; add a new style to `styles/` and that test
-  covers it automatically.
+- After any UI change, run the browser tests with `ZOTLET_SCREENSHOTS` and look at the PNGs (light, dark,
+  dialogs, 700px-wide window). The narrow test asserts there is no horizontal overflow.
 
 ## Java version and TBtools plugin (2026-11)
 
 The user asked for zotlet without Node, as a TBtools-II plugin like their svguest (TBtools ships Java and
-JxBrowser, no Node). `java/src/zotlet/` is a port of `src/` to Java 11 (`--release 11`, java.base +
-java.desktop only: no `java.net.http`, no `jdk.httpserver`, in case TBtools' runtime lacks them). The
-Node version stays; both serve the same `public/` and read/write the same `~/.zotlet` files.
+JxBrowser, no Node). `java/src/zotlet/` was ported line by line from the Node app to Java 11
+(`--release 11`, java.base + java.desktop only: no `java.net.http`, no `jdk.httpserver`, in case TBtools'
+runtime lacks them), checked against it request by request, and then the Node app was removed
+(its answers live on in `test/fixtures/golden.json`).
 
-- **Parity is the rule.** `test/java.test.js` builds the Java version (skipped without a JDK) and sends the
-  same API requests, exports, PDFs, style installs and word-processor sessions (GenOffice TCP, LibreOffice
-  TCP, HTTP 23119, Word documents written by Zotero) to a Node and a Java server, comparing the answers
-  and the resulting documents after normalizing random ids. Change both versions together and extend that test.
 - `Json.java` writes exactly like `JSON.stringify` (key order, number format, 2-space pretty print);
   `Text.java` has JavaScript's `\s`, `trim`, `encodeURIComponent` / `decodeURIComponent` (Java's differ).
 - **citeproc-js runs in Rhino 1.7.15.1** (pure Java, MPL 2.0; `lib/rhino-*.jar`), loaded from
@@ -347,8 +358,13 @@ Node version stays; both serve the same `public/` and read/write the same `~/.zo
   plugin.** The README is written for the Java version: start it with your own Java
   (`start-java.command` / `start-java.sh`, which builds `java/build/lib/zotlet.jar` on first start or when
   `java/src` changed); TBtools-II users can also use `zotlet.plugin` (repository root; releases attach
-  `zotlet-<v>.plugin`), where the whole workflow happens inside TBtools. The Node app is kept as the
-  reference implementation for the parity tests and is only mentioned under Development.
+  `zotlet-<v>.plugin`), where the whole workflow happens inside TBtools.
+- **Plugin removed or reinstalled while TBtools runs** (seen 12 Nov 2026: the old in-TBtools server kept
+  port 23121 and answered `{"error":"…/.Plugin/zotlet/public/index.html"}`, and start-java opened that
+  broken page). Now the plugin remembers its folder and class loader in system properties and, when
+  opened from a different or emptied folder, calls `Main.stopEmbedded()` on the old one and starts
+  again; the server answers a clear text when its files are gone; and `zotlet web` refuses to reuse a
+  zotlet on its port whose page does not load (`Main.pageWorks`), telling the user to quit TBtools.
 - First run in TBtools-II 2.568 **Intel build on a Mac** (12 Nov 2026): `new WebGuiJPanel(...)` threw
   JxBrowser's `InvalidLicenseException` and TBtools said "no plugin menu could be registered". Decompiled
   (classes the user sent): `WebGuiJPanel(url, b)` sets `jxbrowser.license.key` from
@@ -385,9 +401,9 @@ subsystems and was unreliable. What was found and what was done:
 ## Working style for future changes
 
 - Keep it small: no frameworks, no bundler, no new runtime dependencies without a strong reason.
-- Put behavior in `src/` where it is testable; keep `public/app.js` to UI wiring.
+- Put behavior in `java/src/zotlet/` where it is testable; keep `public/app.js` to UI wiring.
 - Add or update a test with every fix; run `npm test` before committing.
-- Don't commit `dist/`, `node_modules/` or anything from a real `~/.zotlet`. The exception is
+- Don't commit `dist/`, `java/build/`, `node_modules/` or anything from a real `~/.zotlet`. The exception is
   `zotlet.plugin` at the top of the repository (the user's request, like svguest.plugin): after changing
   `java/`, `public/`, `styles/` or `locales/`, rebuild it with
   `TBTOOLS_JAR=<TBtools main jar or its classes> sh scripts/package-java.sh` and commit it.

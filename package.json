@@ -1,22 +1,14 @@
 {
   "name": "zotlet",
   "version": "0.2.0",
-  "description": "A minimal, personal reference manager: projects, DOI/PMID import, citeproc citations, CSL JSON/BibTeX/RIS export",
+  "description": "A minimal, personal reference manager (Java; also a TBtools plugin). This file only holds the version and the test script.",
   "license": "MIT",
   "private": true,
   "type": "module",
-  "bin": {
-    "zotlet": "zotlet.js"
-  },
-  "engines": {
-    "node": ">=18.17"
-  },
   "scripts": {
-    "start": "node zotlet.js web --open",
-    "test": "node --test",
-    "package": "sh scripts/package.sh"
-  },
-  "dependencies": {
-    "citeproc": "^2.4.63"
+    "start": "sh start-java.sh",
+    "build": "sh scripts/build-java.sh",
+    "package": "sh scripts/package-java.sh",
+    "test": "node --test"
   }
 }

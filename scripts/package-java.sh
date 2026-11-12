@@ -18,7 +18,7 @@ mkdir -p "$APP/lib" "$APP/citeproc" dist
 
 # The application folder, shared by the plugin and the stand-alone zip.
 cp -R public styles locales "$APP/"
-cp src/quickformat.jxa.js LICENSE "$APP/"
+cp java/quickformat.jxa.js LICENSE "$APP/"
 cp "$BUILD/lib/zotlet.jar" "$BUILD"/lib/rhino-*.jar "$APP/lib/"
 cp "$BUILD/citeproc/citeproc_commonjs.js" "$BUILD/citeproc/LICENSE" "$APP/citeproc/"
 cat > "$APP/THIRD-PARTY.txt" <<'EOF'

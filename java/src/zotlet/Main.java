@@ -55,6 +55,18 @@ public final class Main {
         }
     }
 
+    /** Does the zotlet on this port still serve its page (its files can vanish under a running TBtools plugin)? */
+    static boolean pageWorks(int port) {
+        try {
+            HttpURLConnection c = (HttpURLConnection) new URL("http://127.0.0.1:" + port + "/").openConnection(java.net.Proxy.NO_PROXY);
+            c.setConnectTimeout(1500);
+            c.setReadTimeout(3000);
+            try { return c.getResponseCode() == 200; } finally { c.disconnect(); }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private static int intOption(List<String> args, String name, String env, int fallback) {
         int i = args.indexOf(name);
         String v = i >= 0 && i + 1 < args.size() ? args.get(i + 1) : System.getenv(env);
@@ -91,6 +103,10 @@ public final class Main {
         } catch (BindException e) {
             if (isZotlet(o.port)) {
                 String url = "http://127.0.0.1:" + o.port + "/";
+                if (!pageWorks(o.port)) {
+                    throw new UserError("A zotlet is answering at " + url + " but its files are missing. It is probably the TBtools plugin "
+                        + "after it was removed or reinstalled: quit TBtools, then start zotlet again.");
+                }
                 System.out.println(yellow("•") + " zotlet is already running at " + url);
                 if (open) Picker.openBrowser(url);
                 return;
@@ -199,7 +215,7 @@ public final class Main {
      */
     public static synchronized String startEmbedded(String appHome) throws Exception {
         if (embedded != null) return embedded.url;
-        if (isZotlet(DEFAULT_PORT)) return "http://127.0.0.1:" + DEFAULT_PORT + "/";
+        if (isZotlet(DEFAULT_PORT) && pageWorks(DEFAULT_PORT)) return "http://127.0.0.1:" + DEFAULT_PORT + "/";
         Server.Options o = new Server.Options();
         if (appHome != null) o.home = Home.at(java.nio.file.Paths.get(appHome));
         o.integration = true;
@@ -212,5 +228,13 @@ public final class Main {
         }
         System.out.println("zotlet: " + embedded.url + " (data: " + embedded.store.libraryFile + ")");
         return embedded.url;
+    }
+
+    /** Stop the zotlet started by startEmbedded (the plugin calls this when its folder was replaced). */
+    public static synchronized void stopEmbedded() {
+        if (embedded == null) return;
+        embedded.close();
+        embedded = null;
+        System.out.println("zotlet: stopped");
     }
 }

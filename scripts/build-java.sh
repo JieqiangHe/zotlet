@@ -2,7 +2,7 @@
 # Build the Java version of zotlet into java/build:
 #   java/build/lib/zotlet.jar          zotlet itself (java/src)
 #   java/build/lib/rhino-1.7.15.1.jar  Rhino, the JavaScript engine that runs citeproc-js
-#   java/build/citeproc/               citeproc-js (from node_modules, else from the npm registry)
+#   java/build/citeproc/               citeproc-js (from the npm registry)
 # Needs a JDK 11+ (javac, jar). Rhino and citeproc are downloaded once and checked by SHA-256.
 set -eu
 cd "$(dirname "$0")/.."
@@ -28,12 +28,11 @@ mkdir -p "$BUILD/lib" "$BUILD/citeproc" "$BUILD/download"
 
 fetch "https://repo1.maven.org/maven2/org/mozilla/rhino/$RHINO_VERSION/rhino-$RHINO_VERSION.jar" "$BUILD/lib/rhino-$RHINO_VERSION.jar" "$RHINO_SHA256"
 
-if [ -f node_modules/citeproc/citeproc_commonjs.js ] && grep -q "\"version\": \"$CITEPROC_VERSION\"" node_modules/citeproc/package.json; then
-  cp node_modules/citeproc/citeproc_commonjs.js node_modules/citeproc/LICENSE "$BUILD/citeproc/"
-elif [ ! -f "$BUILD/citeproc/citeproc_commonjs.js" ]; then
+if [ ! -f "$BUILD/citeproc/citeproc_commonjs.js" ] || ! grep -q "$CITEPROC_VERSION" "$BUILD/citeproc/VERSION" 2>/dev/null; then
   fetch "https://registry.npmjs.org/citeproc/-/citeproc-$CITEPROC_VERSION.tgz" "$BUILD/download/citeproc.tgz" "$CITEPROC_SHA256"
   tar -xzf "$BUILD/download/citeproc.tgz" -C "$BUILD/download"
   cp "$BUILD/download/package/citeproc_commonjs.js" "$BUILD/download/package/LICENSE" "$BUILD/citeproc/"
+  echo "$CITEPROC_VERSION" > "$BUILD/citeproc/VERSION"
 fi
 
 rm -rf "$BUILD/classes"

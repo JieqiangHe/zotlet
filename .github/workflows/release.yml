@@ -1,5 +1,5 @@
-# Build dist/zotlet-<version>.zip (scripts/package.sh) and the Java builds, zotlet-<version>.plugin
-# for TBtools and zotlet-java-<version>.zip (scripts/package-java.sh), and publish them as the
+# Build zotlet-java-<version>.zip and zotlet-<version>.plugin for TBtools (scripts/package-java.sh;
+# the tests need Node, the app itself does not) and publish them as the
 # GitHub release v<version> (version from package.json). Runs when a tag v* is
 # pushed, or by hand (Actions → release → Run workflow), which creates the tag.
 name: release
@@ -28,7 +28,6 @@ jobs:
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           if [ "$GITHUB_REF_TYPE" = tag ]; then test "v$VERSION" = "$GITHUB_REF_NAME"; fi
       - run: npm test
-      - run: npm run package
       - run: sh scripts/package-java.sh
       - name: Release notes from CHANGELOG.md
         run: |
@@ -41,6 +40,6 @@ jobs:
           if gh release view "v$VERSION" > /dev/null 2>&1; then
             gh release edit "v$VERSION" --title "zotlet $VERSION" --notes-file notes.md
           else
-            gh release create "v$VERSION" "dist/zotlet-$VERSION.zip" "dist/zotlet-$VERSION.plugin" "dist/zotlet-java-$VERSION.zip" \
+            gh release create "v$VERSION" "dist/zotlet-$VERSION.plugin" "dist/zotlet-java-$VERSION.zip" \
               --target "$GITHUB_SHA" --title "zotlet $VERSION" --notes-file notes.md
           fi

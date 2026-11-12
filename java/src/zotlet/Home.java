@@ -8,7 +8,7 @@ import java.nio.file.Paths;
 /**
  * Where zotlet's own files are: the web page, the built-in styles, the locale, citeproc-js and the
  * native picker script. In a release (and in the TBtools plugin) they sit next to lib/zotlet.jar;
- * in the source tree they are in the repository (citeproc from node_modules or java/build).
+ * in the source tree they are in the repository (citeproc in java/build, downloaded by scripts/build-java.sh).
  */
 public final class Home {
     public final Path root, pub, styles, locale, citeproc, quickformat;
@@ -19,9 +19,8 @@ public final class Home {
         this.styles = root.resolve("styles");
         this.locale = root.resolve("locales").resolve("locales-en-US.xml");
         this.citeproc = first(root.resolve("citeproc").resolve("citeproc_commonjs.js"),
-            root.resolve("java").resolve("build").resolve("citeproc").resolve("citeproc_commonjs.js"),
-            root.resolve("node_modules").resolve("citeproc").resolve("citeproc_commonjs.js"));
-        this.quickformat = first(root.resolve("quickformat.jxa.js"), root.resolve("src").resolve("quickformat.jxa.js"));
+            root.resolve("java").resolve("build").resolve("citeproc").resolve("citeproc_commonjs.js"));
+        this.quickformat = first(root.resolve("quickformat.jxa.js"), root.resolve("java").resolve("quickformat.jxa.js"));
     }
 
     private static Path first(Path... options) {

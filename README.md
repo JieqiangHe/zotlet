@@ -113,11 +113,10 @@ set `ZOTLET_HOME` (data then goes to `$ZOTLET_HOME/.zotlet/`).
 - `sh scripts/build-java.sh` builds `java/build/lib/zotlet.jar`; `sh scripts/package-java.sh` builds the
   TBtools plugin (also copied to `zotlet.plugin`) and the Java zip. Set `TBTOOLS_JAR` to TBtools' main jar
   to compile the plugin against it.
-- Tests: `npm test` (needs Node). zotlet started as a Node app (`zotlet.js`, `src/`), which is kept as the
-  reference: `test/java.test.js` sends the same API requests and word-processor sessions to both and
-  requires identical answers. The Node app still runs (`npm start`) if you prefer it.
+- `npm test` runs the tests (Node is used for testing only): end-to-end checks of the API, exports and
+  word-processor sessions against recorded answers, browser tests with Playwright, and unit checks.
 - The `release` GitHub Actions workflow (run by hand, or by pushing a tag `v<version>`) builds the plugin and
-  the zips and publishes them as a GitHub release, with the version's section of
+  the zip and publishes them as a GitHub release, with the version's section of
   [CHANGELOG.md](CHANGELOG.md) as its notes.
 
 [CLAUDE.md](CLAUDE.md) describes the requirements and design.

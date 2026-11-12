@@ -1,0 +1,2685 @@
+{
+ "API: imports, projects, edits, citations and errors #1": {
+  "status": 200,
+  "body": {
+   "items": [],
+   "projects": [],
+   "added": {},
+   "paths": {
+    "library": "PATH",
+    "state": "PATH"
+   },
+   "styles": [
+    {
+     "id": "nature",
+     "title": "Nature",
+     "label": "Nature",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "science",
+     "title": "Science",
+     "label": "Science",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "cell",
+     "title": "Cell",
+     "label": "Cell",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "apa",
+     "title": "APA Style 7th edition",
+     "label": "APA 7th",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    }
+   ]
+  }
+ },
+ "API: imports, projects, edits, citations and errors #2": {
+  "status": 200,
+  "body": {
+   "results": [
+    {
+     "input": "https://doi.org/10.1016/j.plaphy.2026.111729",
+     "status": "added",
+     "id": "zhang2026",
+     "title": "Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought & heat stress"
+    },
+    {
+     "input": "10.1038/s41586-020-0001-x",
+     "status": "added",
+     "id": "lovelace2020",
+     "title": "Second paper"
+    },
+    {
+     "input": "PMID:31452104",
+     "status": "added",
+     "id": "doe2019",
+     "title": "A PubMed-only record"
+    },
+    {
+     "input": "not-an-id",
+     "status": "error",
+     "message": "Not a DOI or PMID"
+    }
+   ]
+  }
+ },
+ "API: imports, projects, edits, citations and errors #3": {
+  "status": 200,
+  "body": {
+   "results": [
+    {
+     "input": "10.1016/J.PLAPHY.2026.111729",
+     "status": "duplicate",
+     "id": "zhang2026",
+     "title": "Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought & heat stress"
+    }
+   ]
+  }
+ },
+ "API: imports, projects, edits, citations and errors #4": {
+  "status": 400,
+  "body": {
+   "error": "Paste one or more DOIs or PMIDs"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #5": {
+  "status": 200,
+  "body": {
+   "id": "uuid0",
+   "name": "Review paper",
+   "itemIds": [],
+   "created": "TIME"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #6": {
+  "status": 409,
+  "body": {
+   "error": "A project named \"review PAPER\" already exists"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #7": {
+  "status": 400,
+  "body": {
+   "error": "Enter a project name"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #8": {
+  "status": 200,
+  "body": {
+   "id": "uuid0",
+   "name": "Review paper v2",
+   "itemIds": [],
+   "created": "TIME"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #9": {
+  "status": 200,
+  "body": {
+   "id": "uuid0",
+   "name": "Second project",
+   "itemIds": [],
+   "created": "TIME"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #10": {
+  "status": 409,
+  "body": {
+   "error": "A project named \"SECOND project\" already exists"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #11": {
+  "status": 404,
+  "body": {
+   "error": "Project not found"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #12": {
+  "status": 200,
+  "body": {
+   "results": [
+    {
+     "input": "10.1038/s41586-020-0001-x",
+     "status": "duplicate",
+     "id": "lovelace2020",
+     "title": "Second paper"
+    }
+   ]
+  }
+ },
+ "API: imports, projects, edits, citations and errors #13": {
+  "status": 200,
+  "body": {
+   "added": 1
+  }
+ },
+ "API: imports, projects, edits, citations and errors #14": {
+  "status": 400,
+  "body": {
+   "error": "Expected a list of ids"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #15": {
+  "status": 200,
+  "body": {
+   "removed": 1
+  }
+ },
+ "API: imports, projects, edits, citations and errors #16": {
+  "status": 200,
+  "body": {
+   "items": [
+    {
+     "id": "zhang2026",
+     "type": "article-journal",
+     "title": "Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought & heat stress",
+     "container-title": "Plant Physiology and Biochemistry",
+     "volume": "232",
+     "page": "111729",
+     "DOI": "10.1016/j.plaphy.2026.111729",
+     "URL": "https://doi.org/10.1016/j.plaphy.2026.111729",
+     "ISSN": "0981-9428",
+     "publisher": "Elsevier BV",
+     "abstract": "Plants face combined stresses.",
+     "language": "en",
+     "author": [
+      {
+       "family": "Zhang",
+       "given": "Wei"
+      },
+      {
+       "family": "García-López",
+       "given": "María José"
+      },
+      {
+       "family": "Beethoven",
+       "given": "Ludwig",
+       "non-dropping-particle": "van"
+      },
+      {
+       "literal": "Plant Stress Consortium"
+      },
+      {
+       "family": "Li",
+       "given": "Jun"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2026,
+        3
+       ]
+      ]
+     }
+    },
+    {
+     "id": "lovelace2020",
+     "type": "article-journal",
+     "title": "Second paper",
+     "container-title": "Nature",
+     "volume": "577",
+     "page": "1-5",
+     "DOI": "10.1038/s41586-020-0001-x",
+     "author": [
+      {
+       "family": "Lovelace",
+       "given": "Ada"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2020,
+        1,
+        2
+       ]
+      ]
+     }
+    },
+    {
+     "id": "doe2019",
+     "type": "article-journal",
+     "title": "A PubMed-only record",
+     "container-title": "Nature communications",
+     "container-title-short": "Nat Commun",
+     "volume": "10",
+     "issue": "1",
+     "page": "3812",
+     "PMID": "31452104",
+     "PMCID": "PMC6710000",
+     "author": [
+      {
+       "family": "Doe",
+       "given": "Jane"
+      },
+      {
+       "family": "Roe",
+       "given": "Richard"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019,
+        8,
+        27
+       ]
+      ]
+     },
+     "accessed": {
+      "date-parts": [
+       [
+        2026,
+        11,
+        3
+       ]
+      ]
+     }
+    }
+   ],
+   "projects": [
+    {
+     "id": "uuid0",
+     "name": "Review paper v2",
+     "created": "TIME",
+     "itemIds": [
+      "lovelace2020"
+     ]
+    },
+    {
+     "id": "uuid1",
+     "name": "Second project",
+     "created": "TIME",
+     "itemIds": []
+    }
+   ],
+   "added": {
+    "zhang2026": "TIME",
+    "lovelace2020": "TIME",
+    "doe2019": "TIME"
+   },
+   "paths": {
+    "library": "PATH",
+    "state": "PATH"
+   },
+   "styles": [
+    {
+     "id": "nature",
+     "title": "Nature",
+     "label": "Nature",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "science",
+     "title": "Science",
+     "label": "Science",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "cell",
+     "title": "Cell",
+     "label": "Cell",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "apa",
+     "title": "APA Style 7th edition",
+     "label": "APA 7th",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    }
+   ]
+  }
+ },
+ "API: imports, projects, edits, citations and errors #17": {
+  "status": 200,
+  "body": {
+   "ok": true
+  }
+ },
+ "API: imports, projects, edits, citations and errors #18": {
+  "status": 404,
+  "body": {
+   "error": "Project not found"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #19": {
+  "status": 200,
+  "body": {
+   "items": [
+    {
+     "id": "zhang2026",
+     "type": "article-journal",
+     "title": "Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought & heat stress",
+     "container-title": "Plant Physiology and Biochemistry",
+     "volume": "232",
+     "page": "111729",
+     "DOI": "10.1016/j.plaphy.2026.111729",
+     "URL": "https://doi.org/10.1016/j.plaphy.2026.111729",
+     "ISSN": "0981-9428",
+     "publisher": "Elsevier BV",
+     "abstract": "Plants face combined stresses.",
+     "language": "en",
+     "author": [
+      {
+       "family": "Zhang",
+       "given": "Wei"
+      },
+      {
+       "family": "García-López",
+       "given": "María José"
+      },
+      {
+       "family": "Beethoven",
+       "given": "Ludwig",
+       "non-dropping-particle": "van"
+      },
+      {
+       "literal": "Plant Stress Consortium"
+      },
+      {
+       "family": "Li",
+       "given": "Jun"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2026,
+        3
+       ]
+      ]
+     }
+    },
+    {
+     "id": "lovelace2020",
+     "type": "article-journal",
+     "title": "Second paper",
+     "container-title": "Nature",
+     "volume": "577",
+     "page": "1-5",
+     "DOI": "10.1038/s41586-020-0001-x",
+     "author": [
+      {
+       "family": "Lovelace",
+       "given": "Ada"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2020,
+        1,
+        2
+       ]
+      ]
+     }
+    },
+    {
+     "id": "doe2019",
+     "type": "article-journal",
+     "title": "A PubMed-only record",
+     "container-title": "Nature communications",
+     "container-title-short": "Nat Commun",
+     "volume": "10",
+     "issue": "1",
+     "page": "3812",
+     "PMID": "31452104",
+     "PMCID": "PMC6710000",
+     "author": [
+      {
+       "family": "Doe",
+       "given": "Jane"
+      },
+      {
+       "family": "Roe",
+       "given": "Richard"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019,
+        8,
+        27
+       ]
+      ]
+     },
+     "accessed": {
+      "date-parts": [
+       [
+        2026,
+        11,
+        3
+       ]
+      ]
+     }
+    }
+   ],
+   "projects": [
+    {
+     "id": "uuid0",
+     "name": "Second project",
+     "created": "TIME",
+     "itemIds": []
+    }
+   ],
+   "added": {
+    "zhang2026": "TIME",
+    "lovelace2020": "TIME",
+    "doe2019": "TIME"
+   },
+   "paths": {
+    "library": "PATH",
+    "state": "PATH"
+   },
+   "styles": [
+    {
+     "id": "nature",
+     "title": "Nature",
+     "label": "Nature",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "science",
+     "title": "Science",
+     "label": "Science",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "cell",
+     "title": "Cell",
+     "label": "Cell",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "apa",
+     "title": "APA Style 7th edition",
+     "label": "APA 7th",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    }
+   ]
+  }
+ },
+ "API: imports, projects, edits, citations and errors #20": {
+  "status": 200,
+  "body": {
+   "style": {
+    "id": "nature",
+    "title": "Nature"
+   },
+   "citation": {
+    "html": "<sup>1–3</sup>",
+    "text": "1–3"
+   },
+   "bibliography": {
+    "html": "<div class=\"csl-bib-body\"><div class=\"csl-entry\">\n    <div class=\"csl-left-margin\">1.</div><div class=\"csl-right-inline\">Zhang, W., García-López, M. J., van Beethoven, L., Plant Stress Consortium &#38; Li, J. Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought &#38; heat stress. <i>Plant Physiology and Biochemistry</i> <b>232</b>, 111729 (2026).</div>\n  </div>\n<div class=\"csl-entry\">\n    <div class=\"csl-left-margin\">2.</div><div class=\"csl-right-inline\">Lovelace, A. Second paper. <i>Nature</i> <b>577</b>, 1–5 (2020).</div>\n  </div>\n<div class=\"csl-entry\">\n    <div class=\"csl-left-margin\">3.</div><div class=\"csl-right-inline\">Doe, J. &#38; Roe, R. A PubMed-only record. <i>Nat Commun</i> <b>10</b>, 3812 (2019).</div>\n  </div></div>",
+    "entries": 3,
+    "text": "1. Zhang, W., García-López, M. J., van Beethoven, L., Plant Stress Consortium & Li, J. Transcriptomic and metabolomic insights into Arabidopsis responses to combined drought & heat stress. Plant Physiology and Biochemistry 232, 111729 (2026).\n2. Lovelace, A. Second paper. Nature 577, 1–5 (2020).\n3. Doe, J. & Roe, R. A PubMed-only record. Nat Commun 10, 3812 (2019)."
+   }
+  }
+ },
+ "API: imports, projects, edits, citations and errors #21": {
+  "status": 200,
+  "body": {
+   "style": {
+    "id": "apa",
+    "title": "APA Style 7th edition"
+   },
+   "citation": {
+    "html": "(Lovelace, 2020; Zhang et al., 2026)",
+    "text": "(Lovelace, 2020; Zhang et al., 2026)"
+   },
+   "bibliography": {
+    "html": "<div class=\"csl-bib-body\"><div class=\"csl-entry\">Lovelace, A. (2020). Second paper. <i>Nature</i>, <i>577</i>, 1–5. https://doi.org/10.1038/s41586-020-0001-x</div>\n<div class=\"csl-entry\">Zhang, W., García-López, M. J., van Beethoven, L., Plant Stress Consortium, &#38; Li, J. (2026). Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought &#38; heat stress. <i>Plant Physiology and Biochemistry</i>, <i>232</i>, 111729. https://doi.org/10.1016/j.plaphy.2026.111729</div></div>",
+    "entries": 2,
+    "text": "Lovelace, A. (2020). Second paper. Nature, 577, 1–5. https://doi.org/10.1038/s41586-020-0001-x\nZhang, W., García-López, M. J., van Beethoven, L., Plant Stress Consortium, & Li, J. (2026). Transcriptomic and metabolomic insights into Arabidopsis responses to combined drought & heat stress. Plant Physiology and Biochemistry, 232, 111729. https://doi.org/10.1016/j.plaphy.2026.111729"
+   }
+  }
+ },
+ "API: imports, projects, edits, citations and errors #22": {
+  "status": 200,
+  "body": {
+   "style": {
+    "id": "cell",
+    "title": "Cell"
+   },
+   "citation": {
+    "html": "<sup>1</sup>",
+    "text": "1"
+   },
+   "bibliography": {
+    "html": "<div class=\"csl-bib-body\"><div class=\"csl-entry\">\n    <div class=\"csl-left-margin\">1.</div><div class=\"csl-right-inline\">Lovelace, A. (2020). Second paper. Nature <i>577</i>, 1–5. https://doi.org/10.1038/s41586-020-0001-x.</div>\n  </div></div>",
+    "entries": 1,
+    "text": "1. Lovelace, A. (2020). Second paper. Nature 577, 1–5. https://doi.org/10.1038/s41586-020-0001-x."
+   }
+  }
+ },
+ "API: imports, projects, edits, citations and errors #23": {
+  "status": 400,
+  "body": {
+   "error": "No references to format"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #24": {
+  "status": 400,
+  "body": {
+   "error": "Unknown citation style \"unknown\""
+  }
+ },
+ "API: imports, projects, edits, citations and errors #25": {
+  "status": 200,
+  "body": {
+   "status": "added",
+   "id": "knuth1984",
+   "item": {
+    "id": "knuth1984",
+    "title": "Hand-made <i>TeX</i>",
+    "author": [
+     {
+      "family": "Knuth",
+      "given": "Donald"
+     },
+     {
+      "literal": "Org Name"
+     }
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       1984
+      ]
+     ]
+    },
+    "type": "book",
+    "volume": "12"
+   }
+  }
+ },
+ "API: imports, projects, edits, citations and errors #26": {
+  "status": 409,
+  "body": {
+   "error": "That DOI/PMID is already in the library as \"zhang2026\""
+  }
+ },
+ "API: imports, projects, edits, citations and errors #27": {
+  "status": 400,
+  "body": {
+   "error": "A title is required"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #28": {
+  "status": 200,
+  "body": {
+   "item": {
+    "id": "knuth1984",
+    "title": "The TeXbook",
+    "author": [
+     {
+      "family": "Knuth",
+      "given": "Donald"
+     },
+     {
+      "literal": "Org Name"
+     }
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       1984
+      ]
+     ]
+    },
+    "type": "book",
+    "publisher": "Addison-Wesley"
+   }
+  }
+ },
+ "API: imports, projects, edits, citations and errors #29": {
+  "status": 400,
+  "body": {
+   "error": "A title is required"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #30": {
+  "status": 400,
+  "body": {
+   "error": "Unsupported field: bogus"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #31": {
+  "status": 404,
+  "body": {
+   "error": "Reference not found"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #32": {
+  "status": 200,
+  "body": {
+   "added": 2,
+   "duplicates": 0,
+   "skipped": 2,
+   "ids": [
+    "elsewhere2001",
+    "arraytitle"
+   ]
+  }
+ },
+ "API: imports, projects, edits, citations and errors #33": {
+  "status": 400,
+  "body": {
+   "error": "No references found in this file (expected CSL JSON)"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #34": {
+  "status": 200,
+  "body": {
+   "removed": 1
+  }
+ },
+ "API: imports, projects, edits, citations and errors #35": {
+  "status": 200,
+  "body": {
+   "items": [
+    {
+     "id": "zhang2026",
+     "type": "article-journal",
+     "title": "Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought & heat stress",
+     "container-title": "Plant Physiology and Biochemistry",
+     "volume": "232",
+     "page": "111729",
+     "DOI": "10.1016/j.plaphy.2026.111729",
+     "URL": "https://doi.org/10.1016/j.plaphy.2026.111729",
+     "ISSN": "0981-9428",
+     "publisher": "Elsevier BV",
+     "abstract": "Plants face combined stresses.",
+     "language": "en",
+     "author": [
+      {
+       "family": "Zhang",
+       "given": "Wei"
+      },
+      {
+       "family": "García-López",
+       "given": "María José"
+      },
+      {
+       "family": "Beethoven",
+       "given": "Ludwig",
+       "non-dropping-particle": "van"
+      },
+      {
+       "literal": "Plant Stress Consortium"
+      },
+      {
+       "family": "Li",
+       "given": "Jun"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2026,
+        3
+       ]
+      ]
+     }
+    },
+    {
+     "id": "lovelace2020",
+     "type": "article-journal",
+     "title": "Second paper",
+     "container-title": "Nature",
+     "volume": "577",
+     "page": "1-5",
+     "DOI": "10.1038/s41586-020-0001-x",
+     "author": [
+      {
+       "family": "Lovelace",
+       "given": "Ada"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2020,
+        1,
+        2
+       ]
+      ]
+     }
+    },
+    {
+     "id": "doe2019",
+     "type": "article-journal",
+     "title": "A PubMed-only record",
+     "container-title": "Nature communications",
+     "container-title-short": "Nat Commun",
+     "volume": "10",
+     "issue": "1",
+     "page": "3812",
+     "PMID": "31452104",
+     "PMCID": "PMC6710000",
+     "author": [
+      {
+       "family": "Doe",
+       "given": "Jane"
+      },
+      {
+       "family": "Roe",
+       "given": "Richard"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019,
+        8,
+        27
+       ]
+      ]
+     },
+     "accessed": {
+      "date-parts": [
+       [
+        2026,
+        11,
+        3
+       ]
+      ]
+     }
+    },
+    {
+     "id": "elsewhere2001",
+     "type": "book",
+     "title": "From Zotero",
+     "author": [
+      {
+       "family": "Elsewhere",
+       "given": "E",
+       "dropping-particle": "van"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2001
+       ]
+      ]
+     }
+    },
+    {
+     "id": "arraytitle",
+     "type": "article-journal",
+     "title": "Array title",
+     "DOI": "10.5555/ABC"
+    }
+   ],
+   "projects": [
+    {
+     "id": "uuid0",
+     "name": "Second project",
+     "created": "TIME",
+     "itemIds": []
+    }
+   ],
+   "added": {
+    "zhang2026": "TIME",
+    "lovelace2020": "TIME",
+    "doe2019": "TIME",
+    "elsewhere2001": "TIME",
+    "arraytitle": "TIME"
+   },
+   "paths": {
+    "library": "PATH",
+    "state": "PATH"
+   },
+   "styles": [
+    {
+     "id": "nature",
+     "title": "Nature",
+     "label": "Nature",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "science",
+     "title": "Science",
+     "label": "Science",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "cell",
+     "title": "Cell",
+     "label": "Cell",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "apa",
+     "title": "APA Style 7th edition",
+     "label": "APA 7th",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    }
+   ]
+  }
+ },
+ "API: imports, projects, edits, citations and errors #36": {
+  "headers": {
+   "content-type": "application/vnd.citationstyles.csl+json; charset=utf-8",
+   "content-disposition": "attachment; filename=\"library.json\"; filename*=UTF-8''library.json",
+   "x-item-count": "5"
+  },
+  "body": "[\n  {\n    \"id\": \"zhang2026\",\n    \"type\": \"article-journal\",\n    \"title\": \"Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought & heat stress\",\n    \"container-title\": \"Plant Physiology and Biochemistry\",\n    \"volume\": \"232\",\n    \"page\": \"111729\",\n    \"DOI\": \"10.1016/j.plaphy.2026.111729\",\n    \"URL\": \"https://doi.org/10.1016/j.plaphy.2026.111729\",\n    \"ISSN\": \"0981-9428\",\n    \"publisher\": \"Elsevier BV\",\n    \"abstract\": \"Plants face combined stresses.\",\n    \"language\": \"en\",\n    \"author\": [\n      {\n        \"family\": \"Zhang\",\n        \"given\": \"Wei\"\n      },\n      {\n        \"family\": \"García-López\",\n        \"given\": \"María José\"\n      },\n      {\n        \"family\": \"Beethoven\",\n        \"given\": \"Ludwig\",\n        \"non-dropping-particle\": \"van\"\n      },\n      {\n        \"literal\": \"Plant Stress Consortium\"\n      },\n      {\n        \"family\": \"Li\",\n        \"given\": \"Jun\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2026,\n          3\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"lovelace2020\",\n    \"type\": \"article-journal\",\n    \"title\": \"Second paper\",\n    \"container-title\": \"Nature\",\n    \"volume\": \"577\",\n    \"page\": \"1-5\",\n    \"DOI\": \"10.1038/s41586-020-0001-x\",\n    \"author\": [\n      {\n        \"family\": \"Lovelace\",\n        \"given\": \"Ada\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2020,\n          1,\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"doe2019\",\n    \"type\": \"article-journal\",\n    \"title\": \"A PubMed-only record\",\n    \"container-title\": \"Nature communications\",\n    \"container-title-short\": \"Nat Commun\",\n    \"volume\": \"10\",\n    \"issue\": \"1\",\n    \"page\": \"3812\",\n    \"PMID\": \"31452104\",\n    \"PMCID\": \"PMC6710000\",\n    \"author\": [\n      {\n        \"family\": \"Doe\",\n        \"given\": \"Jane\"\n      },\n      {\n        \"family\": \"Roe\",\n        \"given\": \"Richard\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2019,\n          8,\n          27\n        ]\n      ]\n    },\n    \"accessed\": {\n      \"date-parts\": [\n        [\n          2026,\n          11,\n          3\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"elsewhere2001\",\n    \"type\": \"book\",\n    \"title\": \"From Zotero\",\n    \"author\": [\n      {\n        \"family\": \"Elsewhere\",\n        \"given\": \"E\",\n        \"dropping-particle\": \"van\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2001\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"arraytitle\",\n    \"type\": \"article-journal\",\n    \"title\": \"Array title\",\n    \"DOI\": \"10.5555/ABC\"\n  }\n]\n"
+ },
+ "API: imports, projects, edits, citations and errors #37": {
+  "headers": {
+   "content-type": "application/vnd.citationstyles.csl+json; charset=utf-8",
+   "content-disposition": "attachment; filename=\"Thesis ch. 1.json\"; filename*=UTF-8''Thesis%20ch.%201.json",
+   "x-item-count": "1"
+  },
+  "body": "[\n  {\n    \"id\": \"zhang2026\",\n    \"type\": \"article-journal\",\n    \"title\": \"Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought & heat stress\",\n    \"container-title\": \"Plant Physiology and Biochemistry\",\n    \"volume\": \"232\",\n    \"page\": \"111729\",\n    \"DOI\": \"10.1016/j.plaphy.2026.111729\",\n    \"URL\": \"https://doi.org/10.1016/j.plaphy.2026.111729\",\n    \"ISSN\": \"0981-9428\",\n    \"publisher\": \"Elsevier BV\",\n    \"abstract\": \"Plants face combined stresses.\",\n    \"language\": \"en\",\n    \"author\": [\n      {\n        \"family\": \"Zhang\",\n        \"given\": \"Wei\"\n      },\n      {\n        \"family\": \"García-López\",\n        \"given\": \"María José\"\n      },\n      {\n        \"family\": \"Beethoven\",\n        \"given\": \"Ludwig\",\n        \"non-dropping-particle\": \"van\"\n      },\n      {\n        \"literal\": \"Plant Stress Consortium\"\n      },\n      {\n        \"family\": \"Li\",\n        \"given\": \"Jun\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2026,\n          3\n        ]\n      ]\n    }\n  }\n]\n"
+ },
+ "API: imports, projects, edits, citations and errors #38": {
+  "headers": {
+   "content-type": "application/vnd.citationstyles.csl+json; charset=utf-8",
+   "content-disposition": "attachment; filename=\"_n_code _quotes_.json\"; filename*=UTF-8''%C3%9Cn%C3%AFcode%20%E2%80%9Cquotes%E2%80%9D.json",
+   "x-item-count": "5"
+  },
+  "body": "[\n  {\n    \"id\": \"zhang2026\",\n    \"type\": \"article-journal\",\n    \"title\": \"Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought & heat stress\",\n    \"container-title\": \"Plant Physiology and Biochemistry\",\n    \"volume\": \"232\",\n    \"page\": \"111729\",\n    \"DOI\": \"10.1016/j.plaphy.2026.111729\",\n    \"URL\": \"https://doi.org/10.1016/j.plaphy.2026.111729\",\n    \"ISSN\": \"0981-9428\",\n    \"publisher\": \"Elsevier BV\",\n    \"abstract\": \"Plants face combined stresses.\",\n    \"language\": \"en\",\n    \"author\": [\n      {\n        \"family\": \"Zhang\",\n        \"given\": \"Wei\"\n      },\n      {\n        \"family\": \"García-López\",\n        \"given\": \"María José\"\n      },\n      {\n        \"family\": \"Beethoven\",\n        \"given\": \"Ludwig\",\n        \"non-dropping-particle\": \"van\"\n      },\n      {\n        \"literal\": \"Plant Stress Consortium\"\n      },\n      {\n        \"family\": \"Li\",\n        \"given\": \"Jun\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2026,\n          3\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"lovelace2020\",\n    \"type\": \"article-journal\",\n    \"title\": \"Second paper\",\n    \"container-title\": \"Nature\",\n    \"volume\": \"577\",\n    \"page\": \"1-5\",\n    \"DOI\": \"10.1038/s41586-020-0001-x\",\n    \"author\": [\n      {\n        \"family\": \"Lovelace\",\n        \"given\": \"Ada\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2020,\n          1,\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"doe2019\",\n    \"type\": \"article-journal\",\n    \"title\": \"A PubMed-only record\",\n    \"container-title\": \"Nature communications\",\n    \"container-title-short\": \"Nat Commun\",\n    \"volume\": \"10\",\n    \"issue\": \"1\",\n    \"page\": \"3812\",\n    \"PMID\": \"31452104\",\n    \"PMCID\": \"PMC6710000\",\n    \"author\": [\n      {\n        \"family\": \"Doe\",\n        \"given\": \"Jane\"\n      },\n      {\n        \"family\": \"Roe\",\n        \"given\": \"Richard\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2019,\n          8,\n          27\n        ]\n      ]\n    },\n    \"accessed\": {\n      \"date-parts\": [\n        [\n          2026,\n          11,\n          3\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"elsewhere2001\",\n    \"type\": \"book\",\n    \"title\": \"From Zotero\",\n    \"author\": [\n      {\n        \"family\": \"Elsewhere\",\n        \"given\": \"E\",\n        \"dropping-particle\": \"van\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2001\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"arraytitle\",\n    \"type\": \"article-journal\",\n    \"title\": \"Array title\",\n    \"DOI\": \"10.5555/ABC\"\n  }\n]\n"
+ },
+ "API: imports, projects, edits, citations and errors #39": {
+  "headers": {
+   "content-type": "application/x-bibtex; charset=utf-8",
+   "content-disposition": "attachment; filename=\"library.bib\"; filename*=UTF-8''library.bib",
+   "x-item-count": "5"
+  },
+  "body": "@article{zhang2026,\n  author    = {Zhang, Wei and García-López, María José and van Beethoven, Ludwig and {Plant Stress Consortium} and Li, Jun},\n  title     = {{Transcriptomic and metabolomic insights into \\textit{Arabidopsis} responses to combined drought \\& heat stress}},\n  journal   = {Plant Physiology and Biochemistry},\n  year      = {2026},\n  month     = {mar},\n  volume    = {232},\n  pages     = {111729},\n  publisher = {Elsevier BV},\n  issn      = {0981-9428},\n  doi       = {10.1016/j.plaphy.2026.111729},\n  url       = {https://doi.org/10.1016/j.plaphy.2026.111729},\n  abstract  = {Plants face combined stresses.}\n}\n\n@article{lovelace2020,\n  author    = {Lovelace, Ada},\n  title     = {{Second paper}},\n  journal   = {Nature},\n  year      = {2020},\n  month     = {jan},\n  volume    = {577},\n  pages     = {1--5},\n  doi       = {10.1038/s41586-020-0001-x}\n}\n\n@article{doe2019,\n  author    = {Doe, Jane and Roe, Richard},\n  title     = {{A PubMed-only record}},\n  journal   = {Nature communications},\n  year      = {2019},\n  month     = {aug},\n  volume    = {10},\n  number    = {1},\n  pages     = {3812},\n  pmid      = {31452104},\n  pmcid     = {PMC6710000}\n}\n\n@book{elsewhere2001,\n  author    = {Elsewhere, E van},\n  title     = {{From Zotero}},\n  year      = {2001}\n}\n\n@article{arraytitle,\n  title     = {{Array title}},\n  doi       = {10.5555/ABC}\n}\n"
+ },
+ "API: imports, projects, edits, citations and errors #40": {
+  "headers": {
+   "content-type": "application/x-bibtex; charset=utf-8",
+   "content-disposition": "attachment; filename=\"Thesis ch. 1.bib\"; filename*=UTF-8''Thesis%20ch.%201.bib",
+   "x-item-count": "1"
+  },
+  "body": "@article{zhang2026,\n  author    = {Zhang, Wei and García-López, María José and van Beethoven, Ludwig and {Plant Stress Consortium} and Li, Jun},\n  title     = {{Transcriptomic and metabolomic insights into \\textit{Arabidopsis} responses to combined drought \\& heat stress}},\n  journal   = {Plant Physiology and Biochemistry},\n  year      = {2026},\n  month     = {mar},\n  volume    = {232},\n  pages     = {111729},\n  publisher = {Elsevier BV},\n  issn      = {0981-9428},\n  doi       = {10.1016/j.plaphy.2026.111729},\n  url       = {https://doi.org/10.1016/j.plaphy.2026.111729},\n  abstract  = {Plants face combined stresses.}\n}\n"
+ },
+ "API: imports, projects, edits, citations and errors #41": {
+  "headers": {
+   "content-type": "application/x-bibtex; charset=utf-8",
+   "content-disposition": "attachment; filename=\"_n_code _quotes_.bib\"; filename*=UTF-8''%C3%9Cn%C3%AFcode%20%E2%80%9Cquotes%E2%80%9D.bib",
+   "x-item-count": "5"
+  },
+  "body": "@article{zhang2026,\n  author    = {Zhang, Wei and García-López, María José and van Beethoven, Ludwig and {Plant Stress Consortium} and Li, Jun},\n  title     = {{Transcriptomic and metabolomic insights into \\textit{Arabidopsis} responses to combined drought \\& heat stress}},\n  journal   = {Plant Physiology and Biochemistry},\n  year      = {2026},\n  month     = {mar},\n  volume    = {232},\n  pages     = {111729},\n  publisher = {Elsevier BV},\n  issn      = {0981-9428},\n  doi       = {10.1016/j.plaphy.2026.111729},\n  url       = {https://doi.org/10.1016/j.plaphy.2026.111729},\n  abstract  = {Plants face combined stresses.}\n}\n\n@article{lovelace2020,\n  author    = {Lovelace, Ada},\n  title     = {{Second paper}},\n  journal   = {Nature},\n  year      = {2020},\n  month     = {jan},\n  volume    = {577},\n  pages     = {1--5},\n  doi       = {10.1038/s41586-020-0001-x}\n}\n\n@article{doe2019,\n  author    = {Doe, Jane and Roe, Richard},\n  title     = {{A PubMed-only record}},\n  journal   = {Nature communications},\n  year      = {2019},\n  month     = {aug},\n  volume    = {10},\n  number    = {1},\n  pages     = {3812},\n  pmid      = {31452104},\n  pmcid     = {PMC6710000}\n}\n\n@book{elsewhere2001,\n  author    = {Elsewhere, E van},\n  title     = {{From Zotero}},\n  year      = {2001}\n}\n\n@article{arraytitle,\n  title     = {{Array title}},\n  doi       = {10.5555/ABC}\n}\n"
+ },
+ "API: imports, projects, edits, citations and errors #42": {
+  "headers": {
+   "content-type": "application/x-research-info-systems; charset=utf-8",
+   "content-disposition": "attachment; filename=\"library.ris\"; filename*=UTF-8''library.ris",
+   "x-item-count": "5"
+  },
+  "body": "TY  - JOUR\r\nAU  - Zhang, Wei\r\nAU  - García-López, María José\r\nAU  - van Beethoven, Ludwig\r\nAU  - Plant Stress Consortium\r\nAU  - Li, Jun\r\nTI  - Transcriptomic and metabolomic insights into Arabidopsis responses to combined drought & heat stress\r\nJO  - Plant Physiology and Biochemistry\r\nT2  - Plant Physiology and Biochemistry\r\nPY  - 2026\r\nDA  - 2026/03//\r\nVL  - 232\r\nSP  - 111729\r\nPB  - Elsevier BV\r\nSN  - 0981-9428\r\nDO  - 10.1016/j.plaphy.2026.111729\r\nUR  - https://doi.org/10.1016/j.plaphy.2026.111729\r\nAB  - Plants face combined stresses.\r\nID  - zhang2026\r\nER  - \r\n\r\nTY  - JOUR\r\nAU  - Lovelace, Ada\r\nTI  - Second paper\r\nJO  - Nature\r\nT2  - Nature\r\nPY  - 2020\r\nDA  - 2020/01/02/\r\nVL  - 577\r\nSP  - 1\r\nEP  - 5\r\nDO  - 10.1038/s41586-020-0001-x\r\nUR  - https://doi.org/10.1038/s41586-020-0001-x\r\nID  - lovelace2020\r\nER  - \r\n\r\nTY  - JOUR\r\nAU  - Doe, Jane\r\nAU  - Roe, Richard\r\nTI  - A PubMed-only record\r\nJO  - Nature communications\r\nT2  - Nature communications\r\nJ2  - Nat Commun\r\nPY  - 2019\r\nDA  - 2019/08/27/\r\nVL  - 10\r\nIS  - 1\r\nSP  - 3812\r\nAN  - PMID:31452104\r\nID  - doe2019\r\nER  - \r\n\r\nTY  - BOOK\r\nAU  - Elsewhere, E\r\nTI  - From Zotero\r\nPY  - 2001\r\nDA  - 2001///\r\nID  - elsewhere2001\r\nER  - \r\n\r\nTY  - JOUR\r\nTI  - Array title\r\nDO  - 10.5555/ABC\r\nUR  - https://doi.org/10.5555/ABC\r\nID  - arraytitle\r\nER  - \r\n"
+ },
+ "API: imports, projects, edits, citations and errors #43": {
+  "headers": {
+   "content-type": "application/x-research-info-systems; charset=utf-8",
+   "content-disposition": "attachment; filename=\"Thesis ch. 1.ris\"; filename*=UTF-8''Thesis%20ch.%201.ris",
+   "x-item-count": "1"
+  },
+  "body": "TY  - JOUR\r\nAU  - Zhang, Wei\r\nAU  - García-López, María José\r\nAU  - van Beethoven, Ludwig\r\nAU  - Plant Stress Consortium\r\nAU  - Li, Jun\r\nTI  - Transcriptomic and metabolomic insights into Arabidopsis responses to combined drought & heat stress\r\nJO  - Plant Physiology and Biochemistry\r\nT2  - Plant Physiology and Biochemistry\r\nPY  - 2026\r\nDA  - 2026/03//\r\nVL  - 232\r\nSP  - 111729\r\nPB  - Elsevier BV\r\nSN  - 0981-9428\r\nDO  - 10.1016/j.plaphy.2026.111729\r\nUR  - https://doi.org/10.1016/j.plaphy.2026.111729\r\nAB  - Plants face combined stresses.\r\nID  - zhang2026\r\nER  - \r\n"
+ },
+ "API: imports, projects, edits, citations and errors #44": {
+  "headers": {
+   "content-type": "application/x-research-info-systems; charset=utf-8",
+   "content-disposition": "attachment; filename=\"_n_code _quotes_.ris\"; filename*=UTF-8''%C3%9Cn%C3%AFcode%20%E2%80%9Cquotes%E2%80%9D.ris",
+   "x-item-count": "5"
+  },
+  "body": "TY  - JOUR\r\nAU  - Zhang, Wei\r\nAU  - García-López, María José\r\nAU  - van Beethoven, Ludwig\r\nAU  - Plant Stress Consortium\r\nAU  - Li, Jun\r\nTI  - Transcriptomic and metabolomic insights into Arabidopsis responses to combined drought & heat stress\r\nJO  - Plant Physiology and Biochemistry\r\nT2  - Plant Physiology and Biochemistry\r\nPY  - 2026\r\nDA  - 2026/03//\r\nVL  - 232\r\nSP  - 111729\r\nPB  - Elsevier BV\r\nSN  - 0981-9428\r\nDO  - 10.1016/j.plaphy.2026.111729\r\nUR  - https://doi.org/10.1016/j.plaphy.2026.111729\r\nAB  - Plants face combined stresses.\r\nID  - zhang2026\r\nER  - \r\n\r\nTY  - JOUR\r\nAU  - Lovelace, Ada\r\nTI  - Second paper\r\nJO  - Nature\r\nT2  - Nature\r\nPY  - 2020\r\nDA  - 2020/01/02/\r\nVL  - 577\r\nSP  - 1\r\nEP  - 5\r\nDO  - 10.1038/s41586-020-0001-x\r\nUR  - https://doi.org/10.1038/s41586-020-0001-x\r\nID  - lovelace2020\r\nER  - \r\n\r\nTY  - JOUR\r\nAU  - Doe, Jane\r\nAU  - Roe, Richard\r\nTI  - A PubMed-only record\r\nJO  - Nature communications\r\nT2  - Nature communications\r\nJ2  - Nat Commun\r\nPY  - 2019\r\nDA  - 2019/08/27/\r\nVL  - 10\r\nIS  - 1\r\nSP  - 3812\r\nAN  - PMID:31452104\r\nID  - doe2019\r\nER  - \r\n\r\nTY  - BOOK\r\nAU  - Elsewhere, E\r\nTI  - From Zotero\r\nPY  - 2001\r\nDA  - 2001///\r\nID  - elsewhere2001\r\nER  - \r\n\r\nTY  - JOUR\r\nTI  - Array title\r\nDO  - 10.5555/ABC\r\nUR  - https://doi.org/10.5555/ABC\r\nID  - arraytitle\r\nER  - \r\n"
+ },
+ "API: imports, projects, edits, citations and errors #45": {
+  "headers": {
+   "content-type": "application/zip",
+   "content-disposition": "attachment; filename=\"library.zip\"; filename*=UTF-8''library.zip",
+   "x-item-count": "5"
+  },
+  "body": {
+   "library.ris": "TY  - JOUR\r\nAU  - Zhang, Wei\r\nAU  - García-López, María José\r\nAU  - van Beethoven, Ludwig\r\nAU  - Plant Stress Consortium\r\nAU  - Li, Jun\r\nTI  - Transcriptomic and metabolomic insights into Arabidopsis responses to combined drought & heat stress\r\nJO  - Plant Physiology and Biochemistry\r\nT2  - Plant Physiology and Biochemistry\r\nPY  - 2026\r\nDA  - 2026/03//\r\nVL  - 232\r\nSP  - 111729\r\nPB  - Elsevier BV\r\nSN  - 0981-9428\r\nDO  - 10.1016/j.plaphy.2026.111729\r\nUR  - https://doi.org/10.1016/j.plaphy.2026.111729\r\nAB  - Plants face combined stresses.\r\nID  - zhang2026\r\nER  - \r\n\r\nTY  - JOUR\r\nAU  - Lovelace, Ada\r\nTI  - Second paper\r\nJO  - Nature\r\nT2  - Nature\r\nPY  - 2020\r\nDA  - 2020/01/02/\r\nVL  - 577\r\nSP  - 1\r\nEP  - 5\r\nDO  - 10.1038/s41586-020-0001-x\r\nUR  - https://doi.org/10.1038/s41586-020-0001-x\r\nID  - lovelace2020\r\nER  - \r\n\r\nTY  - JOUR\r\nAU  - Doe, Jane\r\nAU  - Roe, Richard\r\nTI  - A PubMed-only record\r\nJO  - Nature communications\r\nT2  - Nature communications\r\nJ2  - Nat Commun\r\nPY  - 2019\r\nDA  - 2019/08/27/\r\nVL  - 10\r\nIS  - 1\r\nSP  - 3812\r\nAN  - PMID:31452104\r\nID  - doe2019\r\nER  - \r\n\r\nTY  - BOOK\r\nAU  - Elsewhere, E\r\nTI  - From Zotero\r\nPY  - 2001\r\nDA  - 2001///\r\nID  - elsewhere2001\r\nER  - \r\n\r\nTY  - JOUR\r\nTI  - Array title\r\nDO  - 10.5555/ABC\r\nUR  - https://doi.org/10.5555/ABC\r\nID  - arraytitle\r\nER  - \r\n",
+   "library.json": "[\n  {\n    \"id\": \"zhang2026\",\n    \"type\": \"article-journal\",\n    \"title\": \"Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought & heat stress\",\n    \"container-title\": \"Plant Physiology and Biochemistry\",\n    \"volume\": \"232\",\n    \"page\": \"111729\",\n    \"DOI\": \"10.1016/j.plaphy.2026.111729\",\n    \"URL\": \"https://doi.org/10.1016/j.plaphy.2026.111729\",\n    \"ISSN\": \"0981-9428\",\n    \"publisher\": \"Elsevier BV\",\n    \"abstract\": \"Plants face combined stresses.\",\n    \"language\": \"en\",\n    \"author\": [\n      {\n        \"family\": \"Zhang\",\n        \"given\": \"Wei\"\n      },\n      {\n        \"family\": \"García-López\",\n        \"given\": \"María José\"\n      },\n      {\n        \"family\": \"Beethoven\",\n        \"given\": \"Ludwig\",\n        \"non-dropping-particle\": \"van\"\n      },\n      {\n        \"literal\": \"Plant Stress Consortium\"\n      },\n      {\n        \"family\": \"Li\",\n        \"given\": \"Jun\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2026,\n          3\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"lovelace2020\",\n    \"type\": \"article-journal\",\n    \"title\": \"Second paper\",\n    \"container-title\": \"Nature\",\n    \"volume\": \"577\",\n    \"page\": \"1-5\",\n    \"DOI\": \"10.1038/s41586-020-0001-x\",\n    \"author\": [\n      {\n        \"family\": \"Lovelace\",\n        \"given\": \"Ada\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2020,\n          1,\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"doe2019\",\n    \"type\": \"article-journal\",\n    \"title\": \"A PubMed-only record\",\n    \"container-title\": \"Nature communications\",\n    \"container-title-short\": \"Nat Commun\",\n    \"volume\": \"10\",\n    \"issue\": \"1\",\n    \"page\": \"3812\",\n    \"PMID\": \"31452104\",\n    \"PMCID\": \"PMC6710000\",\n    \"author\": [\n      {\n        \"family\": \"Doe\",\n        \"given\": \"Jane\"\n      },\n      {\n        \"family\": \"Roe\",\n        \"given\": \"Richard\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2019,\n          8,\n          27\n        ]\n      ]\n    },\n    \"accessed\": {\n      \"date-parts\": [\n        [\n          2026,\n          11,\n          3\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"elsewhere2001\",\n    \"type\": \"book\",\n    \"title\": \"From Zotero\",\n    \"author\": [\n      {\n        \"family\": \"Elsewhere\",\n        \"given\": \"E\",\n        \"dropping-particle\": \"van\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2001\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"arraytitle\",\n    \"type\": \"article-journal\",\n    \"title\": \"Array title\",\n    \"DOI\": \"10.5555/ABC\"\n  }\n]\n",
+   "library.bib": "@article{zhang2026,\n  author    = {Zhang, Wei and García-López, María José and van Beethoven, Ludwig and {Plant Stress Consortium} and Li, Jun},\n  title     = {{Transcriptomic and metabolomic insights into \\textit{Arabidopsis} responses to combined drought \\& heat stress}},\n  journal   = {Plant Physiology and Biochemistry},\n  year      = {2026},\n  month     = {mar},\n  volume    = {232},\n  pages     = {111729},\n  publisher = {Elsevier BV},\n  issn      = {0981-9428},\n  doi       = {10.1016/j.plaphy.2026.111729},\n  url       = {https://doi.org/10.1016/j.plaphy.2026.111729},\n  abstract  = {Plants face combined stresses.}\n}\n\n@article{lovelace2020,\n  author    = {Lovelace, Ada},\n  title     = {{Second paper}},\n  journal   = {Nature},\n  year      = {2020},\n  month     = {jan},\n  volume    = {577},\n  pages     = {1--5},\n  doi       = {10.1038/s41586-020-0001-x}\n}\n\n@article{doe2019,\n  author    = {Doe, Jane and Roe, Richard},\n  title     = {{A PubMed-only record}},\n  journal   = {Nature communications},\n  year      = {2019},\n  month     = {aug},\n  volume    = {10},\n  number    = {1},\n  pages     = {3812},\n  pmid      = {31452104},\n  pmcid     = {PMC6710000}\n}\n\n@book{elsewhere2001,\n  author    = {Elsewhere, E van},\n  title     = {{From Zotero}},\n  year      = {2001}\n}\n\n@article{arraytitle,\n  title     = {{Array title}},\n  doi       = {10.5555/ABC}\n}\n",
+   "README.txt": "library — 5 references exported from zotlet\r\n\r\nlibrary.ris   RIS: Zotero, EndNote, Mendeley, most reference managers\r\nlibrary.json  CSL JSON: Zotero, and zotlet itself (drop it on the zotlet list)\r\nlibrary.bib   BibTeX: LaTeX\r\n\r\nInto Zotero: File → Import… → choose library.ris (or library.json).\r\nDocuments written with zotlet keep a full copy of every cited reference, so Zotero can\r\nrefresh them in Word or LibreOffice even before the references are imported.\r\n"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #46": {
+  "headers": {
+   "content-type": "application/zip",
+   "content-disposition": "attachment; filename=\"Thesis ch. 1.zip\"; filename*=UTF-8''Thesis%20ch.%201.zip",
+   "x-item-count": "1"
+  },
+  "body": {
+   "Thesis ch. 1.ris": "TY  - JOUR\r\nAU  - Zhang, Wei\r\nAU  - García-López, María José\r\nAU  - van Beethoven, Ludwig\r\nAU  - Plant Stress Consortium\r\nAU  - Li, Jun\r\nTI  - Transcriptomic and metabolomic insights into Arabidopsis responses to combined drought & heat stress\r\nJO  - Plant Physiology and Biochemistry\r\nT2  - Plant Physiology and Biochemistry\r\nPY  - 2026\r\nDA  - 2026/03//\r\nVL  - 232\r\nSP  - 111729\r\nPB  - Elsevier BV\r\nSN  - 0981-9428\r\nDO  - 10.1016/j.plaphy.2026.111729\r\nUR  - https://doi.org/10.1016/j.plaphy.2026.111729\r\nAB  - Plants face combined stresses.\r\nID  - zhang2026\r\nER  - \r\n",
+   "Thesis ch. 1.json": "[\n  {\n    \"id\": \"zhang2026\",\n    \"type\": \"article-journal\",\n    \"title\": \"Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought & heat stress\",\n    \"container-title\": \"Plant Physiology and Biochemistry\",\n    \"volume\": \"232\",\n    \"page\": \"111729\",\n    \"DOI\": \"10.1016/j.plaphy.2026.111729\",\n    \"URL\": \"https://doi.org/10.1016/j.plaphy.2026.111729\",\n    \"ISSN\": \"0981-9428\",\n    \"publisher\": \"Elsevier BV\",\n    \"abstract\": \"Plants face combined stresses.\",\n    \"language\": \"en\",\n    \"author\": [\n      {\n        \"family\": \"Zhang\",\n        \"given\": \"Wei\"\n      },\n      {\n        \"family\": \"García-López\",\n        \"given\": \"María José\"\n      },\n      {\n        \"family\": \"Beethoven\",\n        \"given\": \"Ludwig\",\n        \"non-dropping-particle\": \"van\"\n      },\n      {\n        \"literal\": \"Plant Stress Consortium\"\n      },\n      {\n        \"family\": \"Li\",\n        \"given\": \"Jun\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2026,\n          3\n        ]\n      ]\n    }\n  }\n]\n",
+   "Thesis ch. 1.bib": "@article{zhang2026,\n  author    = {Zhang, Wei and García-López, María José and van Beethoven, Ludwig and {Plant Stress Consortium} and Li, Jun},\n  title     = {{Transcriptomic and metabolomic insights into \\textit{Arabidopsis} responses to combined drought \\& heat stress}},\n  journal   = {Plant Physiology and Biochemistry},\n  year      = {2026},\n  month     = {mar},\n  volume    = {232},\n  pages     = {111729},\n  publisher = {Elsevier BV},\n  issn      = {0981-9428},\n  doi       = {10.1016/j.plaphy.2026.111729},\n  url       = {https://doi.org/10.1016/j.plaphy.2026.111729},\n  abstract  = {Plants face combined stresses.}\n}\n",
+   "README.txt": "Thesis ch. 1 — 1 reference exported from zotlet\r\n\r\nThesis ch. 1.ris   RIS: Zotero, EndNote, Mendeley, most reference managers\r\nThesis ch. 1.json  CSL JSON: Zotero, and zotlet itself (drop it on the zotlet list)\r\nThesis ch. 1.bib   BibTeX: LaTeX\r\n\r\nInto Zotero: File → Import… → choose Thesis ch. 1.ris (or Thesis ch. 1.json).\r\nDocuments written with zotlet keep a full copy of every cited reference, so Zotero can\r\nrefresh them in Word or LibreOffice even before the references are imported.\r\n"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #47": {
+  "headers": {
+   "content-type": "application/zip",
+   "content-disposition": "attachment; filename=\"_n_code _quotes_.zip\"; filename*=UTF-8''%C3%9Cn%C3%AFcode%20%E2%80%9Cquotes%E2%80%9D.zip",
+   "x-item-count": "5"
+  },
+  "body": {
+   "Ünïcode “quotes”.ris": "TY  - JOUR\r\nAU  - Zhang, Wei\r\nAU  - García-López, María José\r\nAU  - van Beethoven, Ludwig\r\nAU  - Plant Stress Consortium\r\nAU  - Li, Jun\r\nTI  - Transcriptomic and metabolomic insights into Arabidopsis responses to combined drought & heat stress\r\nJO  - Plant Physiology and Biochemistry\r\nT2  - Plant Physiology and Biochemistry\r\nPY  - 2026\r\nDA  - 2026/03//\r\nVL  - 232\r\nSP  - 111729\r\nPB  - Elsevier BV\r\nSN  - 0981-9428\r\nDO  - 10.1016/j.plaphy.2026.111729\r\nUR  - https://doi.org/10.1016/j.plaphy.2026.111729\r\nAB  - Plants face combined stresses.\r\nID  - zhang2026\r\nER  - \r\n\r\nTY  - JOUR\r\nAU  - Lovelace, Ada\r\nTI  - Second paper\r\nJO  - Nature\r\nT2  - Nature\r\nPY  - 2020\r\nDA  - 2020/01/02/\r\nVL  - 577\r\nSP  - 1\r\nEP  - 5\r\nDO  - 10.1038/s41586-020-0001-x\r\nUR  - https://doi.org/10.1038/s41586-020-0001-x\r\nID  - lovelace2020\r\nER  - \r\n\r\nTY  - JOUR\r\nAU  - Doe, Jane\r\nAU  - Roe, Richard\r\nTI  - A PubMed-only record\r\nJO  - Nature communications\r\nT2  - Nature communications\r\nJ2  - Nat Commun\r\nPY  - 2019\r\nDA  - 2019/08/27/\r\nVL  - 10\r\nIS  - 1\r\nSP  - 3812\r\nAN  - PMID:31452104\r\nID  - doe2019\r\nER  - \r\n\r\nTY  - BOOK\r\nAU  - Elsewhere, E\r\nTI  - From Zotero\r\nPY  - 2001\r\nDA  - 2001///\r\nID  - elsewhere2001\r\nER  - \r\n\r\nTY  - JOUR\r\nTI  - Array title\r\nDO  - 10.5555/ABC\r\nUR  - https://doi.org/10.5555/ABC\r\nID  - arraytitle\r\nER  - \r\n",
+   "Ünïcode “quotes”.json": "[\n  {\n    \"id\": \"zhang2026\",\n    \"type\": \"article-journal\",\n    \"title\": \"Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought & heat stress\",\n    \"container-title\": \"Plant Physiology and Biochemistry\",\n    \"volume\": \"232\",\n    \"page\": \"111729\",\n    \"DOI\": \"10.1016/j.plaphy.2026.111729\",\n    \"URL\": \"https://doi.org/10.1016/j.plaphy.2026.111729\",\n    \"ISSN\": \"0981-9428\",\n    \"publisher\": \"Elsevier BV\",\n    \"abstract\": \"Plants face combined stresses.\",\n    \"language\": \"en\",\n    \"author\": [\n      {\n        \"family\": \"Zhang\",\n        \"given\": \"Wei\"\n      },\n      {\n        \"family\": \"García-López\",\n        \"given\": \"María José\"\n      },\n      {\n        \"family\": \"Beethoven\",\n        \"given\": \"Ludwig\",\n        \"non-dropping-particle\": \"van\"\n      },\n      {\n        \"literal\": \"Plant Stress Consortium\"\n      },\n      {\n        \"family\": \"Li\",\n        \"given\": \"Jun\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2026,\n          3\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"lovelace2020\",\n    \"type\": \"article-journal\",\n    \"title\": \"Second paper\",\n    \"container-title\": \"Nature\",\n    \"volume\": \"577\",\n    \"page\": \"1-5\",\n    \"DOI\": \"10.1038/s41586-020-0001-x\",\n    \"author\": [\n      {\n        \"family\": \"Lovelace\",\n        \"given\": \"Ada\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2020,\n          1,\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"doe2019\",\n    \"type\": \"article-journal\",\n    \"title\": \"A PubMed-only record\",\n    \"container-title\": \"Nature communications\",\n    \"container-title-short\": \"Nat Commun\",\n    \"volume\": \"10\",\n    \"issue\": \"1\",\n    \"page\": \"3812\",\n    \"PMID\": \"31452104\",\n    \"PMCID\": \"PMC6710000\",\n    \"author\": [\n      {\n        \"family\": \"Doe\",\n        \"given\": \"Jane\"\n      },\n      {\n        \"family\": \"Roe\",\n        \"given\": \"Richard\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2019,\n          8,\n          27\n        ]\n      ]\n    },\n    \"accessed\": {\n      \"date-parts\": [\n        [\n          2026,\n          11,\n          3\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"elsewhere2001\",\n    \"type\": \"book\",\n    \"title\": \"From Zotero\",\n    \"author\": [\n      {\n        \"family\": \"Elsewhere\",\n        \"given\": \"E\",\n        \"dropping-particle\": \"van\"\n      }\n    ],\n    \"issued\": {\n      \"date-parts\": [\n        [\n          2001\n        ]\n      ]\n    }\n  },\n  {\n    \"id\": \"arraytitle\",\n    \"type\": \"article-journal\",\n    \"title\": \"Array title\",\n    \"DOI\": \"10.5555/ABC\"\n  }\n]\n",
+   "Ünïcode “quotes”.bib": "@article{zhang2026,\n  author    = {Zhang, Wei and García-López, María José and van Beethoven, Ludwig and {Plant Stress Consortium} and Li, Jun},\n  title     = {{Transcriptomic and metabolomic insights into \\textit{Arabidopsis} responses to combined drought \\& heat stress}},\n  journal   = {Plant Physiology and Biochemistry},\n  year      = {2026},\n  month     = {mar},\n  volume    = {232},\n  pages     = {111729},\n  publisher = {Elsevier BV},\n  issn      = {0981-9428},\n  doi       = {10.1016/j.plaphy.2026.111729},\n  url       = {https://doi.org/10.1016/j.plaphy.2026.111729},\n  abstract  = {Plants face combined stresses.}\n}\n\n@article{lovelace2020,\n  author    = {Lovelace, Ada},\n  title     = {{Second paper}},\n  journal   = {Nature},\n  year      = {2020},\n  month     = {jan},\n  volume    = {577},\n  pages     = {1--5},\n  doi       = {10.1038/s41586-020-0001-x}\n}\n\n@article{doe2019,\n  author    = {Doe, Jane and Roe, Richard},\n  title     = {{A PubMed-only record}},\n  journal   = {Nature communications},\n  year      = {2019},\n  month     = {aug},\n  volume    = {10},\n  number    = {1},\n  pages     = {3812},\n  pmid      = {31452104},\n  pmcid     = {PMC6710000}\n}\n\n@book{elsewhere2001,\n  author    = {Elsewhere, E van},\n  title     = {{From Zotero}},\n  year      = {2001}\n}\n\n@article{arraytitle,\n  title     = {{Array title}},\n  doi       = {10.5555/ABC}\n}\n",
+   "README.txt": "Ünïcode “quotes” — 5 references exported from zotlet\r\n\r\nÜnïcode “quotes”.ris   RIS: Zotero, EndNote, Mendeley, most reference managers\r\nÜnïcode “quotes”.json  CSL JSON: Zotero, and zotlet itself (drop it on the zotlet list)\r\nÜnïcode “quotes”.bib   BibTeX: LaTeX\r\n\r\nInto Zotero: File → Import… → choose Ünïcode “quotes”.ris (or Ünïcode “quotes”.json).\r\nDocuments written with zotlet keep a full copy of every cited reference, so Zotero can\r\nrefresh them in Word or LibreOffice even before the references are imported.\r\n"
+  }
+ },
+ "API: imports, projects, edits, citations and errors #48": {
+  "status": 400,
+  "body": {
+   "error": "Choose zip, CSL JSON, BibTeX or RIS"
+  }
+ },
+ "API: PDFs dropped on the list import by DOI #1": [
+  200,
+  {
+   "file": "Zhang 2026.pdf",
+   "doi": "10.1016/j.plaphy.2026.111729",
+   "status": "duplicate",
+   "id": "zhang2026",
+   "title": "Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought & heat stress"
+  }
+ ],
+ "API: PDFs dropped on the list import by DOI #2": [
+  200,
+  {
+   "file": "meta.pdf",
+   "doi": "10.1093/plcell/koab001",
+   "status": "error",
+   "message": "DOI 10.1093/plcell/koab001 was not found"
+  }
+ ],
+ "API: PDFs dropped on the list import by DOI #3": [
+  200,
+  {
+   "file": "none.pdf",
+   "status": "no-doi"
+  }
+ ],
+ "API: PDFs dropped on the list import by DOI #4": [
+  400,
+  {
+   "error": "This file is not a PDF"
+  }
+ ],
+ "styles: search, install a journal style with its parent, add a file, remove #1": {
+  "status": 200,
+  "body": {
+   "total": 3,
+   "results": [
+    {
+     "name": "elsevier-harvard",
+     "title": "Elsevier - Harvard (with titles)",
+     "titleShort": "",
+     "dependent": false,
+     "format": "author-date",
+     "fields": [
+      "generic-base"
+     ],
+     "updated": "",
+     "installed": false,
+     "builtin": false
+    },
+    {
+     "name": "nature",
+     "title": "Nature",
+     "titleShort": "",
+     "dependent": false,
+     "format": "numeric",
+     "fields": [
+      "science"
+     ],
+     "updated": "",
+     "installed": true,
+     "builtin": true
+    },
+    {
+     "name": "plant-physiology-and-biochemistry",
+     "title": "Plant Physiology and Biochemistry",
+     "titleShort": "",
+     "dependent": true,
+     "format": "author-date",
+     "fields": [
+      "botany"
+     ],
+     "updated": "2018-02-16",
+     "installed": false,
+     "builtin": false
+    }
+   ]
+  }
+ },
+ "styles: search, install a journal style with its parent, add a file, remove #2": {
+  "status": 200,
+  "body": {
+   "total": 1,
+   "results": [
+    {
+     "name": "plant-physiology-and-biochemistry",
+     "title": "Plant Physiology and Biochemistry",
+     "titleShort": "",
+     "dependent": true,
+     "format": "author-date",
+     "fields": [
+      "botany"
+     ],
+     "updated": "2018-02-16",
+     "installed": false,
+     "builtin": false
+    }
+   ]
+  }
+ },
+ "styles: search, install a journal style with its parent, add a file, remove #3": {
+  "status": 200,
+  "body": {
+   "installed": {
+    "id": "plant-physiology-and-biochemistry",
+    "title": "Plant Physiology and Biochemistry",
+    "parent": "elsevier-harvard"
+   },
+   "styles": [
+    {
+     "id": "nature",
+     "title": "Nature",
+     "label": "Nature",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "science",
+     "title": "Science",
+     "label": "Science",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "cell",
+     "title": "Cell",
+     "label": "Cell",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "apa",
+     "title": "APA Style 7th edition",
+     "label": "APA 7th",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
+     "id": "elsevier-harvard",
+     "title": "Elsevier (author-date/Harvard, with titles)",
+     "label": "Elsevier Harvard",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
+     "id": "plant-physiology-and-biochemistry",
+     "title": "Plant Physiology and Biochemistry",
+     "label": "Plant Physiology and Biochemistry",
+     "builtin": false,
+     "parent": "elsevier-harvard",
+     "format": "author-date"
+    }
+   ]
+  }
+ },
+ "styles: search, install a journal style with its parent, add a file, remove #4": {
+  "status": 404,
+  "body": {
+   "error": "Style \"no-such-style\" was not found (HTTP 404)"
+  }
+ },
+ "styles: search, install a journal style with its parent, add a file, remove #5": {
+  "status": 409,
+  "body": {
+   "error": "Used by \"Plant Physiology and Biochemistry\". Remove that style first."
+  }
+ },
+ "styles: search, install a journal style with its parent, add a file, remove #6": {
+  "status": 200,
+  "body": {
+   "style": {
+    "id": "plant-physiology-and-biochemistry",
+    "title": "Plant Physiology and Biochemistry"
+   },
+   "citation": {
+    "html": "(Zhang et al., 2026)",
+    "text": "(Zhang et al., 2026)"
+   },
+   "bibliography": {
+    "html": "<div class=\"csl-bib-body\"><div class=\"csl-entry\">Zhang, W., García-López, M.J., van Beethoven, L., Plant Stress Consortium, Li, J., 2026. Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought &#38; heat stress. Plant Physiology and Biochemistry 232, 111729. https://doi.org/10.1016/j.plaphy.2026.111729</div></div>",
+    "entries": 1,
+    "text": "Zhang, W., García-López, M.J., van Beethoven, L., Plant Stress Consortium, Li, J., 2026. Transcriptomic and metabolomic insights into Arabidopsis responses to combined drought & heat stress. Plant Physiology and Biochemistry 232, 111729. https://doi.org/10.1016/j.plaphy.2026.111729"
+   }
+  }
+ },
+ "styles: search, install a journal style with its parent, add a file, remove #7": {
+  "status": 200,
+  "body": {
+   "installed": {
+    "id": "apa-copy",
+    "title": "APA copy",
+    "parent": null
+   },
+   "styles": [
+    {
+     "id": "nature",
+     "title": "Nature",
+     "label": "Nature",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "science",
+     "title": "Science",
+     "label": "Science",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "cell",
+     "title": "Cell",
+     "label": "Cell",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "apa",
+     "title": "APA Style 7th edition",
+     "label": "APA 7th",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
+     "id": "elsevier-harvard",
+     "title": "Elsevier (author-date/Harvard, with titles)",
+     "label": "Elsevier Harvard",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
+     "id": "apa-copy",
+     "title": "APA copy",
+     "label": "APA copy",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
+     "id": "plant-physiology-and-biochemistry",
+     "title": "Plant Physiology and Biochemistry",
+     "label": "Plant Physiology and Biochemistry",
+     "builtin": false,
+     "parent": "elsevier-harvard",
+     "format": "author-date"
+    }
+   ]
+  }
+ },
+ "styles: search, install a journal style with its parent, add a file, remove #8": {
+  "status": 400,
+  "body": {
+   "error": "This is not a CSL style (.csl) file"
+  }
+ },
+ "styles: search, install a journal style with its parent, add a file, remove #9": {
+  "status": 409,
+  "body": {
+   "error": "\"Nature\" is a built-in style and cannot be replaced"
+  }
+ },
+ "styles: search, install a journal style with its parent, add a file, remove #10": {
+  "status": 200,
+  "body": {
+   "removed": {
+    "id": "plant-physiology-and-biochemistry"
+   },
+   "styles": [
+    {
+     "id": "nature",
+     "title": "Nature",
+     "label": "Nature",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "science",
+     "title": "Science",
+     "label": "Science",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "cell",
+     "title": "Cell",
+     "label": "Cell",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "apa",
+     "title": "APA Style 7th edition",
+     "label": "APA 7th",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
+     "id": "elsevier-harvard",
+     "title": "Elsevier (author-date/Harvard, with titles)",
+     "label": "Elsevier Harvard",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
+     "id": "apa-copy",
+     "title": "APA copy",
+     "label": "APA copy",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    }
+   ]
+  }
+ },
+ "styles: search, install a journal style with its parent, add a file, remove #11": {
+  "status": 400,
+  "body": {
+   "error": "Built-in styles cannot be removed"
+  }
+ },
+ "styles: search, install a journal style with its parent, add a file, remove #12": {
+  "status": 200,
+  "body": {
+   "items": [
+    {
+     "id": "zhang2026",
+     "type": "article-journal",
+     "title": "Transcriptomic and metabolomic insights into <i>Arabidopsis</i> responses to combined drought & heat stress",
+     "container-title": "Plant Physiology and Biochemistry",
+     "volume": "232",
+     "page": "111729",
+     "DOI": "10.1016/j.plaphy.2026.111729",
+     "URL": "https://doi.org/10.1016/j.plaphy.2026.111729",
+     "ISSN": "0981-9428",
+     "publisher": "Elsevier BV",
+     "abstract": "Plants face combined stresses.",
+     "language": "en",
+     "author": [
+      {
+       "family": "Zhang",
+       "given": "Wei"
+      },
+      {
+       "family": "García-López",
+       "given": "María José"
+      },
+      {
+       "family": "Beethoven",
+       "given": "Ludwig",
+       "non-dropping-particle": "van"
+      },
+      {
+       "literal": "Plant Stress Consortium"
+      },
+      {
+       "family": "Li",
+       "given": "Jun"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2026,
+        3
+       ]
+      ]
+     }
+    },
+    {
+     "id": "lovelace2020",
+     "type": "article-journal",
+     "title": "Second paper",
+     "container-title": "Nature",
+     "volume": "577",
+     "page": "1-5",
+     "DOI": "10.1038/s41586-020-0001-x",
+     "author": [
+      {
+       "family": "Lovelace",
+       "given": "Ada"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2020,
+        1,
+        2
+       ]
+      ]
+     }
+    },
+    {
+     "id": "doe2019",
+     "type": "article-journal",
+     "title": "A PubMed-only record",
+     "container-title": "Nature communications",
+     "container-title-short": "Nat Commun",
+     "volume": "10",
+     "issue": "1",
+     "page": "3812",
+     "PMID": "31452104",
+     "PMCID": "PMC6710000",
+     "author": [
+      {
+       "family": "Doe",
+       "given": "Jane"
+      },
+      {
+       "family": "Roe",
+       "given": "Richard"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019,
+        8,
+        27
+       ]
+      ]
+     },
+     "accessed": {
+      "date-parts": [
+       [
+        2026,
+        11,
+        3
+       ]
+      ]
+     }
+    },
+    {
+     "id": "elsewhere2001",
+     "type": "book",
+     "title": "From Zotero",
+     "author": [
+      {
+       "family": "Elsewhere",
+       "given": "E",
+       "dropping-particle": "van"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2001
+       ]
+      ]
+     }
+    },
+    {
+     "id": "arraytitle",
+     "type": "article-journal",
+     "title": "Array title",
+     "DOI": "10.5555/ABC"
+    }
+   ],
+   "projects": [
+    {
+     "id": "uuid0",
+     "name": "Second project",
+     "created": "TIME",
+     "itemIds": []
+    }
+   ],
+   "added": {
+    "zhang2026": "TIME",
+    "lovelace2020": "TIME",
+    "doe2019": "TIME",
+    "elsewhere2001": "TIME",
+    "arraytitle": "TIME"
+   },
+   "paths": {
+    "library": "PATH",
+    "state": "PATH"
+   },
+   "styles": [
+    {
+     "id": "nature",
+     "title": "Nature",
+     "label": "Nature",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "science",
+     "title": "Science",
+     "label": "Science",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "cell",
+     "title": "Cell",
+     "label": "Cell",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "apa",
+     "title": "APA Style 7th edition",
+     "label": "APA 7th",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
+     "id": "elsevier-harvard",
+     "title": "Elsevier (author-date/Harvard, with titles)",
+     "label": "Elsevier Harvard",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
+     "id": "apa-copy",
+     "title": "APA copy",
+     "label": "APA copy",
+     "builtin": false,
+     "parent": null,
+     "format": "author-date"
+    }
+   ]
+  }
+ },
+ "GenOffice (TCP): cite, bibliography, edit, style change, refresh, unlink #1": {
+  "data": "<data data-version=\"3\" zotero-version=\"zotlet\"><session id=\"sid1\"/><style id=\"http://www.zotero.org/styles/nature\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"ReferenceMark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"\\\\super 1,2\\\\nosupersub{}\",\"plainCitation\":\"1,2\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"lovelace2020\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/PRXQZ9GZ\"],\"itemData\":{\"id\":\"lovelace2020\",\"type\":\"article-journal\",\"title\":\"Second paper\",\"container-title\":\"Nature\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\"}],\"issued\":{\"date-parts\":[[2020]]},\"volume\":\"577\",\"page\":\"1-5\",\"DOI\":\"10.1/love\"}},{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf \\super 1,2\\nosupersub{}}"
+   }
+  ],
+  "alerts": [],
+  "completed": 1,
+  "bibliographyStyle": null,
+  "spec": {
+   "mode": "cite",
+   "style": "nature",
+   "askStyle": true,
+   "selected": [],
+   "items": [
+    {
+     "id": "lovelace2020",
+     "type": "article-journal",
+     "title": "Second paper",
+     "author": [
+      {
+       "family": "Lovelace",
+       "given": "Ada"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2020
+       ]
+      ]
+     },
+     "container-title": "Nature",
+     "DOI": "10.1/love"
+    },
+    {
+     "id": "hopper2019",
+     "type": "article-journal",
+     "title": "A <i>compiler</i> paper",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "container-title": "Science",
+     "DOI": "10.1/hopper"
+    },
+    {
+     "id": "hopper2019a",
+     "type": "book",
+     "title": "Another one",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "publisher": "Navy"
+    }
+   ],
+   "bookmarksLocked": false,
+   "projects": [],
+   "styles": [
+    "nature",
+    "science",
+    "cell",
+    "apa"
+   ]
+  }
+ },
+ "GenOffice (TCP): cite, bibliography, edit, style change, refresh, unlink #2": {
+  "data": "<data data-version=\"3\" zotero-version=\"zotlet\"><session id=\"sid1\"/><style id=\"http://www.zotero.org/styles/nature\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"ReferenceMark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"\\\\super 1,2\\\\nosupersub{}\",\"plainCitation\":\"1,2\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"lovelace2020\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/PRXQZ9GZ\"],\"itemData\":{\"id\":\"lovelace2020\",\"type\":\"article-journal\",\"title\":\"Second paper\",\"container-title\":\"Nature\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\"}],\"issued\":{\"date-parts\":[[2020]]},\"volume\":\"577\",\"page\":\"1-5\",\"DOI\":\"10.1/love\"}},{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf \\super 1,2\\nosupersub{}}"
+   },
+   {
+    "id": "f2",
+    "code": "BIBL {\"uncited\":[],\"omitted\":[],\"custom\":[]} CSL_BIBLIOGRAPHY",
+    "text": "{\\rtf \\li480\\fi-480 1.\\tab Lovelace, A. Second paper. {\\i{}Nature} {\\b{}577}, 1\\uc0\\u8211{}5 (2020).\\par 2.\\tab Hopper, G. A {\\i{}compiler} paper. {\\i{}Science} {\\b{}1}, 2\\uc0\\u8211{}3 (2019).}"
+   }
+  ],
+  "alerts": [],
+  "completed": 2,
+  "bibliographyStyle": null,
+  "spec": null
+ },
+ "GenOffice (TCP): cite, bibliography, edit, style change, refresh, unlink #3": {
+  "data": "<data data-version=\"3\" zotero-version=\"zotlet\"><session id=\"sid2\"/><style id=\"http://www.zotero.org/styles/nature\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"ReferenceMark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"\\\\super 1,2\\\\nosupersub{}\",\"plainCitation\":\"1,2\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"lovelace2020\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/PRXQZ9GZ\"],\"itemData\":{\"id\":\"lovelace2020\",\"type\":\"article-journal\",\"title\":\"Second paper\",\"container-title\":\"Nature\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\"}],\"issued\":{\"date-parts\":[[2020]]},\"volume\":\"577\",\"page\":\"1-5\",\"DOI\":\"10.1/love\"}},{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf \\super 1,2\\nosupersub{}}"
+   },
+   {
+    "id": "f2",
+    "code": "BIBL {\"uncited\":[],\"omitted\":[],\"custom\":[]} CSL_BIBLIOGRAPHY",
+    "text": "{\\rtf \\li480\\fi-480 1.\\tab Lovelace, A. Second paper. {\\i{}Nature} {\\b{}577}, 1\\uc0\\u8211{}5 (2020).\\par 2.\\tab Hopper, G. A {\\i{}compiler} paper. {\\i{}Science} {\\b{}1}, 2\\uc0\\u8211{}3 (2019).\\par 3.\\tab Hopper, G. {\\i{}Another One}. (Navy, 2019).}"
+   },
+   {
+    "id": "f3",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid1\",\"properties\":{\"formattedCitation\":\"\\\\super 3\\\\nosupersub{}\",\"plainCitation\":\"3\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf \\super 3\\nosupersub{}}"
+   }
+  ],
+  "alerts": [],
+  "completed": 3,
+  "bibliographyStyle": null,
+  "spec": {
+   "mode": "cite",
+   "style": "nature",
+   "askStyle": false,
+   "selected": [],
+   "items": [
+    {
+     "id": "lovelace2020",
+     "type": "article-journal",
+     "title": "Second paper",
+     "author": [
+      {
+       "family": "Lovelace",
+       "given": "Ada"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2020
+       ]
+      ]
+     },
+     "container-title": "Nature",
+     "DOI": "10.1/love"
+    },
+    {
+     "id": "hopper2019",
+     "type": "article-journal",
+     "title": "A <i>compiler</i> paper",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "container-title": "Science",
+     "DOI": "10.1/hopper"
+    },
+    {
+     "id": "hopper2019a",
+     "type": "book",
+     "title": "Another one",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "publisher": "Navy"
+    }
+   ],
+   "bookmarksLocked": false,
+   "projects": [],
+   "styles": [
+    "nature",
+    "science",
+    "cell",
+    "apa"
+   ]
+  }
+ },
+ "GenOffice (TCP): cite, bibliography, edit, style change, refresh, unlink #4": {
+  "data": "<data data-version=\"3\" zotero-version=\"zotlet\"><session id=\"sid2\"/><style id=\"http://www.zotero.org/styles/nature\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"ReferenceMark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"\\\\super 1\\\\uc0\\\\u8211{}3\\\\nosupersub{}\",\"plainCitation\":\"1–3\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"lovelace2020\",\"locator\":\"12\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/PRXQZ9GZ\"],\"itemData\":{\"id\":\"lovelace2020\",\"type\":\"article-journal\",\"title\":\"Second paper\",\"container-title\":\"Nature\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\"}],\"issued\":{\"date-parts\":[[2020]]},\"volume\":\"577\",\"page\":\"1-5\",\"DOI\":\"10.1/love\"}},{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}},{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf \\super 1\\uc0\\u8211{}3\\nosupersub{}}"
+   },
+   {
+    "id": "f2",
+    "code": "BIBL {\"uncited\":[],\"omitted\":[],\"custom\":[]} CSL_BIBLIOGRAPHY",
+    "text": "{\\rtf \\li480\\fi-480 1.\\tab Lovelace, A. Second paper. {\\i{}Nature} {\\b{}577}, 1\\uc0\\u8211{}5 (2020).\\par 2.\\tab Hopper, G. A {\\i{}compiler} paper. {\\i{}Science} {\\b{}1}, 2\\uc0\\u8211{}3 (2019).\\par 3.\\tab Hopper, G. {\\i{}Another One}. (Navy, 2019).}"
+   },
+   {
+    "id": "f3",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid1\",\"properties\":{\"formattedCitation\":\"\\\\super 3\\\\nosupersub{}\",\"plainCitation\":\"3\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf \\super 3\\nosupersub{}}"
+   }
+  ],
+  "alerts": [],
+  "completed": 4,
+  "bibliographyStyle": null,
+  "spec": {
+   "mode": "cite",
+   "style": "nature",
+   "askStyle": false,
+   "selected": [
+    "lovelace2020",
+    "hopper2019"
+   ],
+   "items": [
+    {
+     "id": "lovelace2020",
+     "type": "article-journal",
+     "title": "Second paper",
+     "author": [
+      {
+       "family": "Lovelace",
+       "given": "Ada"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2020
+       ]
+      ]
+     },
+     "container-title": "Nature",
+     "DOI": "10.1/love"
+    },
+    {
+     "id": "hopper2019",
+     "type": "article-journal",
+     "title": "A <i>compiler</i> paper",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "container-title": "Science",
+     "DOI": "10.1/hopper"
+    },
+    {
+     "id": "hopper2019a",
+     "type": "book",
+     "title": "Another one",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "publisher": "Navy"
+    }
+   ],
+   "bookmarksLocked": false,
+   "projects": [],
+   "styles": [
+    "nature",
+    "science",
+    "cell",
+    "apa"
+   ]
+  }
+ },
+ "GenOffice (TCP): cite, bibliography, edit, style change, refresh, unlink #5": {
+  "data": "<data data-version=\"3\" zotero-version=\"zotlet\"><session id=\"sid2\"/><style id=\"http://www.zotero.org/styles/apa\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"ReferenceMark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"(Hopper, 2019a, 2019b; Lovelace, 2020, p. 12)\",\"plainCitation\":\"(Hopper, 2019a, 2019b; Lovelace, 2020, p. 12)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"lovelace2020\",\"locator\":\"12\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/PRXQZ9GZ\"],\"itemData\":{\"id\":\"lovelace2020\",\"type\":\"article-journal\",\"title\":\"Second paper\",\"container-title\":\"Nature\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\"}],\"issued\":{\"date-parts\":[[2020]]},\"volume\":\"577\",\"page\":\"1-5\",\"DOI\":\"10.1/love\"}},{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}},{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf (Hopper, 2019a, 2019b; Lovelace, 2020, p. 12)}"
+   },
+   {
+    "id": "f2",
+    "code": "BIBL {\"uncited\":[],\"omitted\":[],\"custom\":[]} CSL_BIBLIOGRAPHY",
+    "text": "{\\rtf \\li720\\fi-720 Hopper, G. (2019a). A {\\i{}compiler} paper. {\\i{}Science}, {\\i{}1}, 2\\uc0\\u8211{}3. https://doi.org/10.1/hopper\\par Hopper, G. (2019b). {\\i{}Another one}. Navy.\\par Lovelace, A. (2020). Second paper. {\\i{}Nature}, {\\i{}577}, 1\\uc0\\u8211{}5. https://doi.org/10.1/love}"
+   },
+   {
+    "id": "f3",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid1\",\"properties\":{\"formattedCitation\":\"(Hopper, 2019b)\",\"plainCitation\":\"(Hopper, 2019b)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf (Hopper, 2019b)}"
+   }
+  ],
+  "alerts": [],
+  "completed": 5,
+  "bibliographyStyle": null,
+  "spec": {
+   "mode": "style",
+   "style": "nature",
+   "askStyle": false,
+   "selected": [],
+   "items": [],
+   "bookmarks": false,
+   "bookmarksLocked": true,
+   "projects": [],
+   "styles": [
+    "nature",
+    "science",
+    "cell",
+    "apa"
+   ]
+  }
+ },
+ "GenOffice (TCP): cite, bibliography, edit, style change, refresh, unlink #6": {
+  "data": "<data data-version=\"3\" zotero-version=\"zotlet\"><session id=\"sid2\"/><style id=\"http://www.zotero.org/styles/apa\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"ReferenceMark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"(Hopper, 2019a, 2019b; Lovelace, 2020, p. 12)\",\"plainCitation\":\"(Hopper, 2019a, 2019b; Lovelace, 2020, p. 12)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"lovelace2020\",\"locator\":\"12\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/PRXQZ9GZ\"],\"itemData\":{\"id\":\"lovelace2020\",\"type\":\"article-journal\",\"title\":\"Second paper\",\"container-title\":\"Nature\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\"}],\"issued\":{\"date-parts\":[[2020]]},\"volume\":\"577\",\"page\":\"1-5\",\"DOI\":\"10.1/love\"}},{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}},{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf (Hopper, 2019a, 2019b; Lovelace, 2020, p. 12)}"
+   },
+   {
+    "id": "f2",
+    "code": "BIBL {\"uncited\":[],\"omitted\":[],\"custom\":[]} CSL_BIBLIOGRAPHY",
+    "text": "{\\rtf \\li720\\fi-720 Hopper, G. (2019a). A {\\i{}compiler} paper. {\\i{}Science}, {\\i{}1}, 2\\uc0\\u8211{}3. https://doi.org/10.1/hopper\\par Hopper, G. (2019b). {\\i{}Another one}. Navy.\\par Lovelace, A. (2020). Second paper. {\\i{}Nature}, {\\i{}577}, 1\\uc0\\u8211{}5. https://doi.org/10.1/love}"
+   },
+   {
+    "id": "f3",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid1\",\"properties\":{\"formattedCitation\":\"(Hopper, 2019b)\",\"plainCitation\":\"(Hopper, 2019b)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf (Hopper, 2019b)}"
+   }
+  ],
+  "alerts": [],
+  "completed": 6,
+  "bibliographyStyle": null,
+  "spec": null
+ },
+ "GenOffice (TCP): cite, bibliography, edit, style change, refresh, unlink #7": {
+  "data": "<data data-version=\"3\" zotero-version=\"zotlet\"><session id=\"sid2\"/><style id=\"http://www.zotero.org/styles/apa\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"ReferenceMark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"(Hopper, 2019a, 2019b; Lovelace, 2020, p. 12)\",\"plainCitation\":\"(Hopper, 2019a, 2019b; Lovelace, 2020, p. 12)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"lovelace2020\",\"locator\":\"12\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/PRXQZ9GZ\"],\"itemData\":{\"id\":\"lovelace2020\",\"type\":\"article-journal\",\"title\":\"Second paper\",\"container-title\":\"Nature\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\"}],\"issued\":{\"date-parts\":[[2020]]},\"volume\":\"577\",\"page\":\"1-5\",\"DOI\":\"10.1/love\"}},{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}},{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf (Hopper, 2019a, 2019b; Lovelace, 2020, p. 12)}"
+   },
+   {
+    "id": "f2",
+    "code": "BIBL {\"uncited\":[],\"omitted\":[],\"custom\":[]} CSL_BIBLIOGRAPHY",
+    "text": "{\\rtf \\li720\\fi-720 Hopper, G. (2019a). A {\\i{}compiler} paper. {\\i{}Science}, {\\i{}1}, 2\\uc0\\u8211{}3. https://doi.org/10.1/hopper\\par Hopper, G. (2019b). {\\i{}Another one}. Navy.\\par Lovelace, A. (2020). Second paper. {\\i{}Nature}, {\\i{}577}, 1\\uc0\\u8211{}5. https://doi.org/10.1/love}"
+   },
+   {
+    "id": "f3",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid1\",\"properties\":{\"formattedCitation\":\"(Hopper, 2019b)\",\"plainCitation\":\"(Hopper, 2019b)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf (Hopper, 2019b)}"
+   }
+  ],
+  "alerts": [],
+  "completed": 7,
+  "bibliographyStyle": null,
+  "spec": {
+   "mode": "cite",
+   "style": "apa",
+   "askStyle": false,
+   "selected": [],
+   "items": [
+    {
+     "id": "lovelace2020",
+     "type": "article-journal",
+     "title": "Second paper",
+     "author": [
+      {
+       "family": "Lovelace",
+       "given": "Ada"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2020
+       ]
+      ]
+     },
+     "container-title": "Nature",
+     "DOI": "10.1/love"
+    },
+    {
+     "id": "hopper2019",
+     "type": "article-journal",
+     "title": "A <i>compiler</i> paper",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "container-title": "Science",
+     "DOI": "10.1/hopper"
+    },
+    {
+     "id": "hopper2019a",
+     "type": "book",
+     "title": "Another one",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "publisher": "Navy"
+    }
+   ],
+   "bookmarksLocked": false,
+   "projects": [],
+   "styles": [
+    "nature",
+    "science",
+    "cell",
+    "apa"
+   ]
+  }
+ },
+ "GenOffice (TCP): cite, bibliography, edit, style change, refresh, unlink #8": {
+  "data": "<data data-version=\"3\" zotero-version=\"zotlet\"><session id=\"sid2\"/><style id=\"http://www.zotero.org/styles/apa\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"ReferenceMark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"(Hopper, 2019a, 2019b; Lovelace, 2020, p. 12)\",\"plainCitation\":\"(Hopper, 2019a, 2019b; Lovelace, 2020, p. 12)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"lovelace2020\",\"locator\":\"12\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/PRXQZ9GZ\"],\"itemData\":{\"id\":\"lovelace2020\",\"type\":\"article-journal\",\"title\":\"Second paper\",\"container-title\":\"Nature\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\"}],\"issued\":{\"date-parts\":[[2020]]},\"volume\":\"577\",\"page\":\"1-5\",\"DOI\":\"10.1/love\"}},{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}},{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf (Hopper, 2019a, 2019b; Lovelace, 2020, p. 12)}"
+   },
+   {
+    "id": "f2",
+    "code": "BIBL {\"uncited\":[],\"omitted\":[],\"custom\":[]} CSL_BIBLIOGRAPHY",
+    "text": "{\\rtf \\li720\\fi-720 Hopper, G. (2019a). A {\\i{}compiler} paper. {\\i{}Science}, {\\i{}1}, 2\\uc0\\u8211{}3. https://doi.org/10.1/hopper\\par Hopper, G. (2019b). {\\i{}Another one}. Navy.\\par Lovelace, A. (2020). Second paper. {\\i{}Nature}, {\\i{}577}, 1\\uc0\\u8211{}5. https://doi.org/10.1/love}"
+   },
+   {
+    "id": "f3",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid1\",\"properties\":{\"formattedCitation\":\"(Hopper, 2019b)\",\"plainCitation\":\"(Hopper, 2019b)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf (Hopper, 2019b)}"
+   }
+  ],
+  "alerts": [
+   "Convert all citations to plain text? They can no longer be refreshed or edited."
+  ],
+  "completed": 8,
+  "bibliographyStyle": null,
+  "spec": null
+ },
+ "GenOffice (TCP): cite, bibliography, edit, style change, refresh, unlink #9": {
+  "data": "<data data-version=\"3\" zotero-version=\"zotlet\"><session id=\"sid0\"/><style id=\"http://www.zotero.org/styles/apa\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"ReferenceMark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "",
+    "text": "{\\rtf (Hopper, 2019a, 2019b; Lovelace, 2020, p. 12)}"
+   },
+   {
+    "id": "f2",
+    "code": "",
+    "text": "{\\rtf \\li720\\fi-720 Hopper, G. (2019a). A {\\i{}compiler} paper. {\\i{}Science}, {\\i{}1}, 2\\uc0\\u8211{}3. https://doi.org/10.1/hopper\\par Hopper, G. (2019b). {\\i{}Another one}. Navy.\\par Lovelace, A. (2020). Second paper. {\\i{}Nature}, {\\i{}577}, 1\\uc0\\u8211{}5. https://doi.org/10.1/love}"
+   },
+   {
+    "id": "f3",
+    "code": "",
+    "text": "{\\rtf (Hopper, 2019b)}"
+   }
+  ],
+  "alerts": [
+   "Convert all citations to plain text? They can no longer be refreshed or edited.",
+   "Convert all citations to plain text? They can no longer be refreshed or edited."
+  ],
+  "completed": 9,
+  "bibliographyStyle": null,
+  "spec": null
+ },
+ "LibreOffice (TCP, newer data format): bookmarks for Word, bibliography paragraph style #1": {
+  "data": "<data data-version=\"3\" zotero-version=\"6.0.0\"><session id=\"sid0\"/><style id=\"http://www.zotero.org/styles/apa\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"0\"/><prefs><pref name=\"fieldType\" value=\"Bookmark\"/></prefs></data>",
+  "fields": [],
+  "alerts": [],
+  "completed": 1,
+  "bibliographyStyle": null,
+  "spec": {
+   "mode": "style",
+   "style": "nature",
+   "askStyle": false,
+   "selected": [],
+   "items": [],
+   "bookmarks": false,
+   "bookmarksLocked": false,
+   "projects": [],
+   "styles": [
+    "nature",
+    "science",
+    "cell",
+    "apa"
+   ]
+  }
+ },
+ "LibreOffice (TCP, newer data format): bookmarks for Word, bibliography paragraph style #2": {
+  "data": "<data data-version=\"3\" zotero-version=\"6.0.0\"><session id=\"sid1\"/><style id=\"http://www.zotero.org/styles/apa\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"0\"/><prefs><pref name=\"fieldType\" value=\"Bookmark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"(Hopper, 2019a, 2019b)\",\"plainCitation\":\"(Hopper, 2019a, 2019b)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}},{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf (Hopper, 2019a, 2019b)}"
+   }
+  ],
+  "alerts": [],
+  "completed": 2,
+  "bibliographyStyle": null,
+  "spec": {
+   "mode": "cite",
+   "style": "apa",
+   "askStyle": false,
+   "selected": [],
+   "items": [
+    {
+     "id": "lovelace2020",
+     "type": "article-journal",
+     "title": "Second paper",
+     "author": [
+      {
+       "family": "Lovelace",
+       "given": "Ada"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2020
+       ]
+      ]
+     },
+     "container-title": "Nature",
+     "DOI": "10.1/love"
+    },
+    {
+     "id": "hopper2019",
+     "type": "article-journal",
+     "title": "A <i>compiler</i> paper",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "container-title": "Science",
+     "DOI": "10.1/hopper"
+    },
+    {
+     "id": "hopper2019a",
+     "type": "book",
+     "title": "Another one",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "publisher": "Navy"
+    }
+   ],
+   "bookmarksLocked": false,
+   "projects": [],
+   "styles": [
+    "nature",
+    "science",
+    "cell",
+    "apa"
+   ]
+  }
+ },
+ "LibreOffice (TCP, newer data format): bookmarks for Word, bibliography paragraph style #3": {
+  "data": "<data data-version=\"3\" zotero-version=\"6.0.0\"><session id=\"sid1\"/><style id=\"http://www.zotero.org/styles/apa\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"Bookmark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"(Hopper, 2019a, 2019b)\",\"plainCitation\":\"(Hopper, 2019a, 2019b)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}},{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf (Hopper, 2019a, 2019b)}"
+   },
+   {
+    "id": "f2",
+    "code": "BIBL {\"uncited\":[],\"omitted\":[],\"custom\":[]} CSL_BIBLIOGRAPHY",
+    "text": "{\\rtf \\li720\\fi-720 Hopper, G. (2019a). A {\\i{}compiler} paper. {\\i{}Science}, {\\i{}1}, 2\\uc0\\u8211{}3. https://doi.org/10.1/hopper\\par Hopper, G. (2019b). {\\i{}Another one}. Navy.}"
+   }
+  ],
+  "alerts": [],
+  "completed": 3,
+  "bibliographyStyle": [
+   -720,
+   720,
+   480,
+   0,
+   [],
+   0
+  ],
+  "spec": null
+ },
+ "LibreOffice (TCP, newer data format): bookmarks for Word, bibliography paragraph style #4": {
+  "data": "<data data-version=\"3\" zotero-version=\"6.0.0\"><session id=\"sid1\"/><style id=\"http://www.zotero.org/styles/cell\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"Bookmark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"\\\\super 1,2\\\\nosupersub{}\",\"plainCitation\":\"1,2\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}},{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf \\super 1,2\\nosupersub{}}"
+   },
+   {
+    "id": "f2",
+    "code": "BIBL {\"uncited\":[],\"omitted\":[],\"custom\":[]} CSL_BIBLIOGRAPHY",
+    "text": "{\\rtf \\li480\\fi-480 1.\\tab Hopper, G. (2019). A {\\i{}compiler} paper. Science {\\i{}1}, 2\\uc0\\u8211{}3. https://doi.org/10.1/hopper.\\par 2.\\tab Hopper, G. (2019). Another one (Navy).}"
+   }
+  ],
+  "alerts": [],
+  "completed": 4,
+  "bibliographyStyle": [
+   -264,
+   264,
+   240,
+   240,
+   [
+    264
+   ],
+   1
+  ],
+  "spec": {
+   "mode": "style",
+   "style": "apa",
+   "askStyle": false,
+   "selected": [],
+   "items": [],
+   "bookmarks": true,
+   "bookmarksLocked": true,
+   "projects": [],
+   "styles": [
+    "nature",
+    "science",
+    "cell",
+    "apa"
+   ]
+  }
+ },
+ "LibreOffice (TCP, newer data format): bookmarks for Word, bibliography paragraph style #5": {
+  "data": "<data data-version=\"3\" zotero-version=\"6.0.0\"><session id=\"sid1\"/><style id=\"http://www.zotero.org/styles/cell\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"Bookmark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"\\\\super 1,2\\\\nosupersub{}\",\"plainCitation\":\"1,2\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}},{\"id\":\"hopper2019a\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/SYKFW5I2\"],\"itemData\":{\"id\":\"hopper2019a\",\"type\":\"book\",\"title\":\"Another one\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"publisher\":\"Navy\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf \\super 1,2\\nosupersub{}}"
+   },
+   {
+    "id": "f2",
+    "code": "BIBL {\"uncited\":[],\"omitted\":[],\"custom\":[]} CSL_BIBLIOGRAPHY",
+    "text": "{\\rtf \\li480\\fi-480 1.\\tab Hopper, G. (2019). A {\\i{}compiler} paper. Science {\\i{}1}, 2\\uc0\\u8211{}3. https://doi.org/10.1/hopper.\\par 2.\\tab Hopper, G. (2019). Another one (Navy).}"
+   }
+  ],
+  "alerts": [],
+  "completed": 5,
+  "bibliographyStyle": [
+   -264,
+   264,
+   240,
+   240,
+   [
+    264
+   ],
+   1
+  ],
+  "spec": null
+ },
+ "Word documents written by Zotero: field type kept, items matched by DOI, embedded data refreshed #1": {
+  "data": "<data data-version=\"3\" zotero-version=\"7.0.11\"><session id=\"Zs1\"/><style id=\"http://www.zotero.org/styles/apa\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"Field\"/><pref name=\"automaticJournalAbbreviations\" value=\"true\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "z1",
+    "text": "{\\rtf (Elsewhere, 2001; Hopper, 2019, p. 5)}",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"c1\",\"properties\":{\"formattedCitation\":\"(Elsewhere, 2001; Hopper, 2019, p. 5)\",\"plainCitation\":\"(Elsewhere, 2001; Hopper, 2019, p. 5)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/123/items/ABCD1234\",\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"locator\":\"5\",\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}},{\"id\":42,\"uris\":[\"http://zotero.org/users/123/items/ZZZZ\"],\"itemData\":{\"id\":42,\"type\":\"book\",\"title\":\"Only in Zotero\",\"author\":[{\"family\":\"Elsewhere\",\"given\":\"E\"}],\"issued\":{\"date-parts\":[[2001]]}}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}"
+   }
+  ],
+  "alerts": [],
+  "completed": 1,
+  "bibliographyStyle": null,
+  "spec": null
+ },
+ "Word documents written by Zotero: field type kept, items matched by DOI, embedded data refreshed #2": {
+  "data": "<data data-version=\"3\" zotero-version=\"7.0.11\"><session id=\"Zs1\"/><style id=\"http://www.zotero.org/styles/apa\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"Field\"/><pref name=\"automaticJournalAbbreviations\" value=\"true\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "z1",
+    "text": "{\\rtf (Elsewhere, 2001; Hopper, 2019, p. 5; Lovelace, 2020)}",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"c1\",\"properties\":{\"formattedCitation\":\"(Elsewhere, 2001; Hopper, 2019, p. 5; Lovelace, 2020)\",\"plainCitation\":\"(Elsewhere, 2001; Hopper, 2019, p. 5; Lovelace, 2020)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019\",\"locator\":\"5\",\"uris\":[\"http://zotero.org/users/123/items/ABCD1234\",\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}},{\"id\":\"lovelace2020\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/PRXQZ9GZ\"],\"itemData\":{\"id\":\"lovelace2020\",\"type\":\"article-journal\",\"title\":\"Second paper\",\"container-title\":\"Nature\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\"}],\"issued\":{\"date-parts\":[[2020]]},\"volume\":\"577\",\"page\":\"1-5\",\"DOI\":\"10.1/love\"}},{\"id\":\"42\",\"uris\":[\"http://zotero.org/users/123/items/ZZZZ\",\"http://zotero.org/users/local/zotlet/items/KH322222\"],\"itemData\":{\"id\":\"42\",\"type\":\"book\",\"title\":\"Only in Zotero\",\"author\":[{\"family\":\"Elsewhere\",\"given\":\"E\"}],\"issued\":{\"date-parts\":[[2001]]}}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}"
+   }
+  ],
+  "alerts": [],
+  "completed": 2,
+  "bibliographyStyle": null,
+  "spec": {
+   "mode": "cite",
+   "style": "apa",
+   "askStyle": false,
+   "selected": [
+    "hopper2019",
+    "42"
+   ],
+   "items": [
+    {
+     "id": "lovelace2020",
+     "type": "article-journal",
+     "title": "Second paper",
+     "author": [
+      {
+       "family": "Lovelace",
+       "given": "Ada"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2020
+       ]
+      ]
+     },
+     "container-title": "Nature",
+     "DOI": "10.1/love"
+    },
+    {
+     "id": "hopper2019",
+     "type": "article-journal",
+     "title": "A <i>compiler</i> paper",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "container-title": "Science",
+     "DOI": "10.1/hopper"
+    },
+    {
+     "id": "hopper2019a",
+     "type": "book",
+     "title": "Another one",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "publisher": "Navy"
+    },
+    {
+     "id": "42",
+     "type": "book",
+     "title": "Only in Zotero",
+     "author": [
+      {
+       "family": "Elsewhere",
+       "given": "E"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2001
+       ]
+      ]
+     }
+    }
+   ],
+   "bookmarksLocked": false,
+   "projects": [],
+   "styles": [
+    "nature",
+    "science",
+    "cell",
+    "apa"
+   ]
+  }
+ },
+ "Word documents written by Zotero: field type kept, items matched by DOI, embedded data refreshed #3": {
+  "data": "<data data-version=\"3\" zotero-version=\"7.0.11\"><session id=\"Zs1\"/><style id=\"http://www.zotero.org/styles/apa\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"Field\"/><pref name=\"automaticJournalAbbreviations\" value=\"true\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "z1",
+    "text": "{\\rtf (Elsewhere, 2001; Hopper, 2019, p. 5; Lovelace, 2020)}",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"c1\",\"properties\":{\"formattedCitation\":\"(Elsewhere, 2001; Hopper, 2019, p. 5; Lovelace, 2020)\",\"plainCitation\":\"(Elsewhere, 2001; Hopper, 2019, p. 5; Lovelace, 2020)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019\",\"locator\":\"5\",\"uris\":[\"http://zotero.org/users/123/items/ABCD1234\",\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}},{\"id\":\"lovelace2020\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/PRXQZ9GZ\"],\"itemData\":{\"id\":\"lovelace2020\",\"type\":\"article-journal\",\"title\":\"Second paper\",\"container-title\":\"Nature\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\"}],\"issued\":{\"date-parts\":[[2020]]},\"volume\":\"577\",\"page\":\"1-5\",\"DOI\":\"10.1/love\"}},{\"id\":\"42\",\"uris\":[\"http://zotero.org/users/123/items/ZZZZ\",\"http://zotero.org/users/local/zotlet/items/KH322222\"],\"itemData\":{\"id\":\"42\",\"type\":\"book\",\"title\":\"Only in Zotero\",\"author\":[{\"family\":\"Elsewhere\",\"given\":\"E\"}],\"issued\":{\"date-parts\":[[2001]]}}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}"
+   },
+   {
+    "id": "f1",
+    "code": "BIBL {\"uncited\":[],\"omitted\":[],\"custom\":[]} CSL_BIBLIOGRAPHY",
+    "text": "{\\rtf \\li720\\fi-720 Elsewhere, E. (2001). {\\i{}Only in Zotero}.\\par Hopper, G. (2019). A {\\i{}compiler} paper. {\\i{}Science}, {\\i{}1}, 2\\uc0\\u8211{}3. https://doi.org/10.1/hopper\\par Lovelace, A. (2020). Second paper. {\\i{}Nature}, {\\i{}577}, 1\\uc0\\u8211{}5. https://doi.org/10.1/love}"
+   }
+  ],
+  "alerts": [],
+  "completed": 3,
+  "bibliographyStyle": null,
+  "spec": null
+ },
+ "a document whose style is not installed is downloaded first, or left alone #1": {
+  "data": "<data data-version=\"3\" zotero-version=\"7.0\"><session id=\"sid1\"/><style id=\"http://www.zotero.org/styles/elsevier-harvard\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"ReferenceMark\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"(Hopper, 2019)\",\"plainCitation\":\"(Hopper, 2019)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "{\\rtf (Hopper, 2019)}"
+   }
+  ],
+  "alerts": [],
+  "completed": 1,
+  "bibliographyStyle": null,
+  "spec": {
+   "mode": "cite",
+   "style": "elsevier-harvard",
+   "askStyle": false,
+   "selected": [],
+   "items": [
+    {
+     "id": "lovelace2020",
+     "type": "article-journal",
+     "title": "Second paper",
+     "author": [
+      {
+       "family": "Lovelace",
+       "given": "Ada"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2020
+       ]
+      ]
+     },
+     "container-title": "Nature",
+     "DOI": "10.1/love"
+    },
+    {
+     "id": "hopper2019",
+     "type": "article-journal",
+     "title": "A <i>compiler</i> paper",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "container-title": "Science",
+     "DOI": "10.1/hopper"
+    },
+    {
+     "id": "hopper2019a",
+     "type": "book",
+     "title": "Another one",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "publisher": "Navy"
+    }
+   ],
+   "bookmarksLocked": false,
+   "projects": [],
+   "styles": [
+    "nature",
+    "science",
+    "cell",
+    "apa",
+    "elsevier-harvard"
+   ]
+  }
+ },
+ "a document whose style is not installed is downloaded first, or left alone #2": {
+  "data": "<data data-version=\"3\" zotero-version=\"7.0\"><session id=\"sid0\"/><style id=\"http://www.zotero.org/styles/no-such-style\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"ReferenceMark\"/></prefs></data>",
+  "fields": [],
+  "alerts": [
+   "zotlet: This document uses the citation style \"no-such-style\", which is not installed and could not be downloaded (Style \"no-such-style\" was not found (HTTP 404)). Install it under Styles in zotlet, or choose another style in Document Preferences."
+  ],
+  "completed": 1,
+  "bibliographyStyle": null,
+  "spec": null
+ },
+ "HTTP citing protocol (23119): the execCommand / respond loop #1": {
+  "data": "<data data-version=\"3\" zotero-version=\"6.0.0\"><session id=\"sid1\"/><style id=\"http://www.zotero.org/styles/science\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"0\"/><prefs><pref name=\"fieldType\" value=\"Http\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"(<i>1</i>)\",\"plainCitation\":\"(1)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "(<i>1</i>)"
+   }
+  ],
+  "alerts": [],
+  "completed": 1,
+  "bibliographyStyle": null,
+  "spec": {
+   "mode": "cite",
+   "style": "nature",
+   "askStyle": true,
+   "selected": [],
+   "items": [
+    {
+     "id": "lovelace2020",
+     "type": "article-journal",
+     "title": "Second paper",
+     "author": [
+      {
+       "family": "Lovelace",
+       "given": "Ada"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2020
+       ]
+      ]
+     },
+     "container-title": "Nature",
+     "DOI": "10.1/love"
+    },
+    {
+     "id": "hopper2019",
+     "type": "article-journal",
+     "title": "A <i>compiler</i> paper",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "container-title": "Science",
+     "DOI": "10.1/hopper"
+    },
+    {
+     "id": "hopper2019a",
+     "type": "book",
+     "title": "Another one",
+     "author": [
+      {
+       "family": "Hopper",
+       "given": "Grace"
+      }
+     ],
+     "issued": {
+      "date-parts": [
+       [
+        2019
+       ]
+      ]
+     },
+     "publisher": "Navy"
+    }
+   ],
+   "bookmarksLocked": false,
+   "projects": [],
+   "styles": [
+    "nature",
+    "science",
+    "cell",
+    "apa"
+   ]
+  }
+ },
+ "HTTP citing protocol (23119): the execCommand / respond loop #2": {
+  "data": "<data data-version=\"3\" zotero-version=\"6.0.0\"><session id=\"sid1\"/><style id=\"http://www.zotero.org/styles/science\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"Http\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"(<i>1</i>)\",\"plainCitation\":\"(1)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "(<i>1</i>)"
+   },
+   {
+    "id": "f2",
+    "code": "BIBL {\"uncited\":[],\"omitted\":[],\"custom\":[]} CSL_BIBLIOGRAPHY",
+    "text": "<div class=\"csl-bib-body\">\n  <div class=\"csl-entry\">\n    <div class=\"csl-left-margin\">1. </div><div class=\"csl-right-inline\">G. Hopper, A <i>compiler</i> paper. <i>Science</i> <b>1</b>, 2–3 (2019).</div>\n  </div>\n</div>"
+   }
+  ],
+  "alerts": [],
+  "completed": 2,
+  "bibliographyStyle": [
+   -384,
+   384,
+   240,
+   240,
+   [
+    384
+   ],
+   1
+  ],
+  "spec": null
+ },
+ "HTTP citing protocol (23119): the execCommand / respond loop #3": {
+  "data": "<data data-version=\"3\" zotero-version=\"6.0.0\"><session id=\"sid1\"/><style id=\"http://www.zotero.org/styles/apa\" hasBibliography=\"1\" bibliographyStyleHasBeenSet=\"1\"/><prefs><pref name=\"fieldType\" value=\"Http\"/></prefs></data>",
+  "fields": [
+   {
+    "id": "f1",
+    "code": "ITEM CSL_CITATION {\"citationID\":\"cid0\",\"properties\":{\"formattedCitation\":\"(Hopper, 2019)\",\"plainCitation\":\"(Hopper, 2019)\",\"noteIndex\":0},\"citationItems\":[{\"id\":\"hopper2019\",\"uris\":[\"http://zotero.org/users/local/zotlet/items/UG36XSDA\"],\"itemData\":{\"id\":\"hopper2019\",\"type\":\"article-journal\",\"title\":\"A <i>compiler</i> paper\",\"container-title\":\"Science\",\"author\":[{\"family\":\"Hopper\",\"given\":\"Grace\"}],\"issued\":{\"date-parts\":[[2019]]},\"volume\":\"1\",\"page\":\"2-3\",\"DOI\":\"10.1/hopper\"}}],\"schema\":\"https://github.com/citation-style-language/schema/raw/master/csl-citation.json\"}",
+    "text": "(Hopper, 2019)"
+   },
+   {
+    "id": "f2",
+    "code": "BIBL {\"uncited\":[],\"omitted\":[],\"custom\":[]} CSL_BIBLIOGRAPHY",
+    "text": "<div class=\"csl-bib-body\">\n  <div class=\"csl-entry\">Hopper, G. (2019). A <i>compiler</i> paper. <i>Science</i>, <i>1</i>, 2–3. https://doi.org/10.1/hopper</div>\n</div>"
+   }
+  ],
+  "alerts": [],
+  "completed": 3,
+  "bibliographyStyle": [
+   -720,
+   720,
+   480,
+   0,
+   [],
+   0
+  ],
+  "spec": {
+   "mode": "style",
+   "style": "science",
+   "askStyle": false,
+   "selected": [],
+   "items": [],
+   "bookmarksLocked": true,
+   "projects": [],
+   "styles": [
+    "nature",
+    "science",
+    "cell",
+    "apa"
+   ]
+  }
+ }
+}

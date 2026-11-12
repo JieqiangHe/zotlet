@@ -272,7 +272,17 @@ public final class Server {
         if (req.method.equals("GET") && pathname.equals("/api/ping")) return json(200, obj("app", "zotlet"));
         if (req.method.equals("GET") && STATIC.containsKey(pathname)) {
             String[] file = STATIC.get(pathname);
-            String content = new String(Files.readAllBytes(options.home.pub.resolve(file[0])), StandardCharsets.UTF_8);
+            Path source = options.home.pub.resolve(file[0]);
+            if (!Files.isRegularFile(source)) {
+                // Seen when the TBtools plugin folder was removed or replaced while TBtools kept running.
+                Reply r = new Reply();
+                r.status = 500;
+                r.type = "text/plain";
+                r.body = ("zotlet's files are missing (" + source + ").\n\nIf zotlet runs in TBtools and the plugin was removed or "
+                    + "reinstalled, quit TBtools and open it again. Otherwise reinstall zotlet.\n").getBytes(StandardCharsets.UTF_8);
+                return r;
+            }
+            String content = new String(Files.readAllBytes(source), StandardCharsets.UTF_8);
             if (file[0].endsWith(".html")) content = content.replaceFirst("__ZOTLET_TOKEN__", token);
             Reply r = new Reply();
             r.type = file[1];

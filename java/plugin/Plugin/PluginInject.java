@@ -52,7 +52,7 @@ public class PluginInject {
     private interface Saver { void to(Path file) throws Exception; }
 
     private static final String CB = "com.teamdev.jxbrowser.browser.callback.";
-    private static final String URL_PROPERTY = "zotlet.plugin.url";
+    private static final String URL_PROPERTY = "zotlet.plugin.url", HOME_PROPERTY = "zotlet.plugin.home", LOADER_PROPERTY = "zotlet.plugin.loader";
     private static File lastDir;
     private static boolean queued;
     private final File dir;
@@ -72,8 +72,23 @@ public class PluginInject {
 
     /** Start zotlet once per TBtools process (later tabs reuse it) and return its page. */
     private static synchronized String start(File dir) throws Exception {
-        String url = System.getProperty(URL_PROPERTY);
-        if (url != null) return url;
+        String url = System.getProperty(URL_PROPERTY), home = System.getProperty(HOME_PROPERTY);
+        if (url != null && dir.getAbsolutePath().equals(home) && new File(dir, "public/index.html").isFile()) return url;
+        if (url != null) {
+            // The plugin was removed or reinstalled while TBtools kept running: stop the zotlet that
+            // still serves the old folder, then start again from this one.
+            Object previous = System.getProperties().get(LOADER_PROPERTY);
+            if (previous instanceof ClassLoader) {
+                try {
+                    Class.forName("zotlet.Main", true, (ClassLoader) previous).getMethod("stopEmbedded").invoke(null);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            }
+            System.getProperties().remove(URL_PROPERTY);
+            System.getProperties().remove(HOME_PROPERTY);
+            System.getProperties().remove(LOADER_PROPERTY);
+        }
         List<URL> jars = new ArrayList<>();
         File[] files = new File(dir, "lib").listFiles((d, n) -> n.endsWith(".jar"));
         if (files == null || files.length == 0) throw new IllegalStateException("lib/ is missing from the zotlet plugin folder " + dir);
@@ -83,6 +98,8 @@ public class PluginInject {
         Class<?> main = Class.forName("zotlet.Main", true, loader);
         url = (String) main.getMethod("startEmbedded", String.class).invoke(null, dir.getAbsolutePath());
         System.setProperty(URL_PROPERTY, url);
+        System.setProperty(HOME_PROPERTY, dir.getAbsolutePath());
+        System.getProperties().put(LOADER_PROPERTY, loader); // to stop this zotlet if the folder is replaced
         return url;
     }
 

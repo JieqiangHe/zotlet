@@ -4,14 +4,13 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
-import { startServer } from '../src/server.js'
-import { createStore } from '../src/store.js'
 import { fixture, fakeFetch, tempDir, makePdf } from './helpers.js'
+import { buildOrSkip, startInternet, javaServer, fakeDocument, tcpCommand } from './zotlet.js'
 
 let playwright = null
 try { playwright = createRequire(import.meta.url)('playwright') } catch { /* optional */ }
 const SHOTS = process.env.ZOTLET_SCREENSHOTS // optional folder for screenshots
-const skip = !playwright && 'Playwright is not installed'
+const skip = (!playwright && 'Playwright is not installed') || buildOrSkip()
 
 const ELSEVIER = '10.1016/j.plaphy.2026.111729'
 let server, browser, page, dir
@@ -19,6 +18,7 @@ let server, browser, page, dir
 // Serves Zotero's style index and one journal style; everything else goes to `next`.
 const JOURNAL_STYLE = fs.readFileSync(new URL('./fixtures/dependent-style.csl', import.meta.url), 'utf8')
 const styleNet = (next) => async (url, init) => {
+  url = String(url)
   if (String(url) === 'https://www.zotero.org/styles-files/styles.json') {
     return Response.json([
       { title: 'Plant Physiology and Biochemistry', name: 'plant-physiology-and-biochemistry', dependent: 1, categories: { format: 'author-date', fields: ['botany'] }, updated: '2018-02-16' },
@@ -29,20 +29,23 @@ const styleNet = (next) => async (url, init) => {
   if (String(url) === 'https://www.zotero.org/styles/elsevier-harvard') return new Response(fs.readFileSync(new URL('./fixtures/styles/elsevier-harvard.csl', import.meta.url), 'utf8'))
   return next(url, init)
 }
-const opened = []
+let internet
+/** The library as the server sees it. */
+const snapshot = async () => (await fetch(new URL('api/state', server.url), { headers: { 'X-Zotlet-Token': server.token } })).json()
 
 before(async () => {
-  if (!playwright) return
-  dir = tempDir()
-  const store = createStore({ dir })
-  await store.addItems([
-    { type: 'article-journal', title: 'CRISPR screens in <i>Zea mays</i> reveal new regulators', author: [{ family: 'Olsen', given: 'Kai' }, { family: 'Ng', given: 'Mei' }], 'container-title': 'Nature Plants', issued: { 'date-parts': [[2023, 5]] }, DOI: '10.1038/s41477-023-0001-1' },
-    { type: 'book', title: 'Statistical Rethinking', author: [{ family: 'McElreath', given: 'Richard' }], publisher: 'CRC Press', issued: { 'date-parts': [[2020]] } },
-  ])
-  server = await startServer({
-    port: 0, dir, store, quiet: true, openUrl: (url) => opened.push(url),
-    fetchImpl: styleNet(fakeFetch({ dois: { [ELSEVIER]: fixture('elsevier-crossref.json') }, pmids: { 31452104: fixture('pubmed.json') } })),
-  })
+  if (skip) return
+  dir = path.join(tempDir(), '.zotlet')
+  fs.mkdirSync(dir)
+  const items = [
+    { id: 'olsen2023', type: 'article-journal', title: 'CRISPR screens in <i>Zea mays</i> reveal new regulators', author: [{ family: 'Olsen', given: 'Kai' }, { family: 'Ng', given: 'Mei' }], 'container-title': 'Nature Plants', issued: { 'date-parts': [[2023, 5]] }, DOI: '10.1038/s41477-023-0001-1' },
+    { id: 'mcelreath2020', type: 'book', title: 'Statistical Rethinking', author: [{ family: 'McElreath', given: 'Richard' }], publisher: 'CRC Press', issued: { 'date-parts': [[2020]] } },
+  ]
+  fs.writeFileSync(path.join(dir, 'library.json'), JSON.stringify(items))
+  fs.writeFileSync(path.join(dir, 'web-state.json'), JSON.stringify({ version: 1, projects: [],
+    added: { olsen2023: '2026-11-01T09:00:00.000Z', mcelreath2020: '2026-11-02T09:00:00.000Z' } }))
+  internet = await startInternet(styleNet(fakeFetch({ dois: { [ELSEVIER]: fixture('elsevier-crossref.json') }, pmids: { 31452104: fixture('pubmed.json') } })))
+  server = await javaServer(dir, { fetchBase: internet.base })
   browser = await playwright.chromium.launch()
   const context = await browser.newContext({ viewport: { width: 1280, height: 760 }, acceptDownloads: true })
   page = await context.newPage()
@@ -54,7 +57,7 @@ before(async () => {
 after(async () => {
   await browser?.close()
   server?.close()
-  server?.closeAllConnections()
+  internet?.close()
   if (page) assert.deepEqual(page.errors.map(String), [])
 })
 
@@ -251,13 +254,22 @@ test('narrow window: no horizontal overflow', { skip }, async () => {
   await page.setViewportSize({ width: 1280, height: 760 })
 })
 
-test('citation picker (opened by Word / GenOffice): search, select, insert; style picker', { skip }, async () => {
-  const { items } = await createStore({ dir }).snapshot()
-  const result = server.pick({ mode: 'cite', style: 'nature', askStyle: true, items, selected: [] })
-  await new Promise((r) => setTimeout(r, 20))
+const nextPicker = async () => {
+  for (let k = 0; !server.opened.length; k++) {
+    if (k > 3000) throw new Error('the picker was never opened')
+    await new Promise((r) => setTimeout(r, 10))
+  }
+  return server.opened.shift()
+}
+
+test('citation picker (opened by GenOffice / LibreOffice): search, select, insert; style picker', { skip }, async () => {
+  const { items } = await snapshot()
+  // A word processor asks for a citation over TCP 23116; zotlet opens the browser picker (ZOTLET_PICKER=web).
+  const doc = fakeDocument()
+  const done = tcpCommand(server, doc, 'addEditCitation')
   const picker = await page.context().newPage()
   picker.on('pageerror', (e) => page.errors.push(e))
-  await picker.goto(opened.shift())
+  await picker.goto(await nextPicker())
   await picker.waitForSelector('#pick-rows .row')
   assert.equal(await picker.$$eval('#pick-rows .row', (rows) => rows.length), items.length)
   await picker.fill('#pick-search', 'rethinking')
@@ -272,32 +284,36 @@ test('citation picker (opened by Word / GenOffice): search, select, insert; styl
   assert.ok(await picker.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'no horizontal overflow')
   if (SHOTS) await picker.screenshot({ path: path.join(SHOTS, '21-picker-narrow.png') })
   await picker.keyboard.press('Enter')
-  const chosen = await result
-  assert.equal(chosen.style, 'cell')
-  assert.deepEqual(chosen.ids, [picked])
+  await done
+  assert.equal(doc.fields.length, 1, 'the citation was inserted')
+  assert.deepEqual(JSON.parse(doc.fields[0].code.slice(doc.fields[0].code.indexOf('{'))).citationItems.map((c) => c.id), [picked])
+  assert.match(doc.data, /styles\/cell/)
   await picker.waitForSelector('#pick-message:not([hidden])')
   await picker.close().catch(() => {})
 
-  const styleResult = server.pick({ mode: 'style', style: 'nature', bookmarks: false, bookmarksLocked: false })
-  await new Promise((r) => setTimeout(r, 20))
+  const prefs = fakeDocument()
+  const styleDone = tcpCommand(server, prefs, 'setDocPrefs')
   const stylePage = await page.context().newPage()
-  await stylePage.goto(opened.shift())
+  await stylePage.goto(await nextPicker())
   await stylePage.waitForSelector('#pick-rows .row.selected')
   await stylePage.click('#pick-rows .row:nth-child(2)')
   if (SHOTS) await stylePage.screenshot({ path: path.join(SHOTS, '22-style-picker.png') })
   await stylePage.check('#pick-bookmarks input')
   await stylePage.click('#pick-ok')
-  assert.deepEqual(await styleResult, { style: 'science', bookmarks: true })
+  await styleDone
+  assert.match(prefs.data, /styles\/science/)
+  assert.match(prefs.data, /<pref name="fieldType" value="Bookmark"\/>/)
   await stylePage.close().catch(() => {})
 
   // Closing the tab without answering cancels the request.
-  const closed = server.pick({ mode: 'cite', style: 'nature', items, selected: [] })
-  await new Promise((r) => setTimeout(r, 20))
+  const untouched = fakeDocument()
+  const closed = tcpCommand(server, untouched, 'addEditCitation')
   const gone = await page.context().newPage()
-  await gone.goto(opened.shift())
+  await gone.goto(await nextPicker())
   await gone.waitForSelector('#pick-rows .row')
   await gone.close({ runBeforeUnload: true })
-  assert.equal(await closed, null)
+  await closed
+  assert.deepEqual([untouched.fields.length, untouched.completed], [0, 1])
 })
 
 test('styles: search the repository, install a journal style, remove it', { skip }, async () => {
@@ -334,7 +350,7 @@ async function dropPdf(selector, name, bytes) {
 test('drop PDFs: the DOI is read and the reference imported; type a DOI when none is found', { skip }, async () => {
   await page.setViewportSize({ width: 1280, height: 760 })
   await page.click('.nav-item[data-project=""]')
-  const before = (await createStore({ dir }).snapshot()).items.length
+  const before = (await snapshot()).items.length
   const article = makePdf({ pages: ['[(Plant Physiology and Biochemistry)-300(https://doi.org/10.1016/j.plaphy.2026.111729)]TJ'] })
   const dt = await dropPdf('.table', 'elsevier.pdf', article)
   assert.ok(await page.isVisible('#drop-hint'))
@@ -355,11 +371,11 @@ test('drop PDFs: the DOI is read and the reference imported; type a DOI when non
   await page.click('#pdf-results li.bad button')
   await page.waitForSelector('#pdf-results li.warn')
   await page.click('#pdf-dialog .dialog-foot .primary')
-  assert.equal((await createStore({ dir }).snapshot()).items.length, before)
+  assert.equal((await snapshot()).items.length, before)
 })
 
 test('drop a CSL JSON file (e.g. exported from Zotero) to import its references', { skip }, async () => {
-  const before = (await createStore({ dir }).snapshot()).items.length
+  const before = (await snapshot()).items.length
   const json = Buffer.from(JSON.stringify([
     { id: 'http://zotero.org/users/1/items/AAA', type: 'article-journal', title: 'From Zotero', author: [{ family: 'Curie', given: 'Marie' }], issued: { 'date-parts': [['1903']] }, DOI: '10.5555/zotero-1' },
     { id: 'x', type: 'book', title: 'Statistical Rethinking (2nd ed.)' },
@@ -375,7 +391,7 @@ test('drop a CSL JSON file (e.g. exported from Zotero) to import its references'
   await page.waitForSelector('#pdf-results li.ok')
   assert.match(await page.textContent('#pdf-results li'), /Imported 2 references · 1 skipped/)
   await page.click('#pdf-dialog .dialog-foot .primary')
-  assert.equal((await createStore({ dir }).snapshot()).items.length, before + 2)
+  assert.equal((await snapshot()).items.length, before + 2)
   await page.waitForSelector('.rows .row:has-text("From Zotero")')
 })
 
@@ -384,7 +400,7 @@ test('columns sort, including by import time (Added), and the choice is remember
   await page.click('.nav-item[data-project=""]')
   await page.waitForSelector('.rows .row')
   const keys = () => page.$$eval('.rows .row', (rows) => rows.map((r) => r.dataset.id))
-  const { items } = await createStore({ dir }).snapshot()
+  const { items } = await snapshot()
   const importOrder = items.map((i) => i.id)
   assert.deepEqual(await keys(), [...importOrder].reverse(), 'default: newest import first')
 

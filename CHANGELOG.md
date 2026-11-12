@@ -2,6 +2,14 @@
 
 The release workflow publishes the section of the released version as its GitHub release notes.
 
+## Unreleased
+
+- zotlet is now Java only: the Node version (`zotlet.js`, `src/`, `start-web.command`) is removed. Its
+  behaviour is kept as recorded answers that the tests check the Java version against.
+- TBtools plugin: removing or reinstalling the plugin while TBtools is open no longer leaves a broken zotlet
+  behind; opening the new plugin takes over. `start-java` no longer opens a broken zotlet that is still
+  running in TBtools; it says to quit TBtools first.
+
 ## 0.2.0 — 2026-11-12
 
 zotlet without Node: it now also runs on Java, and as a plugin in TBtools.
