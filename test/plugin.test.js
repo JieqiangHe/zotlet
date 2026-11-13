@@ -64,7 +64,7 @@ test('TBtools loads the plugin: zotlet starts, survives the closed class loader,
 })
 
 test('Intel build of TBtools on a Mac: the macOS licence key is refused, the other key works', { skip }, async () => {
-  const out = await verify(['-Dos.name=Mac OS X', '-Dstub.licenses=OTHER-KEY'])
+  const out = await verify(['-Dverify.osName=Mac OS X', '-Dstub.licenses=OTHER-KEY'])
   assert.match(out, /refused the macOS license key; trying TBtools' other key/)
   assert.match(out, /panel: biocjava\.GUIexcutors\.WebGuiApp\.WebGuiJPanel/)
 })

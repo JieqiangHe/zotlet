@@ -53,6 +53,14 @@ public class VerifyPlugin {
     }
 
     public static void main(String[] args) throws Exception {
+        String fakeOs = System.getProperty("verify.osName");
+        if (fakeOs != null) {
+            // Pretend to be another OS (the Intel-build licence test) only after the JDK has set up sockets,
+            // fonts and Swing for the real one: with -Dos.name at start a Linux JDK loads macOS-only classes.
+            new java.net.ServerSocket(0).close();
+            new javax.swing.JLabel("<html>x</html>").getFont().getFamily();
+            System.setProperty("os.name", fakeOs);
+        }
         File dir = new File(args[0]);
         Object[] first = open(dir);
         check("zotlet".equals(first[0]), "the plugin is named after its folder: " + first[0]);

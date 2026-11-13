@@ -321,8 +321,10 @@ test('HTTP citing protocol (23119): the execCommand / respond loop', { skip }, a
   for (const s of Object.values(servers)) {
     const base = `http://127.0.0.1:${s.http}/connector/`
     await assert.rejects(fetch(base + 'document/execCommand', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://evil.example' }, body: '{}' }), s.name)
-    assert.equal((await fetch(base + 'ping')).status, 200)
-    assert.equal((await fetch(base + 'nothing')).status, 404)
+    // (the cause of a network error, if any, so a failure on CI says what happened)
+    const get = (route) => fetch(base + route).catch((e) => { throw new Error(`${s.name} ${route}: ${e.cause?.code || ''} ${e.cause?.message || e.message}`) })
+    assert.equal((await get('ping')).status, 200)
+    assert.equal((await get('nothing')).status, 404)
   }
 })
 

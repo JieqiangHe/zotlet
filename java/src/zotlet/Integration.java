@@ -856,8 +856,24 @@ public final class Integration {
                 o.write(header.toString().getBytes(StandardCharsets.UTF_8));
                 o.flush();
             } catch (IOException e) { /* client gone */ }
-            try { socket.close(); } catch (IOException e) { /* ignore */ }
+            closeGently(socket);
         };
+    }
+
+    /**
+     * Close after a response without a TCP reset: a plain close() with unread request bytes sends RST, which can
+     * discard the response before the client has read it (seen as "fetch failed" on a slow machine).
+     */
+    static void closeGently(Socket socket) {
+        try {
+            socket.shutdownOutput();
+            socket.setSoTimeout(200);
+            InputStream in = socket.getInputStream();
+            byte[] buf = new byte[4096];
+            long until = System.currentTimeMillis() + 500;
+            while (System.currentTimeMillis() < until && in.read(buf) >= 0) { /* drain until the client closes */ }
+        } catch (IOException e) { /* gone or timed out */ }
+        try { socket.close(); } catch (IOException e) { /* ignore */ }
     }
 
     private static List<Object> fieldTuple(Object field) {
@@ -933,7 +949,7 @@ public final class Integration {
                 boolean browser = (ua != null && ua.startsWith("Mozilla/")) || request.headers.containsKey("origin");
                 if (browser && request.header("x-zotero-connector-api-version") == null && request.header("zotero-allowed-request") == null
                     && !(pathname.equals("/connector/ping") && "navigate".equals(request.header("sec-fetch-mode")))) {
-                    socket.close();
+                    closeGently(socket);
                     return;
                 }
                 Object data = null;
