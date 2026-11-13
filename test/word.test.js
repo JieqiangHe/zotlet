@@ -81,6 +81,19 @@ test('Word for Mac: insert citations and a bibliography, refresh, unlink — thr
   assert.ok(w.doc().fields.every((f) => f.code === null), 'all fields unlinked')
 })
 
+test('Word for Mac refused by macOS: the user is told, also what to do when zotlet runs inside TBtools', { skip }, async () => {
+  const refused = `${process.execPath} ${path.join(ROOT, 'test/fake-word-refused.mjs')}`
+  for (const [embedded, expected] of [['', /not allowed to control Microsoft Word \| .*Automation/], ['1', /from inside TBtools \| .*start-java\.command/]]) {
+    const dir = path.join(tempDir(), '.zotlet')
+    const server = await javaServer(dir, { env: { ZOTLET_WORD_MODE: 'mac', ZOTLET_WORD_HELPER: refused, ZOTLET_TEST_EMBEDDED: embedded } })
+    servers.push(server)
+    await macButton({ server }, 'addEditCitation')
+    await until(() => server.alerts.length, 'the alert')
+    assert.match(server.alerts[0], expected)
+    assert.match(fs.readFileSync(path.join(dir, 'word.log'), 'utf8'), /addEditCitation failed: macOS did not allow/)
+  }
+})
+
 test('Word for Windows: commands from the ZoteroMessageWindow run in the same way', { skip }, async () => {
   const w = await start('windows')
   const press = (command) => fs.appendFileSync(`${w.docFile}.trigger`, command + '\n')

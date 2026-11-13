@@ -15,6 +15,9 @@ The release workflow publishes the section of the released version as its GitHub
   the system, with the same keys as on the Mac, instead of a browser window. The browser picker is only used
   when no window can be shown.
 
+- Word on a Mac: when a button cannot be carried out, zotlet now says so in a message (before, nothing
+  happened), and explains what to do when it runs inside TBtools, which macOS does not let control Word.
+
 ## 0.3.0 — 2026-11-12
 
 - **Microsoft Word** (macOS and Windows) without Zotero: zotlet puts Zotero's Word template into Word and

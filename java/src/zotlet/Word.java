@@ -204,10 +204,46 @@ public final class Word {
                 log.accept(Text.padEnd("Word " + command, 20) + " " + run(command, null, helper, ctx));
             } catch (Throwable e) {
                 log.accept("Word error: " + e.getMessage());
+                // Without this the button seems to do nothing (in TBtools nobody sees the log).
+                String[] alert = failure(command, String.valueOf(e.getMessage()), Main.isEmbedded());
+                appendLog(dataDir, "zotlet: " + command + " failed: " + e.getMessage());
+                Picker.alert(alert[0], alert[1]);
             } finally {
                 if (helper != null) helper.close();
             }
         });
+    }
+
+    /**
+     * What to tell the user when a Word button could not be carried out: { title, text }.
+     * macOS asks "allow X to control Microsoft Word?" on behalf of the application zotlet was started
+     * from. Terminal can be allowed; an application that does not declare that it sends Apple events
+     * (TBtools) is refused without a question (error -1743), so there the way out is to start zotlet itself.
+     */
+    static String[] failure(String command, String message, boolean embedded) {
+        boolean refused = message.contains("did not allow") || message.contains("-1743") || message.contains("Not authorized");
+        if (refused && embedded) {
+            return new String[]{"zotlet cannot control Microsoft Word from inside TBtools",
+                "macOS only lets an application control Word after asking you, and it does not ask for TBtools.\n\n"
+                + "Quit TBtools, start zotlet with start-java.command (in the zotlet folder) and click the button in Word again: "
+                + "macOS then asks once whether Terminal may control Microsoft Word. Afterwards TBtools can be opened again; "
+                + "its zotlet tab uses the zotlet that is already running.\n\nLibreOffice and GenOffice work from TBtools as before."};
+        }
+        if (refused) {
+            return new String[]{"zotlet is not allowed to control Microsoft Word",
+                "Open System Settings \u2192 Privacy & Security \u2192 Automation, switch on Microsoft Word for Terminal (or the application zotlet was started from), "
+                + "then click the button in Word again."};
+        }
+        return new String[]{"zotlet could not finish \"" + command + "\" in Word", message + "\n\nDetails are in the file word.log in the folder .zotlet of your home folder."};
+    }
+
+    private static void appendLog(Path dataDir, String line) {
+        if (dataDir == null) return;
+        try {
+            Files.createDirectories(dataDir);
+            Files.write(dataDir.resolve("word.log"), (java.time.Instant.now() + "  " + line + "\n").getBytes(StandardCharsets.UTF_8),
+                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+        } catch (IOException e) { /* only a log */ }
     }
 
     /** Windows: a helper that keeps the ZoteroMessageWindow open and runs each button press. */

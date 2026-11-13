@@ -290,6 +290,16 @@ How Zotero's Word plugins reach Zotero, read from zotero-word-for-mac-integratio
   (once, marker `~/.zotlet/.word-install-asked`) Finder shows the file and the folder to drag.
   `zotlet word-install` runs it by hand; the server runs it at start (`ZOTLET_WORD_INSTALL=0` turns it off).
 - Unsupported buttons (Add Note, annotations, citation explorer) get an alert.
+- **Word on a Mac from the TBtools plugin** (the user, Intel Mac, 13 Nov 2026: the Zotero tab is there, Add
+  Citation shows nothing). Not reproduced (no Mac here); the likely cause: macOS attributes the helper's
+  Apple events to the application zotlet was started from, and refuses them without asking (-1743) when
+  that application's Info.plist has no `NSAppleEventsUsageDescription` (TBtools; Terminal has one). Errors
+  of a Mac Word session used to go to the log only, so nothing was seen. Now `Word.runMac` shows
+  `Picker.alert` (osascript's own `display alert`, no permission needed) with `Word.failure(...)`: inside
+  TBtools (`Main.isEmbedded()`) it says to quit TBtools and start zotlet with start-java.command (the plugin
+  tab then reuses that zotlet); the error also goes to `~/.zotlet/word.log`. If the user's word.log shows
+  another error, this diagnosis was wrong. Not tried: running the helper outside TBtools' responsibility
+  (a launchd job or an osacompile'd applet).
 - Tests: `test/word.test.js` drives the whole path with `test/fake-word.mjs` standing in for the helper
   (`ZOTLET_WORD_HELPER`, `ZOTLET_WORD_MODE=mac|windows`). The AppleScript and COM parts are checked
   only on real machines: PowerShell 7 parses the script and compiles its C#, and its JSON shapes were

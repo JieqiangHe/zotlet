@@ -109,6 +109,11 @@ citations as bookmarks, which both Word and LibreOffice-style editors accept.
 
 ## Troubleshooting
 
+- **Word on a Mac, zotlet as a TBtools plugin: the buttons do nothing, or a message says zotlet cannot control
+  Word.** macOS lets an application control Word only after asking you, and it does not ask for TBtools.
+  Quit TBtools, start zotlet with `start-java.command`, and click the button in Word again: macOS asks once
+  whether Terminal may control Microsoft Word. After that TBtools can be opened again (its zotlet tab uses
+  the zotlet that is already running). LibreOffice and GenOffice are not affected.
 - **Word: something goes wrong.** Details are in `~/.zotlet/word.log`; please send it with a report.
 - **The citation buttons do nothing.** Make sure zotlet is running (as a TBtools plugin: TBtools is open and
   the zotlet tab was opened once) and Zotero is closed: both use the same ports (23116 and 23119), and zotlet

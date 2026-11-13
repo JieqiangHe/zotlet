@@ -243,6 +243,27 @@ public final class Picker {
         return "tab";
     }
 
+    /**
+     * A message box of zotlet's own (macOS: osascript, which needs no permission for its own alert;
+     * elsewhere a Swing dialog), for failures the user would otherwise never see. Does not wait.
+     */
+    public static void alert(String title, String text) {
+        if ("stdout".equals(System.getenv("ZOTLET_OPEN_LOG"))) { System.out.println("alert: " + title + " | " + text.replace('\n', ' ')); System.out.flush(); return; }
+        if (MAC) {
+            String q = "\"" + title.replace("\\", "\\\\").replace("\"", "\\\"") + "\" message \"" + text.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+            if (Proc.spawn(Arrays.asList("/usr/bin/osascript", "-e", "tell me to activate", "-e", "display alert " + q + " as warning"))) return;
+        }
+        if (QuickPick.available()) {
+            java.awt.EventQueue.invokeLater(() -> {
+                javax.swing.JOptionPane pane = new javax.swing.JOptionPane(text, javax.swing.JOptionPane.WARNING_MESSAGE);
+                javax.swing.JDialog d = pane.createDialog(null, title);
+                d.setAlwaysOnTop(true);
+                d.setModal(false);
+                d.setVisible(true);
+            });
+        }
+    }
+
     private static final Pattern BUNDLE = Pattern.compile("\"CFBundleIdentifier\"" + Text.WS + "*=" + Text.WS + "*\"([^\"]+)\"");
 
     /** macOS: the bundle id of the app in front (no permission prompt: uses lsappinfo). */

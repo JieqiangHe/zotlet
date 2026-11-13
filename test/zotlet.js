@@ -43,7 +43,7 @@ export function javaServer(dir, { libreOffice = false, fetchBase, env = {} } = {
         ZOTLET_PICKER: 'web', ZOTLET_OPEN_LOG: 'stdout', ZOTLET_TEST_CLIENT: libreOffice ? 'soffice' : '', NO_COLOR: '1', ZOTLET_WORD_MODE: '', ZOTLET_WORD_INSTALL: '0', ...env },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
-    const opened = [], info = {}
+    const opened = [], alerts = [], info = {}
     let out = '', err = ''
     child.stderr.on('data', (d) => { err += d })
     child.stdout.on('data', (d) => {
@@ -54,13 +54,14 @@ export function javaServer(dir, { libreOffice = false, fetchBase, env = {} } = {
         const line = out.slice(0, nl).trim()
         out = out.slice(nl + 1)
         if (line.startsWith('open: ')) opened.push(line.slice(6))
+        if (line.startsWith('alert: ')) alerts.push(line.slice(7))
         let m
         if ((m = /zotlet . (http:\/\/127\.0\.0\.1:\d+\/)/.exec(line))) info.url = m[1]
         if ((m = /citations: on \(ports (\d+), (\d+)\)/.exec(line))) {
           info.tcp = Number(m[1]); info.http = Number(m[2])
           clearTimeout(startTimer)
           fetch(info.url).then((r) => r.text()).then((html) => {
-            resolve({ name: 'java', ...info, opened, token: /name="zotlet-token" content="([0-9a-f]+)"/.exec(html)[1], close: () => child.kill(),
+            resolve({ name: 'java', ...info, opened, alerts, token: /name="zotlet-token" content="([0-9a-f]+)"/.exec(html)[1], close: () => child.kill(),
               // (for failure messages: did the process stop, and what did it print?)
               state: () => `pid ${child.pid}, exit ${child.exitCode ?? '-'} ${child.signalCode ?? ''}; stderr: ${err.slice(-2000)}` })
           }, reject)

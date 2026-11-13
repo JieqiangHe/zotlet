@@ -243,6 +243,9 @@ public final class Main {
         return embedded.url;
     }
 
+    /** Running inside another application (the TBtools plugin)? */
+    public static synchronized boolean isEmbedded() { return embedded != null || "1".equals(System.getenv("ZOTLET_TEST_EMBEDDED")); }
+
     private static int envPort(String name, int fallback) {
         try { return Integer.parseInt(System.getenv(name).trim()); } catch (Exception e) { return fallback; }
     }
