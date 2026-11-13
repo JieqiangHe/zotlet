@@ -2,6 +2,14 @@
 
 The release workflow publishes the section of the released version as its GitHub release notes.
 
+## 0.4.1 — 2026-11-13
+
+- The citation pop-up: no grey see-through frame around it, no bottom bar (an Insert button next to the chosen references), more compact, and references can be chosen with
+  the mouse: a click adds one (click again to take it out), a double click inserts.
+- Citing is quicker on a Mac: the pop-up opens at once (zotlet no longer tries the older macOS pop-up first,
+  which did not start on some Macs, and prepares the window when it starts).
+- Word on a Mac: when the helper that controls Word stops, the message and `~/.zotlet/word.log` now say why.
+
 ## 0.4.0 — 2026-11-13
 
 - **Chinese literature without a plugin** (what Zotero needs Jasminum / 茉莉花 for): paste the GB/T 7714

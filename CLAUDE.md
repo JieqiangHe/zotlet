@@ -232,22 +232,31 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   a new document's first citation; style mode lists styles (+ the bookmarks checkbox). The request /
   answer is JSON (`Picker.nativeSpec`, `Picker.parseResult`, both in java/test/UnitTest.java); the Cocoa part can
   only be run on a Mac (tests syntax-check it).
-  **Windows, Linux, and macOS when the Cocoa one fails** (13 Nov 2026, the user: "a real pop-up, not back to
+  **Since 13 Nov 2026 (evening) Java's pop-up is the default everywhere, macOS included**: on the user's Mac the
+  Cocoa one never appeared (zotlet fell back to Java's every time, after a failed osascript start that made
+  each citation slow); `ZOTLET_PICKER=cocoa` still tries the Cocoa one first.
+  **Java's pop-up** (13 Nov 2026, the user: "a real pop-up, not back to
   the browser", in Word, LibreOffice and GenOffice): `QuickPick.java`, a Swing window in zotlet's own JVM
   (undecorated, always on top, same request / answer / keys; `Picker.windowPick`). Its look (the user:
   "prettier, like Raycast"): a rounded card, a large search line without a box, chips for the chosen
   references (click removes), rows with a rounded highlight (mark, title, journal, authors + year), a bottom
   bar with the keys as clickable hints; light or dark like the system (`systemDark()`: defaults / reg /
   gsettings; `ZOTLET_PICKER_THEME`), fonts with Chinese glyphs (PingFang SC, Microsoft YaHei UI, else Sans
-  Serif; `fit()` falls back per string). With a translucent window it draws a soft shadow (`glass`; never
-  seen: Xvfb has no translucency, there the corners are cut with `setShape`). The macOS Cocoa pop-up was
+  Serif; `fit()` falls back per string). The user (13 Nov 2026, macOS, screenshot): no see-through frame around
+  the card (the painted 22px shadow showed as one), more compact, several references must be choosable. So:
+  the window is exactly the card (transparent corners with translucency, macOS' own `Window.shadow`; else
+  `setShape`), 600×380, 32px rows, 16px search line; **a click puts a reference into the citation or takes it
+  out** (`Model.toggle`), a double click inserts, Enter as before. No bottom bar in citation mode (the user: "still ugly, the bottom"): an
+  accent **Insert** pill at the right end of the chips row (shown once something is chosen; the window is 30px
+  shorter until then); the style picker keeps a bottom bar with plain Cancel / Use style buttons + the checkbox. `QuickPick.warm()` (server start) reads the
+  system colours and the font list once, so the first pop-up opens at once (`dark()` re-reads in the background). The macOS Cocoa pop-up was
   not restyled (it cannot be run here). `QuickPick.Model` holds
   the behaviour without AWT (UnitTest.java); `test/popup.test.js` opens the real window on Xvfb
   (`java/test/PickWindowTest.java`, screenshots with `ZOTLET_SCREENSHOTS`) and answers a TCP citation
   through it (`ZOTLET_PICK_KEYS="type:…;enter;enter"` presses keys in the window). It has only run on
   Linux/Xvfb: keyboard focus on Windows (a background program may be refused it; a WScript `AppActivate`
   is tried once) and on macOS (`Desktop.requestForeground`; `apple.awt.UIElement` keeps the stand-alone
-  JVM out of the Dock) is unverified. `ZOTLET_PICKER=window` forces it on a Mac.
+  JVM out of the Dock) was confirmed by the user's screenshot (the pop-up had the keyboard).
   Only when no window can be shown (headless) or it throws, zotlet falls back to the browser picker
   (`/pick.html?id=…`, answered by `POST /api/pick/done`, closing it cancels, 30 min timeout), which
   `Picker.openPicker` shows as a Chromium `--app` window when possible, else a tab.

@@ -69,6 +69,15 @@ public class UnitTest {
         check(m.status().startsWith("Citing: He et al. 2023; Zhi 2025"), "status names the citation: " + m.status());
         eq(m.result("cell", null), Json.obj("ids", Json.arr("he2023", "zhi2025"), "style", "cell"), "answer");
         check(m.removeLast() && m.removeLast() && !m.removeLast(), "backspace removes the last, then nothing");
+        m.filter("");
+        String r0 = (String) m.rows.get(0).get("id"), r1 = (String) m.rows.get(1).get("id");
+        m.toggle(0); m.toggle(1);
+        eq(m.chosen, Arrays.asList(r0, r1), "a click puts a reference in: several can be chosen by clicking");
+        m.toggle(0);
+        eq(m.chosen, Arrays.asList(r1), "a second click takes it out");
+        m.toggle(0);
+        eq(m.chosen, Arrays.asList(r1, r0), "and in again, now last");
+        m.chosen.clear();
         m.filter("nothing matches this");
         check(m.highlighted() == null && m.result(null, null) == null, "nothing to insert");
         m.filter("4-mu"); m.move(5); m.move(-9);

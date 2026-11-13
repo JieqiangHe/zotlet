@@ -64,13 +64,25 @@ public final class Word {
         private final AtomicInteger ids = new AtomicInteger();
         private final CompletableFuture<Map<String, Object>> ready = new CompletableFuture<>();
         private volatile boolean closed;
+        private final StringBuilder stderr = new StringBuilder();
+        private Thread errors;
 
         Helper(List<String> command, Map<String, String> env, Consumer<Map<String, Object>> events, Consumer<String> log) throws IOException {
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.environment().putAll(env);
-            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
             process = pb.start();
             in = process.getOutputStream();
+            // What the helper prints on stderr (osascript's own errors) goes to the terminal and into the error message.
+            errors = new Thread(() -> {
+                try (BufferedReader r = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
+                    for (String line; (line = r.readLine()) != null; ) {
+                        System.err.println("word helper: " + line);
+                        synchronized (stderr) { stderr.append(line).append('\n'); if (stderr.length() > 4000) stderr.delete(0, stderr.length() - 4000); }
+                    }
+                } catch (IOException e) { /* gone */ }
+            }, "zotlet-word-helper-stderr");
+            errors.setDaemon(true);
+            errors.start();
             Thread reader = new Thread(() -> {
                 try (BufferedReader r = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                     for (String line; (line = r.readLine()) != null; ) {
@@ -94,8 +106,9 @@ public final class Word {
                     /* helper gone */
                 } finally {
                     closed = true;
-                    ready.complete(obj("event", "ready", "warning", "the Word helper stopped"));
-                    for (CompletableFuture<Object> f : waiting.values()) f.completeExceptionally(new IOException("The Word helper stopped"));
+                    String why = stopped();
+                    ready.complete(obj("event", "ready", "warning", why));
+                    for (CompletableFuture<Object> f : waiting.values()) f.completeExceptionally(new IOException(why));
                     waiting.clear();
                 }
             }, "zotlet-word-helper");
@@ -108,8 +121,18 @@ public final class Word {
             try { return ready.get(ms, TimeUnit.MILLISECONDS); } catch (Exception e) { return obj("event", "ready", "warning", "the Word helper did not start"); }
         }
 
+        /** "The Word helper stopped", with its exit code and what it printed on stderr. */
+        String stopped() {
+            Integer code = null;
+            try { if (process.waitFor(2, TimeUnit.SECONDS)) code = process.exitValue(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            try { if (errors != null) errors.join(1000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            String err;
+            synchronized (stderr) { err = stderr.toString().trim(); }
+            return "The Word helper stopped" + (code != null ? " (exit " + code + ")" : "") + (err.isEmpty() ? "" : ": " + err);
+        }
+
         Object call(String method, List<Object> args) throws Exception {
-            if (closed) throw new IOException("The Word helper stopped");
+            if (closed) throw new IOException(stopped());
             int id = ids.incrementAndGet();
             CompletableFuture<Object> f = new CompletableFuture<>();
             waiting.put(id, f);

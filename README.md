@@ -127,10 +127,11 @@ citations as bookmarks, which both Word and LibreOffice-style editors accept.
 - **Choosing references: the pop-up.** Add/Edit Citation opens a small launcher-style window over your word
   processor (Word, LibreOffice, GenOffice; macOS, Windows and Linux), light or dark like your system: type to
   search, Enter adds the highlighted reference, Enter again inserts, ⌫ removes the last one (or click its
-  chip), Esc cancels. On Windows, click the pop-up once if it does not take the keyboard by itself. Only when
+  chip), Esc cancels. Clicking a reference adds it (click again to take it out), so several can be chosen
+  with the mouse; a double click inserts. On Windows, click the pop-up once if it does not take the keyboard by itself. Only when
   no window can be shown (a computer without a screen) zotlet opens the picker in the browser; the log says
-  why. On a Mac the pop-up is the macOS one; `ZOTLET_PICKER=window` uses Java's own pop-up there too,
-  `ZOTLET_PICKER=web` always uses the browser picker, `ZOTLET_PICKER_THEME=dark|light` fixes its colours.
+  why. `ZOTLET_PICKER=cocoa` tries an older macOS-drawn pop-up first, `ZOTLET_PICKER=web` always uses the
+  browser picker, `ZOTLET_PICKER_THEME=dark|light` fixes its colours.
 
 ## Command line
 

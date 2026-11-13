@@ -134,6 +134,15 @@ public final class QuickPick {
             if (h != null && !chosen.contains(h.get("id"))) chosen.add((String) h.get("id"));
         }
 
+        /** A click on a row: put that reference into the citation, or take it out again. */
+        public void toggle(int row) {
+            if (row < 0 || row >= rows.size()) return;
+            cursor = row;
+            if (!cite) return;
+            String id = (String) rows.get(row).get("id");
+            if (!chosen.remove(id)) chosen.add(id);
+        }
+
         public boolean removeLast() {
             if (!cite || chosen.isEmpty()) return false;
             chosen.remove(chosen.size() - 1);
@@ -159,8 +168,8 @@ public final class QuickPick {
         /** The short note at the left of the bottom bar. */
         public String note() {
             if (!cite) return rows.size() + (rows.size() == 1 ? " style" : " styles");
-            if (chosen.isEmpty()) return rows.size() + (rows.size() == 1 ? " reference" : " references");
-            return chosen.size() + " in this citation";
+            if (chosen.isEmpty()) return rows.size() + (rows.size() == 1 ? " reference" : " references") + " · click to choose";
+            return chosen.size() + " chosen · click adds more";
         }
 
         /** The label of a chosen reference (for its chip). */
@@ -284,10 +293,34 @@ public final class QuickPick {
     /** Windows that are open now (tests look here). */
     public static final List<Window> OPEN = new java.util.concurrent.CopyOnWriteArrayList<>();
 
+    private static volatile Boolean dark;
+
+    /** Light or dark, as last seen (asking the system takes a moment); asked again in the background. */
+    static boolean dark() {
+        Boolean known = dark;
+        if (known == null) known = dark = systemDark();
+        else Proc.POOL.submit(() -> { dark = systemDark(); });
+        return known;
+    }
+
+    /** Do the slow first steps (the font list, the system's colours, Swing itself) before the first citation. */
+    public static void warm() {
+        if (!available()) return;
+        Thread t = new Thread(() -> {
+            try {
+                dark = systemDark();
+                family();
+                EventQueue.invokeLater(() -> new javax.swing.JTextField().getPreferredSize());
+            } catch (Throwable e) { /* the first pop-up does it */ }
+        }, "zotlet-pick-warm");
+        t.setDaemon(true);
+        t.start();
+    }
+
     /** Show the pop-up and wait. The answer, or null if cancelled; throws if no window can be shown. */
     public static Map<String, Object> show(Map<String, Object> nativeSpec) throws Exception {
         if (!available()) throw new IllegalStateException("no screen");
-        Theme theme = new Theme(systemDark());
+        Theme theme = new Theme(dark());
         CompletableFuture<Map<String, Object>> answer = new CompletableFuture<>();
         Window[] window = new Window[1];
         EventQueue.invokeLater(() -> {
@@ -309,7 +342,7 @@ public final class QuickPick {
 
     /** The Swing window around a Model. Everything here runs on the event thread. */
     public static final class Window {
-        static final int WIDTH = 720, HEIGHT = 474, RADIUS = 14, ROW = 40;
+        static final int WIDTH = 600, HEIGHT = 380, RADIUS = 12, ROW = 32;
 
         public final Model model;
         final CompletableFuture<Map<String, Object>> answer;
@@ -321,7 +354,8 @@ public final class QuickPick {
         final List<String> styleIds = new ArrayList<>(), styleLabels = new ArrayList<>();
         int style = -1;
         boolean bookmarks, hasBookmarks, bookmarksLocked;
-        /** Soft shadow around the card (needs a translucent window). */
+        /** Transparent corners around the rounded card (needs a translucent window). No painted shadow:
+         *  on macOS it showed as a grey see-through frame around the card. */
         final boolean glass;
         final int pad;
         JComponent head, chips, foot, note;
@@ -337,7 +371,7 @@ public final class QuickPick {
                     .isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSLUCENT);
             } catch (RuntimeException e) { /* a plain window */ }
             glass = translucent;
-            pad = glass ? 22 : 0;
+            pad = 0;
             field = new Search();
             list = new Rows();
             build();
@@ -354,7 +388,7 @@ public final class QuickPick {
             card.setBorder(BorderFactory.createEmptyBorder(pad + 1, pad + 1, pad + 1, pad + 1));
 
             // Head: the search line (+ the style of a new document), then the references chosen so far.
-            field.setFont(font(19, false));
+            field.setFont(font(16, false));
             field.setForeground(t.text);
             field.setCaretColor(t.accent);
             field.setSelectionColor(t.chip);
@@ -363,7 +397,7 @@ public final class QuickPick {
             field.setBorder(BorderFactory.createEmptyBorder(4, 0, 4, 0));
             JPanel line = new JPanel(new BorderLayout(10, 0));
             line.setOpaque(false);
-            line.setBorder(BorderFactory.createEmptyBorder(14, 20, 12, 14));
+            line.setBorder(BorderFactory.createEmptyBorder(9, 16, 7, 10));
             line.add(field, BorderLayout.CENTER);
             List<Object> styles = list(model.spec.get("styles"));
             if (model.cite && Json.truthy(model.spec.get("askStyle")) && styles != null && !styles.isEmpty()) {
@@ -394,15 +428,15 @@ public final class QuickPick {
                 @Override public void mouseClicked(MouseEvent e) {
                     int row = list.locationToIndex(e.getPoint());
                     if (row < 0 || !list.getCellBounds(row, row).contains(e.getPoint())) return;
-                    model.cursor = row;
-                    if (e.getClickCount() >= 2) { if (model.cite) model.add(); finish(true); }
-                    else render();
+                    // One click puts a reference into the citation (or takes it out); a double click inserts.
+                    if (e.getClickCount() >= 2) { model.cursor = row; if (model.cite) model.add(); finish(true); }
+                    else { model.toggle(row); render(); }
                 }
             });
             JScrollPane scroll = new JScrollPane(list);
             scroll.setOpaque(false);
             scroll.getViewport().setOpaque(false);
-            scroll.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 4));
+            scroll.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 2));
             scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
             JScrollBar bar = scroll.getVerticalScrollBar();
             bar.setUI(new ThinBar());
@@ -411,12 +445,11 @@ public final class QuickPick {
             bar.setUnitIncrement(ROW);
             card.add(scroll, BorderLayout.CENTER);
 
-            // Bottom bar: a note (or the bookmarks choice) on the left, what the keys do on the right.
-            JPanel bottom = new JPanel();
-            bottom.setLayout(new BoxLayout(bottom, BoxLayout.X_AXIS));
+            // Bottom bar: a note (or the bookmarks choice) on the left, Cancel and Insert buttons on the right.
+            JPanel bottom = new JPanel(new BorderLayout());
             bottom.setOpaque(false);
-            bottom.setBorder(BorderFactory.createEmptyBorder(0, 18, 0, 12));
-            bottom.setPreferredSize(new Dimension(10, 42));
+            bottom.setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 10));
+            bottom.setPreferredSize(new Dimension(10, 44));
             if (!model.cite && model.spec.get("bookmarks") instanceof Boolean) {
                 hasBookmarks = true;
                 bookmarks = (Boolean) model.spec.get("bookmarks");
@@ -425,16 +458,19 @@ public final class QuickPick {
             } else {
                 note = new Note();
             }
-            bottom.add(note);
-            bottom.add(Box.createHorizontalGlue());
-            String mod = Picker.MAC ? "⌘" : "Ctrl";
-            second = new Hint("Insert now", new String[]{mod, "↵"}, false, () -> finish(true));
-            primary = new Hint("", new String[]{"↵"}, true, () -> key(KeyEvent.VK_ENTER, false));
-            bottom.add(new Hint("Cancel", new String[]{"esc"}, false, () -> finish(false)));
-            bottom.add(second);
-            bottom.add(primary);
-            foot = bottom;
-            card.add(foot, BorderLayout.SOUTH);
+            bottom.add(note, BorderLayout.CENTER);
+            second = new Hint("Insert now", new String[0], false, () -> finish(true)); // (⌘/Ctrl Enter; not shown)
+            primary = new Hint("", new String[0], true, () -> key(KeyEvent.VK_ENTER, false));
+            JPanel buttons = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 8, 9));
+            buttons.setOpaque(false);
+            buttons.add(new Hint("Cancel", new String[0], false, () -> finish(false)));
+            buttons.add(primary);
+            bottom.add(buttons, BorderLayout.EAST);
+            // Citations have no bottom bar (the user found it ugly): Insert sits at the end of the chips row.
+            if (!model.cite) {
+                foot = bottom;
+                card.add(foot, BorderLayout.SOUTH);
+            }
 
             field.getDocument().addDocumentListener(new DocumentListener() {
                 void changed() { model.filter(field.getText()); render(); }
@@ -467,9 +503,15 @@ public final class QuickPick {
             dialog.setSize(WIDTH + 2 * pad, HEIGHT + 2 * pad);
             if (glass) {
                 try { dialog.setBackground(new Color(0, 0, 0, 0)); } catch (RuntimeException e) { /* square corners */ }
+                dialog.getRootPane().putClientProperty("Window.shadow", Boolean.TRUE); // macOS: its own thin shadow, along the card
             } else {
                 // No translucency (e.g. Linux without a compositor): cut the corners instead.
                 try { dialog.setShape(new RoundRectangle2D.Float(0, 0, WIDTH, HEIGHT, RADIUS * 2, RADIUS * 2)); } catch (RuntimeException e) { /* square corners */ }
+                dialog.addComponentListener(new java.awt.event.ComponentAdapter() {
+                    @Override public void componentResized(java.awt.event.ComponentEvent e) {
+                        try { dialog.setShape(new RoundRectangle2D.Float(0, 0, dialog.getWidth(), dialog.getHeight(), RADIUS * 2, RADIUS * 2)); } catch (RuntimeException x) { /* square corners */ }
+                    }
+                });
             }
             render();
         }
@@ -501,10 +543,11 @@ public final class QuickPick {
             if (model.cursor >= 0) { list.setSelectedIndex(model.cursor); list.ensureIndexIsVisible(model.cursor); }
             else list.clearSelection();
             boolean searching = !Text.trim(field.getText()).isEmpty();
-            primary.label = !model.cite ? "Use this style" : searching ? "Add to citation" : "Insert citation";
+            primary.label = !model.cite ? "Use style" : searching ? "Add" : "Insert";
             primary.setVisible(model.highlighted() != null || (model.cite && !model.chosen.isEmpty()));
             second.setVisible(model.cite && searching && model.highlighted() != null);
             chips.setVisible(model.cite && !model.chosen.isEmpty());
+            if (model.cite) dialog.setSize(dialog.getWidth(), HEIGHT - (chips.isVisible() ? 0 : 30));
             for (JComponent c : new JComponent[]{primary, second, note, chips}) { c.revalidate(); c.repaint(); }
             dialog.getContentPane().repaint();
         }
@@ -585,12 +628,7 @@ public final class QuickPick {
             @Override protected void paintComponent(Graphics g0) {
                 Graphics2D g = smooth(g0.create());
                 int w = getWidth() - 2 * pad, h = getHeight() - 2 * pad;
-                if (glass) {
-                    for (int i = 0; i < pad; i++) {
-                        g.setColor(new Color(0, 0, 0, t.dark ? 7 : 4));
-                        g.fill(new RoundRectangle2D.Float(i, i + 5, getWidth() - 2 * i, getHeight() - 2 * i, 2 * (RADIUS + pad - i), 2 * (RADIUS + pad - i)));
-                    }
-                } else {
+                if (!glass) {
                     g.setColor(t.card);
                     g.fillRect(0, 0, getWidth(), getHeight());
                 }
@@ -600,8 +638,6 @@ public final class QuickPick {
                 Shape old = g.getClip();
                 g.clip(body);
                 if (foot != null) {
-                    g.setColor(t.bar);
-                    g.fillRect(pad, foot.getY(), w, foot.getHeight() + 2);
                     g.setColor(t.line);
                     g.fillRect(pad, foot.getY(), w, 1);
                 }
@@ -664,10 +700,10 @@ public final class QuickPick {
                 int w = getWidth(), h = getHeight();
                 if (selected) {
                     g.setColor(t.row);
-                    g.fill(new RoundRectangle2D.Float(0, 1, w - 4, h - 2, 16, 16));
+                    g.fill(new RoundRectangle2D.Float(0, 1, w - 4, h - 2, 12, 12));
                 }
                 boolean chosen = model.isChosen(row);
-                int x = 14;
+                int x = 10;
                 if (model.cite) {
                     int cy = h / 2;
                     if (chosen) {
@@ -683,14 +719,14 @@ public final class QuickPick {
                         g.setStroke(new BasicStroke(1.3f));
                         g.drawOval(x + 1, cy - 7, 14, 14);
                     }
-                    x += 28;
+                    x += 26;
                 }
-                Font titleFont = font(14, false), small = font(12.5f, false);
+                Font titleFont = font(13, false), small = font(12, false);
                 String detail = model.cite ? Json.jsString(row.get("detail")) : "";
                 String journal = model.cite && row.get("journal") != null ? Json.jsString(row.get("journal")) : "";
                 String title = Json.jsString(row.get(model.cite ? "title" : "label"));
                 FontMetrics tm = g.getFontMetrics(fit(titleFont, title)), sm = g.getFontMetrics(fit(small, detail + journal));
-                int right = w - 18;
+                int right = w - 14;
                 int baseline = (h - tm.getHeight()) / 2 + tm.getAscent();
                 if (!detail.isEmpty()) {
                     int dw = sm.stringWidth(detail);
@@ -713,13 +749,22 @@ public final class QuickPick {
         /** The references chosen so far, as chips; a click removes one. */
         private final class Chips extends JComponent {
             final List<Rectangle> boxes = new ArrayList<>();
-            final Font f = font(12.5f, false);
+            Rectangle insert = new Rectangle();
+            boolean overInsert;
+            final Font f = font(12, false);
 
             Chips() {
                 setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
                 setToolTipText("Click a reference to take it out of the citation");
+                addMouseMotionListener(new MouseAdapter() {
+                    @Override public void mouseMoved(MouseEvent e) {
+                        boolean over = insert.contains(e.getPoint());
+                        if (over != overInsert) { overInsert = over; repaint(); }
+                    }
+                });
                 addMouseListener(new MouseAdapter() {
                     @Override public void mouseClicked(MouseEvent e) {
+                        if (insert.contains(e.getPoint())) { finish(true); return; }
                         for (int i = 0; i < boxes.size(); i++) {
                             if (boxes.get(i).contains(e.getPoint()) && i < model.chosen.size()) { model.remove(model.chosen.get(i)); render(); return; }
                         }
@@ -727,12 +772,21 @@ public final class QuickPick {
                 });
             }
 
-            @Override public Dimension getPreferredSize() { return new Dimension(10, 36); }
+            @Override public Dimension getPreferredSize() { return new Dimension(10, 30); }
 
             @Override protected void paintComponent(Graphics g0) {
                 Graphics2D g = smooth(g0.create());
                 boxes.clear();
-                int x = 20, limit = getWidth() - 20;
+                // Insert, at the right end of the row.
+                Font bf = font(12, true);
+                String ins = "Insert";
+                FontMetrics bm = g.getFontMetrics(bf);
+                int iw = bm.stringWidth(ins) + 26;
+                insert = new Rectangle(getWidth() - 12 - iw, 2, iw, 22);
+                g.setColor(overInsert ? t.accent.brighter() : t.accent);
+                g.fill(new RoundRectangle2D.Float(insert.x, insert.y, insert.width, insert.height, 22, 22));
+                drawText(g, ins, bf, t.onAccent, insert.x + 13, insert.y + (22 - bm.getHeight()) / 2 + bm.getAscent());
+                int x = 16, limit = insert.x - 10;
                 for (int i = 0; i < model.chosen.size(); i++) {
                     String label = model.label(model.chosen.get(i));
                     FontMetrics fm = g.getFontMetrics(fit(f, label));
@@ -741,14 +795,14 @@ public final class QuickPick {
                     int reserve = rest > 1 ? fm.stringWidth("+99") + 10 : 0;
                     int width = fm.stringWidth(label) + 20;
                     if (x + width > limit - reserve) {
-                        drawText(g, more, f, t.muted, x + 2, 6 + (24 - fm.getHeight()) / 2 + fm.getAscent());
+                        drawText(g, more, f, t.muted, x + 2, 2 + (22 - fm.getHeight()) / 2 + fm.getAscent());
                         break;
                     }
-                    Rectangle box = new Rectangle(x, 4, width, 24);
+                    Rectangle box = new Rectangle(x, 2, width, 22);
                     boxes.add(box);
                     g.setColor(t.chip);
-                    g.fill(new RoundRectangle2D.Float(box.x, box.y, box.width, box.height, 24, 24));
-                    drawText(g, label, f, t.dark ? t.text : t.accent.darker(), x + 10, box.y + (24 - fm.getHeight()) / 2 + fm.getAscent());
+                    g.fill(new RoundRectangle2D.Float(box.x, box.y, box.width, box.height, 22, 22));
+                    drawText(g, label, f, t.dark ? t.text : t.accent.darker(), x + 10, box.y + (22 - fm.getHeight()) / 2 + fm.getAscent());
                     x += width + 6;
                 }
                 g.dispose();
@@ -757,7 +811,7 @@ public final class QuickPick {
 
         /** The style of a new document: a quiet pill that opens a menu. */
         private final class StylePill extends JComponent {
-            final Font f = font(12.5f, false);
+            final Font f = font(12, false);
             boolean hover;
 
             StylePill() {
@@ -791,12 +845,12 @@ public final class QuickPick {
 
             @Override public Dimension getPreferredSize() {
                 FontMetrics fm = getFontMetrics(fit(f, label()));
-                return new Dimension(Math.min(230, fm.stringWidth(label()) + 40), 30);
+                return new Dimension(Math.min(210, fm.stringWidth(label()) + 36), 26);
             }
 
             @Override protected void paintComponent(Graphics g0) {
                 Graphics2D g = smooth(g0.create());
-                int h = 28, y = (getHeight() - h) / 2;
+                int h = 24, y = (getHeight() - h) / 2;
                 g.setColor(hover ? t.key : t.row);
                 g.fill(new RoundRectangle2D.Float(0, y, getWidth(), h, 14, 14));
                 FontMetrics fm = g.getFontMetrics(fit(f, label()));
@@ -813,10 +867,10 @@ public final class QuickPick {
 
         /** The note at the left of the bottom bar. */
         private final class Note extends JComponent {
-            final Font f = font(12.5f, false);
+            final Font f = font(12, false);
 
             @Override public Dimension getPreferredSize() {
-                return new Dimension(getFontMetrics(fit(f, model.note())).stringWidth(model.note()) + 4, 42);
+                return new Dimension(getFontMetrics(fit(f, model.note())).stringWidth(model.note()) + 4, 44);
             }
             @Override public Dimension getMaximumSize() { return getPreferredSize(); }
 
@@ -830,7 +884,7 @@ public final class QuickPick {
 
         /** Document Preferences: store citations as bookmarks (for Word with Zotero). */
         private final class Check extends JComponent {
-            final Font f = font(12.5f, false);
+            final Font f = font(12, false);
             final String label;
 
             Check(String label) {
@@ -842,7 +896,7 @@ public final class QuickPick {
                 });
             }
 
-            @Override public Dimension getPreferredSize() { return new Dimension(getFontMetrics(fit(f, label)).stringWidth(label) + 28, 42); }
+            @Override public Dimension getPreferredSize() { return new Dimension(getFontMetrics(fit(f, label)).stringWidth(label) + 28, 44); }
             @Override public Dimension getMaximumSize() { return getPreferredSize(); }
 
             @Override protected void paintComponent(Graphics g0) {
@@ -870,7 +924,7 @@ public final class QuickPick {
 
         /** What a key does, at the right of the bottom bar: a label and key caps; it can be clicked. */
         private final class Hint extends JComponent {
-            final Font f = font(12.5f, false), k = font(11.5f, false);
+            final Font f = font(12, false);
             final String[] keys;
             final boolean strong;
             String label;
@@ -888,34 +942,30 @@ public final class QuickPick {
                 });
             }
 
-            int capWidth(String key) { return Math.max(22, getFontMetrics(fit(k, key)).stringWidth(key) + 12); }
-
             @Override public Dimension getPreferredSize() {
-                int w = 10 + getFontMetrics(fit(f, label)).stringWidth(label) + 8;
-                for (String key : keys) w += capWidth(key) + 4;
-                return new Dimension(w + 6, 42);
+                int w = getFontMetrics(fit(strong ? font(12, true) : f, label)).stringWidth(label) + 28;
+                return new Dimension(Math.max(w, 72), 26);
             }
             @Override public Dimension getMaximumSize() { return getPreferredSize(); }
 
+            /** A plain button: outlined, or filled with the accent for the main action. */
             @Override protected void paintComponent(Graphics g0) {
                 Graphics2D g = smooth(g0.create());
-                int h = 28, y = (getHeight() - h) / 2;
-                if (hover) {
-                    g.setColor(t.row);
-                    g.fill(new RoundRectangle2D.Float(0, y, getWidth(), h, 12, 12));
+                int h = getHeight(), y = 0, w = getWidth();
+                Shape box = new RoundRectangle2D.Float(0.5f, y + 0.5f, w - 1, h - 1, 8, 8);
+                if (strong) {
+                    g.setColor(hover ? t.accent.brighter() : t.accent);
+                    g.fill(box);
+                } else {
+                    g.setColor(hover ? t.row : t.card);
+                    g.fill(box);
+                    g.setColor(t.line.darker());
+                    g.setStroke(new BasicStroke(1f));
+                    g.draw(box);
                 }
-                FontMetrics fm = g.getFontMetrics(fit(f, label));
-                int x = 10;
-                drawText(g, label, strong ? font(12.5f, true) : f, strong ? t.text : t.soft, x, y + (h - fm.getHeight()) / 2 + fm.getAscent());
-                x += g.getFontMetrics(fit(strong ? font(12.5f, true) : f, label)).stringWidth(label) + 8;
-                for (String key : keys) {
-                    int cw = capWidth(key);
-                    g.setColor(t.key);
-                    g.fill(new RoundRectangle2D.Float(x, y + 4, cw, h - 8, 8, 8));
-                    FontMetrics km = g.getFontMetrics(fit(k, key));
-                    drawText(g, key, k, t.soft, x + (cw - km.stringWidth(key)) / 2, y + 4 + (h - 8 - km.getHeight()) / 2 + km.getAscent());
-                    x += cw + 4;
-                }
+                Font bf = strong ? font(12, true) : f;
+                FontMetrics fm = g.getFontMetrics(fit(bf, label));
+                drawText(g, label, bf, strong ? t.onAccent : t.text, (w - fm.stringWidth(label)) / 2, y + (h - fm.getHeight()) / 2 + fm.getAscent());
                 g.dispose();
             }
         }

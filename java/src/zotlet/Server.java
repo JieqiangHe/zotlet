@@ -163,7 +163,7 @@ public final class Server {
         CompletableFuture<String> front = CompletableFuture.supplyAsync(Picker::frontApp, Proc.POOL);
         Runnable back = () -> front.thenAccept(app -> { if (app != null) Picker.activateApp(app); });
         String mode = options.picker;
-        if ("auto".equals(mode) && Picker.MAC) {
+        if ("cocoa".equals(mode) && Picker.MAC) {
             try {
                 Map<String, Object> result = Picker.nativePick(options.home.quickformat, spec, citations.listStyles(), list(store.snapshot().get("projects")));
                 back.run();
@@ -215,6 +215,7 @@ public final class Server {
         integration = Integration.start(ctx, options.host, options.tcpPort, options.httpPort, log, warn, options.detectClient,
             Word.mode().isEmpty() ? null : options.home.word, options.dir);
         if (!Word.mode().isEmpty() && !"0".equals(System.getenv("ZOTLET_WORD_INSTALL"))) installWordPlugin(warn);
+        if (!"web".equals(options.picker)) QuickPick.warm();
     }
 
     /**

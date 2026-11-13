@@ -150,13 +150,15 @@ public final class Picker {
     }
 
     /**
-     * Which picker to use, from ZOTLET_PICKER: "auto" (the macOS pop-up on a Mac, else Java's own
-     * pop-up window, the browser only when neither can be shown), "window" (Java's pop-up, also on
-     * a Mac) or "web" (always the browser picker).
+     * Which picker to use, from ZOTLET_PICKER: "auto" (Java's own pop-up window, QuickPick, on every
+     * system; the browser only when no window can be shown), "cocoa" (the osascript pop-up on a Mac,
+     * java/quickformat.jxa.js, falling back to Java's) or "web" (always the browser picker).
+     * Java's pop-up is the default on a Mac too since 13 Nov 2026: the osascript one failed on the
+     * user's Mac, and trying it first made every citation slow.
      */
     public static String mode() {
         String m = System.getenv("ZOTLET_PICKER");
-        return "web".equals(m) ? "web" : "window".equals(m) || "swing".equals(m) ? "window" : "auto";
+        return "web".equals(m) ? "web" : "cocoa".equals(m) || "native".equals(m) ? "cocoa" : "auto";
     }
 
     /** Java's own pop-up window (QuickPick). The choice, or null if cancelled; throws if no window can be shown. */
