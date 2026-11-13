@@ -59,7 +59,9 @@ export function javaServer(dir, { libreOffice = false, fetchBase, env = {} } = {
         if ((m = /citations: on \(ports (\d+), (\d+)\)/.exec(line))) {
           info.tcp = Number(m[1]); info.http = Number(m[2])
           fetch(info.url).then((r) => r.text()).then((html) => {
-            resolve({ name: 'java', ...info, opened, token: /name="zotlet-token" content="([0-9a-f]+)"/.exec(html)[1], close: () => child.kill() })
+            resolve({ name: 'java', ...info, opened, token: /name="zotlet-token" content="([0-9a-f]+)"/.exec(html)[1], close: () => child.kill(),
+              // (for failure messages: did the process stop, and what did it print?)
+              state: () => `pid ${child.pid}, exit ${child.exitCode ?? '-'} ${child.signalCode ?? ''}; stderr: ${err.slice(-2000)}` })
           }, reject)
         }
       }
