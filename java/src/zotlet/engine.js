@@ -2,7 +2,7 @@
 // boundary as JSON strings. Building a citeproc engine is slow in Rhino (seconds for a large
 // style such as APA), so engines are kept per style file and reused: citeproc's updateItems
 // and rebuildProcessorState re-read every item and start the citation state from scratch.
-var ZL = { locale: null, engines: {}, items: {} };
+var ZL = { locale: null, locales: {}, engines: {}, items: {} };
 
 (function () {
   // Rhino pays dearly for citeproc's recursive walk over the whole style to find one macro
@@ -23,12 +23,23 @@ var ZL = { locale: null, engines: {}, items: {} };
 
 function zlSys() {
   return {
-    retrieveLocale: function () { return ZL.locale; },
+    // en-US for every language but the other bundled ones (zh-CN).
+    retrieveLocale: function (lang) { return ZL.locales[lang] || ZL.locale; },
     retrieveItem: function (id) { return ZL.items[String(id)]; },
   };
 }
 
 function zlSetLocale(xml) { ZL.locale = String(xml); }
+function zlAddLocale(lang, xml) { ZL.locales[String(lang)] = String(xml); }
+
+// Styles are rendered with en-US, except a style written for a language whose locale is bundled
+// (default-locale="zh-CN": GB/T 7714 and other Chinese styles), which gets its own terms.
+function zlNew(xml) {
+  xml = String(xml);
+  var m = /<style\b[^>]*\bdefault-locale="([^"]+)"/.exec(xml);
+  var lang = m && ZL.locales[m[1]] ? m[1] : 'en-US';
+  return new CSL.Engine(zlSys(), xml, lang, true);
+}
 
 // A copy of each item (fresh from JSON), with a string id and only object names.
 function zlSetItems(list) {
@@ -36,6 +47,9 @@ function zlSetItems(list) {
   for (var i = 0; i < list.length; i++) {
     var item = list[i];
     item.id = String(item.id);
+    // Styles with a layout per language (GB/T 7714: 等 or et al.) need to know the language. An item
+    // that does not say is Chinese if its title is in Chinese characters, else English.
+    if (!item.language) item.language = /[\u3400-\u9fff]/.test(String(item.title || '')) ? (/[\u3040-\u30ff]/.test(item.title) ? 'ja' : 'zh-CN') : 'en-US';
     var keys = ['author', 'editor', 'container-author', 'translator'];
     for (var k = 0; k < keys.length; k++) {
       var names = item[keys[k]];
@@ -50,7 +64,7 @@ function zlSetItems(list) {
 function zlEngine(key, xml) {
   var engine = ZL.engines[key];
   if (!engine) {
-    engine = new CSL.Engine(zlSys(), String(xml), 'en-US', true);
+    engine = zlNew(xml);
     ZL.engines[key] = engine;
   }
   return engine;
@@ -60,7 +74,7 @@ function zlForget(key) { delete ZL.engines[key]; }
 
 // Build an engine (so a later call is fast), or check that a style can be read at all.
 function zlPrepare(key, xml) { zlEngine(key, xml).setOutputFormat('html'); return 'ok'; }
-function zlCheck(xml) { new CSL.Engine(zlSys(), String(xml), 'en-US', true).setOutputFormat('html'); return 'ok'; }
+function zlCheck(xml) { zlNew(xml).setOutputFormat('html'); return 'ok'; }
 
 /** The same result as formatCitations in src/citations.js. */
 function zlFormat(key, xml, itemsJson) {

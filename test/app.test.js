@@ -16,8 +16,11 @@ let current = { name: '', n: 0 }
 /** The normalized `value` must equal the recorded answer for this step of the current test. */
 function expectGolden(value, what = '') {
   const key = `${current.name} #${++current.n}`
+  // ZOTLET_RECORD=1 records the answers again (after a change on purpose; then read the diff of golden.json).
+  if (process.env.ZOTLET_RECORD) { golden[key] = JSON.parse(JSON.stringify(normalize(value))); return }
   assert.deepEqual(normalize(value), golden[key], `${key} ${what}`.slice(0, 300))
 }
+if (process.env.ZOTLET_RECORD) process.on('exit', () => fs.writeFileSync(new URL('./fixtures/golden.json', import.meta.url), JSON.stringify(golden, null, 1) + '\n'))
 const begin = (name) => { current = { name, n: 0 } }
 const ELSEVIER = '10.1016/j.plaphy.2026.111729'
 const SECOND = {

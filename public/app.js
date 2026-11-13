@@ -77,15 +77,18 @@ const ICONS = {
 
 const plain = (s) => String(s ?? '').replace(/<[^>]+>/g, '')
 const yearOf = (i) => i.issued?.['date-parts']?.[0]?.[0] ?? ''
-const nameOf = (n) => n.literal || [n['non-dropping-particle'], n.family].filter(Boolean).join(' ')
+// Chinese names are written whole (张三), and several authors end in 等.
+const HAN = /^[\u3400-\u9fff]+$/
+const nameOf = (n) => n.literal || (HAN.test(n.family || '') && HAN.test(n.given || '') ? n.family + n.given : [n['non-dropping-particle'], n.family].filter(Boolean).join(' '))
 function authorsShort(item) {
   const a = item.author || item.editor || []
   if (!a.length) return ''
+  const han = /[\u3400-\u9fff]/.test(nameOf(a[0]))
   if (a.length === 1) return nameOf(a[0])
-  if (a.length === 2) return `${nameOf(a[0])} & ${nameOf(a[1])}`
-  return `${nameOf(a[0])} et al.`
+  if (a.length === 2) return `${nameOf(a[0])}${han ? '、' : ' & '}${nameOf(a[1])}`
+  return `${nameOf(a[0])}${han ? ' 等' : ' et al.'}`
 }
-const authorsFull = (item) => (item.author || item.editor || []).map((n) => n.literal || [n.given, nameOf(n)].filter(Boolean).join(' ')).join(', ')
+const authorsFull = (item) => (item.author || item.editor || []).map((n) => n.literal || (HAN.test(n.family || '') && HAN.test(n.given || '') ? nameOf(n) : [n.given, nameOf(n)].filter(Boolean).join(' '))).join(', ')
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
 
 // Restricted rich-text: only <i>, <b>, <sub>, <sup> survive, everything else is text.
@@ -583,18 +586,43 @@ async function importCslFile(file, project) {
   return null
 }
 
+/** Text in UTF-8, or (older CNKI exports) GB18030. */
+async function readText(file) {
+  const bytes = await file.arrayBuffer()
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes) } catch { /* not UTF-8 */ }
+  try { return new TextDecoder('gb18030').decode(bytes) } catch { return new TextDecoder().decode(bytes) }
+}
+
+/** A reference file exported from CNKI, Wanfang, VIP, EndNote…: EndNote, RefWorks, NoteExpress, RIS or BibTeX. */
+async function importRefsFile(file, project) {
+  const row = pdfRow(file)
+  $('pdf-results').append(row.li)
+  try {
+    const r = await api('import-refs', { text: await readText(file), name: file.name, projectId: project?.id || undefined })
+    row.set(r.added ? 'ok' : 'warn', r.added ? '✓' : '•', [`Imported ${plural(r.added, 'reference')}`,
+      el('span', { class: 'muted' }, [r.duplicates && ` · ${r.duplicates} already in your library`, r.skipped && ` · ${r.skipped} skipped (no title)`].filter(Boolean).join(''))])
+    return r.ids[0]
+  } catch (error) { row.set('bad', '✗', error.message) }
+  return null
+}
+
+const REF_FILE = /\.(txt|enw|net|ris|bib|bibtex|nbib|ciw)$/i
+
 async function importPdfs(files) {
   const pdfs = files.filter((f) => /\.pdf$/i.test(f.name) || f.type === 'application/pdf')
   const jsons = files.filter((f) => /\.json$/i.test(f.name) || f.type === 'application/json')
-  if (!pdfs.length && !jsons.length) { toast('Drop PDF files or a CSL JSON file', 'error'); return }
+  const refs = files.filter((f) => !pdfs.includes(f) && !jsons.includes(f) && (REF_FILE.test(f.name) || f.type === 'text/plain'))
+  if (!pdfs.length && !jsons.length && !refs.length) { toast('Drop PDFs or reference files (CNKI / EndNote / RIS / BibTeX export, CSL JSON)', 'error'); return }
   const project = currentProject()
-  $('pdf-title').textContent = jsons.length && !pdfs.length ? 'Import CSL JSON' : `Import ${pdfs.length === 1 && !jsons.length ? 'PDF' : `${pdfs.length + jsons.length} files`}`
+  const others = jsons.length + refs.length
+  $('pdf-title').textContent = others && !pdfs.length ? (others === 1 ? 'Import references' : `Import ${others} files`) : `Import ${pdfs.length === 1 && !others ? 'PDF' : `${pdfs.length + others} files`}`
   $('pdf-results').replaceChildren()
   $('pdf-summary').textContent = project ? `New references are also added to “${project.name}”.` : ''
   if (!$('pdf-dialog').open) $('pdf-dialog').showModal()
   const query = project ? `?projectId=${encodeURIComponent(project.id)}` : ''
   let touched = null
   for (const file of jsons) touched = (await importCslFile(file, project)) || touched
+  for (const file of refs) touched = (await importRefsFile(file, project)) || touched
   for (const file of pdfs) {
     const row = pdfRow(file)
     $('pdf-results').append(row.li)
@@ -924,7 +952,7 @@ $('import-form').addEventListener('submit', async (e) => {
   e.preventDefault()
   const form = e.target, text = $('import-text').value
   showError(form, '')
-  if (!text.trim()) { $('import-text').focus(); return showError(form, 'Paste at least one DOI or PMID') }
+  if (!text.trim()) { $('import-text').focus(); return showError(form, 'Paste at least one DOI or PMID, or reference text') }
   const list = $('import-results')
   list.hidden = false
   list.replaceChildren(el('li', { class: 'pending' }, el('span', { class: 'mark' }, '…'), el('span', { class: 'ident' }, 'Looking up'), el('span', { class: 'detail muted' }, 'Contacting doi.org / PubMed…')))

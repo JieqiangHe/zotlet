@@ -1,0 +1,17 @@
+RT Journal Article
+SR 1
+A1 王小明;赵四;孙五;周六
+AD 中国农业大学园艺学院;
+T1 外源褪黑素对干旱胁迫下苹果幼苗生长的影响
+JF 果树学报
+YR 2021
+IS 05
+vo 38
+OP 701-710
+K1 苹果;褪黑素;干旱胁迫
+AB 以平邑甜茶为试材。
+SN 1009-9980
+CN 41-1308/S
+LA 中文;
+DS CNKI
+LK https://kns.cnki.net/kcms/detail/41.1308.S.20210301.html

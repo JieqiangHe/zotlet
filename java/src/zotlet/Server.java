@@ -337,7 +337,7 @@ public final class Server {
 
     private static final java.util.Set<String> API = new java.util.HashSet<>(Arrays.asList(
         "GET /api/state", "POST /api/styles/search", "POST /api/styles/install", "POST /api/styles/add", "POST /api/styles/remove",
-        "POST /api/import", "POST /api/import-csl", "POST /api/items/create", "POST /api/items/update", "POST /api/items/delete",
+        "POST /api/import", "POST /api/import-csl", "POST /api/import-refs", "POST /api/items/create", "POST /api/items/update", "POST /api/items/delete",
         "POST /api/projects/create", "POST /api/projects/rename", "POST /api/projects/delete", "POST /api/projects/add", "POST /api/projects/remove",
         "POST /api/pick/get", "POST /api/pick/done", "POST /api/cite"));
 
@@ -426,6 +426,7 @@ public final class Server {
                 return obj("removed", repository.remove((String) body.get("id")), "styles", citations.styleList());
             case "POST /api/import": return importIdentifiers(body);
             case "POST /api/import-csl": return importCSL(body);
+            case "POST /api/import-refs": return importRefs(body);
             case "POST /api/items/create": {
                 Map<String, Object> fields = new LinkedHashMap<>();
                 for (Map.Entry<String, Object> e : validateFields(body.get("fields"), true).entrySet()) if (e.getValue() != null) fields.put(e.getKey(), e.getValue());
@@ -491,6 +492,8 @@ public final class Server {
 
     private Map<String, Object> importIdentifiers(Map<String, Object> body) throws Exception {
         if (!(body.get("text") instanceof String)) throw new UserError("Paste one or more DOIs or PMIDs");
+        // Pasted references (GB/T 7714 text from CNKI, EndNote / RefWorks / NoteExpress / RIS / BibTeX records) instead of identifiers.
+        if (Refs.detect((String) body.get("text")) != null) return obj("results", importRefs(body).get("results"));
         List<Metadata.Request> requests = Metadata.parseIdentifiers(body.get("text"));
         if (requests.isEmpty()) throw new UserError("Paste one or more DOIs or PMIDs");
         if (requests.size() > MAX_IDENTIFIERS) throw new UserError("Import at most " + MAX_IDENTIFIERS + " identifiers at a time");
@@ -526,6 +529,64 @@ public final class Server {
     }
 
     // A CSL JSON file (e.g. exported from Zotero, or from zotlet). Same normalization as DOI imports.
+    private static String titleKey(Map<String, Object> item) {
+        String title = Picker.plain(item.get("title")).toLowerCase(java.util.Locale.ROOT).replaceAll("[\\p{P}\\p{Z}\\s]+", "");
+        Map<String, Object> issued = map(item.get("issued"));
+        List<Object> dp = issued == null ? null : list(issued.get("date-parts"));
+        List<Object> first = dp == null || dp.isEmpty() ? null : list(dp.get(0));
+        return title + "|" + (first == null || first.isEmpty() ? "" : Json.jsString(first.get(0)));
+    }
+
+    /**
+     * References from an export file or pasted text (Refs.java: EndNote, RefWorks, NoteExpress, RIS, BibTeX,
+     * GB/T 7714 text). Records without a DOI or PMID (most Chinese literature) count as already there when a
+     * reference with the same title and year exists.
+     */
+    private Map<String, Object> importRefs(Map<String, Object> body) throws IOException {
+        if (!(body.get("text") instanceof String)) throw new UserError("Expected the text of a reference file");
+        String text = (String) body.get("text");
+        String format = Refs.detect(text);
+        if (format == null) throw new UserError("No references found: expected an EndNote, RefWorks, NoteExpress, RIS or BibTeX export, or GB/T 7714 reference text");
+        List<Map<String, Object>> parsed = Refs.parse(text);
+        if (parsed.size() > 20000) throw new UserError("That file is too large");
+        Map<String, String> known = new HashMap<>();
+        for (Map<String, Object> item : store.visibleItems()) known.putIfAbsent(titleKey(item), Json.jsString(item.get("id")));
+        List<Object> results = new ArrayList<>();
+        List<Map<String, Object>> fresh = new ArrayList<>();
+        List<Integer> slots = new ArrayList<>();
+        long skipped = 0;
+        for (Map<String, Object> raw : parsed) {
+            Map<String, Object> item;
+            try { item = Metadata.normalizeItem(raw); } catch (RuntimeException e) { skipped++; continue; }
+            String key = titleKey(item);
+            Object title = item.get("title");
+            if (!item.containsKey("DOI") && !item.containsKey("PMID") && known.containsKey(key)) {
+                results.add(obj("input", title, "status", "duplicate", "id", known.get(key), "title", title));
+                continue;
+            }
+            known.putIfAbsent(key, "#" + results.size()); // a later copy in the same file points here
+            slots.add(results.size());
+            results.add(obj("input", title, "status", "added", "title", title));
+            fresh.add(item);
+        }
+        if (results.isEmpty()) throw new UserError("No references found in this " + (body.get("name") instanceof String ? "file" : "text"));
+        List<Map<String, Object>> saved = fresh.isEmpty() ? new ArrayList<>() : store.addItems(fresh, projectId(body.get("projectId")));
+        for (int k = 0; k < saved.size(); k++) {
+            Map<String, Object> r = map(results.get(slots.get(k)));
+            r.put("status", saved.get(k).get("status"));
+            r.put("id", saved.get(k).get("id"));
+        }
+        long added = 0, duplicates = 0;
+        List<Object> ids = new ArrayList<>();
+        for (Object o : results) {
+            Map<String, Object> r = map(o);
+            if (r.get("id") instanceof String && ((String) r.get("id")).startsWith("#")) r.put("id", map(results.get(Integer.parseInt(((String) r.get("id")).substring(1)))).get("id"));
+            if ("added".equals(r.get("status"))) added++; else duplicates++;
+            if (r.get("id") != null) ids.add(r.get("id"));
+        }
+        return obj("format", format, "added", added, "duplicates", duplicates, "skipped", skipped, "ids", ids, "results", results);
+    }
+
     private Map<String, Object> importCSL(Map<String, Object> body) throws IOException {
         List<Object> items = list(body.get("items"));
         if (items == null) throw new UserError("Expected a CSL JSON array of references");

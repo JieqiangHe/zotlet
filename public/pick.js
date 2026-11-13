@@ -32,13 +32,16 @@ const el = (tag, props = {}, ...children) => {
 }
 const plain = (s) => String(s ?? '').replace(/<[^>]+>/g, '')
 const yearOf = (i) => i.issued?.['date-parts']?.[0]?.[0] ?? i.issued?.literal ?? ''
-const nameOf = (n) => n.literal || [n['non-dropping-particle'], n.family].filter(Boolean).join(' ')
+// Chinese names are written whole (张三), and several authors end in 等.
+const HAN = /^[\u3400-\u9fff]+$/
+const nameOf = (n) => n.literal || (HAN.test(n.family || '') && HAN.test(n.given || '') ? n.family + n.given : [n['non-dropping-particle'], n.family].filter(Boolean).join(' '))
 function authorsShort(item) {
   const a = item.author || item.editor || []
   if (!a.length) return ''
+  const han = /[\u3400-\u9fff]/.test(nameOf(a[0]))
   if (a.length === 1) return nameOf(a[0])
-  if (a.length === 2) return `${nameOf(a[0])} & ${nameOf(a[1])}`
-  return `${nameOf(a[0])} et al.`
+  if (a.length === 2) return `${nameOf(a[0])}${han ? '、' : ' & '}${nameOf(a[1])}`
+  return `${nameOf(a[0])}${han ? ' 等' : ' et al.'}`
 }
 // Restricted rich-text: only <i>, <b>, <sub>, <sup> become elements, everything else is text.
 function richTitle(value) {

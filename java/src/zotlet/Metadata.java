@@ -255,7 +255,90 @@ public final class Metadata {
         if (accessed != null) item.put("accessed", accessed);
 
         if (!item.containsKey("title")) throw new UserError("The record has no title");
+        // Chinese (and Japanese) references say so: styles such as GB/T 7714 choose 等 or et al. by this.
+        if (!item.containsKey("language")) {
+            String lang = languageOf((String) item.get("title"));
+            if (lang != null) item.put("language", lang);
+        }
         return item;
+    }
+
+    // ---------- Chinese ----------
+
+    /** A Han character (CJK ideograph)? */
+    public static boolean isHan(int cp) {
+        return (cp >= 0x4e00 && cp <= 0x9fff) || (cp >= 0x3400 && cp <= 0x4dbf) || (cp >= 0x20000 && cp <= 0x2ebef) || (cp >= 0xf900 && cp <= 0xfaff);
+    }
+
+    public static boolean hasHan(String s) {
+        return s != null && s.codePoints().anyMatch(Metadata::isHan);
+    }
+
+    /** "zh-CN" for a title in Chinese characters, "ja" when it also has kana, else null (unknown). */
+    public static String languageOf(String title) {
+        if (!hasHan(title)) return null;
+        return title.codePoints().anyMatch(c -> c >= 0x3040 && c <= 0x30ff) ? "ja" : "zh-CN";
+    }
+
+    private static final List<String> COMPOUND_SURNAMES = Arrays.asList("欧阳", "司马", "上官", "诸葛", "东方", "皇甫", "尉迟", "公孙", "慕容", "长孙", "宇文",
+        "司徒", "令狐", "夏侯", "端木", "轩辕", "独孤", "南宫", "西门", "东郭", "呼延", "澹台", "公冶", "宗政", "濮阳", "淳于", "单于", "太叔", "申屠",
+        "赫连", "闻人", "万俟", "钟离", "即墨", "百里", "拓跋");
+
+    /**
+     * A Chinese personal name written without a space ("张三", "欧阳修", "王小明") as family + given, so
+     * styles can sort and shorten it. null for anything else (also longer names: organisations).
+     */
+    public static Map<String, Object> hanName(String value) {
+        String s = Text.squash(value == null ? "" : value);
+        String[] words = s.split(" ");
+        if (words.length == 2 && allHan(words[0]) && allHan(words[1]) && s.length() <= 6) return Json.obj("family", words[0], "given", words[1]);
+        int n = s.codePointCount(0, s.length());
+        if (!allHan(s) || n < 2 || n > 4) return null;
+        int cut = n >= 3 && COMPOUND_SURNAMES.contains(s.substring(0, 2)) ? 2 : 1;
+        return Json.obj("family", s.substring(0, cut), "given", s.substring(cut));
+    }
+
+    private static boolean allHan(String s) {
+        return !s.isEmpty() && s.codePoints().allMatch(Metadata::isHan);
+    }
+
+    // The pinyin of common surnames, for citation keys (zhang2020 instead of ref2020).
+    private static final Map<String, String> PINYIN = new HashMap<>();
+    static {
+        String table = "王wang 李li 张zhang 刘liu 陈chen 杨yang 黄huang 赵zhao 吴wu 周zhou 徐xu 孙sun 马ma 朱zhu 胡hu 郭guo 何he 高gao 林lin 罗luo "
+            + "郑zheng 梁liang 谢xie 宋song 唐tang 许xu 韩han 冯feng 邓deng 曹cao 彭peng 曾zeng 肖xiao 田tian 董dong 袁yuan 潘pan 于yu 蒋jiang 蔡cai "
+            + "余yu 杜du 叶ye 程cheng 苏su 魏wei 吕lv 丁ding 任ren 沈shen 姚yao 卢lu 姜jiang 崔cui 钟zhong 谭tan 陆lu 汪wang 范fan 金jin 石shi 廖liao "
+            + "贾jia 夏xia 韦wei 付fu 傅fu 方fang 白bai 邹zou 孟meng 熊xiong 秦qin 邱qiu 江jiang 尹yin 薛xue 闫yan 阎yan 段duan 雷lei 侯hou 龙long 史shi "
+            + "陶tao 黎li 贺he 顾gu 毛mao 郝hao 龚gong 邵shao 万wan 钱qian 严yan 覃qin 武wu 戴dai 莫mo 孔kong 向xiang 汤tang 常chang 温wen 康kang 施shi "
+            + "文wen 牛niu 樊fan 葛ge 邢xing 安an 齐qi 易yi 乔qiao 伍wu 庞pang 颜yan 倪ni 庄zhuang 聂nie 章zhang 鲁lu 岳yue 翟zhai 殷yin 詹zhan 申shen "
+            + "耿geng 关guan 兰lan 焦jiao 俞yu 左zuo 柳liu 甘gan 祝zhu 包bao 宁ning 尚shang 符fu 舒shu 阮ruan 柯ke 纪ji 梅mei 童tong 凌ling 毕bi 单shan "
+            + "季ji 裴pei 霍huo 涂tu 成cheng 苗miao 谷gu 盛sheng 曲qu 翁weng 冉ran 骆luo 蓝lan 路lu 游you 辛xin 靳jin 管guan 柴chai 蒙meng 鲍bao 华hua "
+            + "喻yu 祁qi 蒲pu 房fang 滕teng 屈qu 饶rao 解xie 牟mou 艾ai 尤you 阳yang 时shi 穆mu 农nong 司si 卓zhuo 古gu 吉ji 缪miao 简jian 车che 项xiang "
+            + "连lian 芦lu 麦mai 褚chu 娄lou 窦dou 戚qi 岑cen 景jing 党dang 宫gong 费fei 卜bu 冷leng 晏yan 席xi 卫wei 米mi 柏bai 宗zong 瞿qu 桂gui 全quan "
+            + "佟tong 应ying 臧zang 闵min 苟gou 邬wu 边bian 卞bian 姬ji 师shi 和he 仇qiu 栾luan 隋sui 商shang 刁diao 沙sha 荣rong 巫wu 寇kou 桑sang 郎lang "
+            + "甄zhen 丛cong 仲zhong 虞yu 敖ao 巩gong 明ming 佘she 池chi 查zha 麻ma 苑yuan 迟chi 邝kuang 官guan 封feng 谈tan 匡kuang 鞠ju 惠hui 荆jing "
+            + "乐le 冀ji 郁yu 胥xu 南nan 班ban 储chu 原yuan 栗li 燕yan 楚chu 鄢yan 劳lao 谌chen 奚xi 皮pi 粟su 冼xian 蔺lin 楼lou 盘pan 满man 闻wen 位wei "
+            + "厉li 伊yi 仝tong 区ou 郜gao 海hai 阚kan 花hua 权quan 强qiang 帅shuai 屠tu 豆dou 朴piao 盖ge 练lian 廉lian 禹yu 井jing 祖zu 漆qi 巴ba 丰feng "
+            + "支zhi 卿qing 国guo 狄di 平ping 计ji 索suo 宣xuan 晋jin 相xiang 初chu 门men 云yun 容rong 敬jing 来lai 扈hu 晁chao 芮rui 都du 普pu 阙que 浦pu "
+            + "束shu 戈ge 伏fu 鹿lu 薄bo 邸di 雍yong 辜gu 羊yang 阿a 乌wu 母mu 裘qiu 亓qi 修xiu 邰tai 赫he 杭hang 况kuang 那na 宿su 鲜xian 印yin 逯lu 隆long 茹ru "
+            + "欧阳ouyang 司马sima 上官shangguan 诸葛zhuge 东方dongfang 皇甫huangfu 尉迟yuchi 公孙gongsun 慕容murong 长孙zhangsun 宇文yuwen 司徒situ "
+            + "令狐linghu 夏侯xiahou 端木duanmu 轩辕xuanyuan 独孤dugu 南宫nangong 西门ximen 东郭dongguo 呼延huyan 澹台tantai 濮阳puyang 淳于chunyu "
+            + "申屠shentu 赫连helian 闻人wenren 万俟moqi 钟离zhongli 拓跋tuoba";
+        for (String entry : table.split(" ")) {
+            int k = 0;
+            while (k < entry.length() && isHan(entry.charAt(k))) k++;
+            PINYIN.put(entry.substring(0, k), entry.substring(k));
+        }
+    }
+
+    /** The pinyin of the surname a Chinese name starts with ("张三" → "zhang"), or "". */
+    static String surnamePinyin(String name) {
+        if (name == null || name.isEmpty() || !isHan(name.codePointAt(0))) return "";
+        if (name.length() >= 3 && PINYIN.containsKey(name.substring(0, 2)) || name.length() == 2 && COMPOUND_SURNAMES.contains(name)) {
+            String p = PINYIN.get(name.substring(0, 2));
+            if (p != null) return p;
+        }
+        return PINYIN.getOrDefault(name.substring(0, 1), "");
     }
 
     // ---------- identifiers ----------
@@ -456,6 +539,7 @@ public final class Metadata {
         Map<String, Object> first = names != null && !names.isEmpty() && map(names.get(0)) != null ? map(names.get(0)) : new HashMap<>();
         Object fam = Json.truthy(first.get("family")) ? first.get("family") : first.get("literal");
         String name = clip(ascii(Json.truthy(fam) ? Json.jsString(fam) : ""), 24);
+        if (name.isEmpty() && Json.truthy(fam)) name = surnamePinyin(Json.jsString(fam));
         if (name.isEmpty()) name = clip(ascii(Json.truthy(item.get("title")) ? Json.jsString(item.get("title")) : ""), 12);
         if (name.isEmpty()) name = "ref";
         String year = "";

@@ -58,6 +58,14 @@ public final class Js {
         }
         cx.evaluateString(scope, glue, "engine.js", 1, null);
         call0("zlSetLocale", new String(Files.readAllBytes(locale), StandardCharsets.UTF_8));
+        // The other bundled locales (locales-zh-CN.xml), for styles written for that language.
+        try (java.nio.file.DirectoryStream<Path> more = Files.newDirectoryStream(locale.getParent(), "locales-*.xml")) {
+            for (Path p : more) {
+                String name = p.getFileName().toString();
+                String lang = name.substring("locales-".length(), name.length() - ".xml".length());
+                if (!p.equals(locale)) call0("zlAddLocale", lang, new String(Files.readAllBytes(p), StandardCharsets.UTF_8));
+            }
+        }
     }
 
     private String call0(String name, Object... args) {

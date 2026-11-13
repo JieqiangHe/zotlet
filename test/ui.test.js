@@ -395,6 +395,28 @@ test('drop a CSL JSON file (e.g. exported from Zotero) to import its references'
   await page.waitForSelector('.rows .row:has-text("From Zotero")')
 })
 
+test('drop a file exported from CNKI (知网; here EndNote format in GBK) to import Chinese references', { skip }, async () => {
+  const before = (await snapshot()).items.length
+  const dataTransfer = await page.evaluateHandle((data) => {
+    const dt = new DataTransfer()
+    dt.items.add(new File([Uint8Array.from(atob(data), (c) => c.charCodeAt(0))], 'CNKI-20261113.txt', { type: 'text/plain' }))
+    return dt
+  }, 'JTAgSm91cm5hbCBBcnRpY2xlDQolQSDC7bfmzfoNCiVBIMDutOTTog0KJVQgxru5+7+5xObQ1NHQvr+1xLvYucsNCiVKINSw0tXRp7GoDQolRCAyMDE2DQolViA0Mw0KJU4gMDkNCiVQIDE3MDEtMTcxMg0K')
+  await page.dispatchEvent('.table', 'dragenter', { dataTransfer })
+  await page.dispatchEvent('.table', 'drop', { dataTransfer })
+  await page.waitForSelector('#pdf-results li.ok')
+  assert.match(await page.textContent('#pdf-results li'), /Imported 1 reference/)
+  await page.click('#pdf-dialog .dialog-foot .primary')
+  const items = (await snapshot()).items
+  assert.equal(items.length, before + 1)
+  const item = items.find((i) => i.id === 'ma2016')
+  assert.deepEqual([item.title, item.language, item.issue], ['苹果抗逆性研究的回顾', 'zh-CN', '9'])
+  // Chinese names are shown whole.
+  const row = page.locator('.rows .row:has-text("苹果抗逆性研究的回顾")')
+  assert.equal((await row.locator('.cell.authors').textContent()).trim(), '马锋旺、李翠英')
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, '16-chinese.png') })
+})
+
 test('columns sort, including by import time (Added), and the choice is remembered', { skip }, async () => {
   await page.setViewportSize({ width: 1280, height: 760 })
   await page.click('.nav-item[data-project=""]')

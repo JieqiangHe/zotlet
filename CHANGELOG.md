@@ -4,9 +4,16 @@ The release workflow publishes the section of the released version as its GitHub
 
 ## Unreleased
 
+- **Chinese literature without a plugin** (what Zotero needs Jasminum / 茉莉花 for): paste the GB/T 7714
+  reference text that CNKI (知网), Wanfang or VIP show, or drop their EndNote / RefWorks / NoteExpress export
+  (also RIS and BibTeX files from anywhere). Chinese names are split into family and given name, references
+  with a Chinese title are marked `zh-CN`, and ids use pinyin (`zhang2020`).
+- **GB/T 7714—2015 is built in** (numeric and author-date, the bilingual styles of the Zotero Chinese
+  community): 等 after Chinese authors, et al. after English ones.
 - **A real pop-up for choosing references on Windows and Linux** (and as the second choice on macOS, if the
-  macOS one cannot start): a small window over Word, LibreOffice or GenOffice, with the same keys as on the
-  Mac, instead of a browser window. The browser picker is only used when no window can be shown.
+  macOS one cannot start): a launcher-style window over Word, LibreOffice or GenOffice, light or dark like
+  the system, with the same keys as on the Mac, instead of a browser window. The browser picker is only used
+  when no window can be shown.
 
 ## 0.3.0 — 2026-11-12
 

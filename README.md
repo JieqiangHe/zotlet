@@ -7,10 +7,12 @@ move freely between the two. zotlet is a small Java app: it runs on the Java (11
 computer and opens in your browser.
 
 - Import by DOI or PMID, by dropping PDFs (the DOI is read from the file), or from a Zotero CSL JSON export
+- Chinese literature without a plugin: references from CNKI (知网), Wanfang (万方) and VIP (维普), and the
+  GB/T 7714 styles with 等 / et al. chosen per reference
 - Live citations and bibliographies in **Microsoft Word** (macOS, Windows), **GenOffice** and **LibreOffice**
   through Zotero's word-processor plugins — Zotero itself does not need to be installed
 - Documents stay compatible with Zotero, so they can be refreshed in Zotero later
-- Thousands of citation styles from the official CSL repository (Nature, Science and Cell are built in)
+- Thousands of citation styles from the official CSL repository (Nature, Science, Cell and GB/T 7714 are built in)
 - One-click export of a project as RIS, CSL JSON and BibTeX
 
 Everything runs on your own computer. Your library is plain JSON in `~/.zotlet/`, the same whether you
@@ -47,6 +49,7 @@ install the new file.
    - click **Add references** and paste DOIs or PMIDs, or
    - drag PDFs onto the list (only the DOI is read; the PDF is not stored), or
    - drag in a CSL JSON file exported from Zotero.
+   - Chinese literature: see [Chinese literature](#chinese-literature-中文文献) below.
 3. **Cite while you write.** Quit Zotero first, keep zotlet running (as a plugin: keep TBtools open), and use
    the Zotero toolbar (or, in Word, the Zotero tab):
    - *Add/Edit Citation* pops up a search bar over your document, like Zotero's: type, press Enter to
@@ -60,9 +63,28 @@ Click a column header to sort the list; **Added** sorts by import time.
 
 ## Citation styles
 
-Nature, Science and Cell are built in. To add a journal's style, click **Styles**, search for the journal and
+Nature, Science, Cell and GB/T 7714—2015 (numeric and author-date, bilingual) are built in. To add a journal's style, click **Styles**, search for the journal and
 click **Install**, or add a `.csl` file you already have. If you open a document that uses a style you
 don't have, zotlet downloads it automatically.
+
+## Chinese literature (中文文献)
+
+Zotero needs the Jasminum (茉莉花) plugin for Chinese references; zotlet has the parts you need for citing built in:
+
+- **Getting references from CNKI (知网), Wanfang (万方) or VIP (维普).** Select the articles there, choose
+  导出 / 导出与分析, and either
+  - copy the reference text it shows (GB/T 7714, e.g. `[1]张三,李四.题名[J].园艺学报,2020,47(3):12-18.`) and
+    paste it under **Add references**, or
+  - export as **EndNote**, **RefWorks** or **NoteExpress** and drop the downloaded file on the list
+    (RIS and BibTeX files from any database work the same way; older files in GBK are read too).
+- **Names.** 张三 is stored as family 张, given 三 (compound surnames such as 欧阳 are recognised), so styles
+  print and sort Chinese names properly; reference ids use pinyin (`zhang2020`).
+- **Language.** References with a Chinese title are marked `zh-CN`. The built-in **GB/T 7714** styles use
+  this to write 等 after Chinese authors and et al. after English ones, in the same bibliography.
+- A reference without a DOI counts as already in your library when one with the same title and year is there.
+
+zotlet does not search CNKI by itself (CNKI has no public interface and blocks automated requests), and it
+does not read a DOI from CNKI's own PDFs when they carry none: use the export above for those.
 
 ## Microsoft Word
 
@@ -97,12 +119,13 @@ citations as bookmarks, which both Word and LibreOffice-style editors accept.
   Apple-silicon Mac, the Apple-silicon build of TBtools avoids it.
 - **A DOI cannot be imported.** zotlet asks doi.org first, then Crossref and PubMed. If all three fail,
   check your connection and try again; the error message names the problem.
-- **Choosing references: the pop-up.** Add/Edit Citation opens a small window over your word processor
-  (Word, LibreOffice, GenOffice; macOS, Windows and Linux): type to search, Enter adds the highlighted
-  reference, Enter again inserts, ⌫ removes the last one, Esc cancels. On Windows, click the pop-up once if
-  it does not take the keyboard by itself. Only when no window can be shown (a computer without a screen)
-  zotlet opens the picker in the browser; the log says why. `ZOTLET_PICKER=window` uses Java's own pop-up
-  on a Mac too, `ZOTLET_PICKER=web` always uses the browser picker.
+- **Choosing references: the pop-up.** Add/Edit Citation opens a small launcher-style window over your word
+  processor (Word, LibreOffice, GenOffice; macOS, Windows and Linux), light or dark like your system: type to
+  search, Enter adds the highlighted reference, Enter again inserts, ⌫ removes the last one (or click its
+  chip), Esc cancels. On Windows, click the pop-up once if it does not take the keyboard by itself. Only when
+  no window can be shown (a computer without a screen) zotlet opens the picker in the browser; the log says
+  why. On a Mac the pop-up is the macOS one; `ZOTLET_PICKER=window` uses Java's own pop-up there too,
+  `ZOTLET_PICKER=web` always uses the browser picker, `ZOTLET_PICKER_THEME=dark|light` fixes its colours.
 
 ## Command line
 
@@ -146,6 +169,7 @@ plugins, styles and formats it uses, and to [TBtools](https://github.com/CJ-Chen
 the plugin — thank you.
 
 zotlet is released under the [MIT License](LICENSE). The bundled citation styles in `styles/` and the
-locale in `locales/` come from the CSL project and keep their own license (CC BY-SA 3.0). zotlet includes
+locales in `locales/` come from the CSL project (the two GB/T 7714 styles from the Zotero Chinese community,
+zotero-chinese/styles) and keep their own license (CC BY-SA 3.0). zotlet includes
 [citeproc-js](https://github.com/Juris-M/citeproc-js) (CPAL / AGPL), [Rhino](https://github.com/mozilla/rhino)
 (MPL 2.0) and Zotero's Word templates (GPL 3 or later, `java/word/NOTICE.md`); see `THIRD-PARTY.txt` in the packages.

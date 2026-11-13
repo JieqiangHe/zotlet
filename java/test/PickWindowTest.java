@@ -109,6 +109,21 @@ public class PickWindowTest {
         });
         check(Json.stringify(r).equals("{\"style\":\"cell\",\"bookmarks\":false}"), "style answer: " + Json.stringify(r));
 
+        // Nothing matches; many references (the list scrolls).
+        List<Object> many = new java.util.ArrayList<>(items);
+        for (int i = 0; i < 30; i++) many.add(Json.parse("{\"id\":\"n" + i + "\",\"title\":\"Reference number " + i + " about apple rootstocks\",\"container-title\":\"Plant Physiology\",\"author\":[{\"family\":\"Author" + i + "\"}],\"issued\":{\"date-parts\":[[" + (1990 + i) + "]]}}"));
+        r = pick(Json.obj("mode", "cite", "style", "nature", "askStyle", false, "items", many, "selected", Json.arr()), styles, null, w -> {
+            type(w, "rootstocks");
+            for (int i = 0; i < 12; i++) key(w, KeyEvent.VK_DOWN);
+            shot(w, "pick-many");
+            type(w, "zzzz no such thing");
+            shot(w, "pick-none");
+            key(w, KeyEvent.VK_ENTER);
+            check(!QuickPick.OPEN.isEmpty(), "Enter with no match keeps the window open");
+            key(w, KeyEvent.VK_ESCAPE);
+        });
+        check(r == null, "cancelled");
+
         System.out.println(failures == 0 ? "ok" : failures + " failed");
         System.exit(failures == 0 ? 0 : 1);
     }

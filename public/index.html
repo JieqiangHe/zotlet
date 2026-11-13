@@ -76,7 +76,7 @@
             <button id="btn-remove-from" class="btn sm" hidden>Remove from project</button>
             <button id="btn-delete" class="btn sm danger">Delete</button>
           </div>
-          <div id="list-hint" class="listbar-actions muted">Drop PDFs or a CSL JSON file here to import · double-click to edit</div>
+          <div id="list-hint" class="listbar-actions muted">Drop PDFs or reference files here to import · double-click to edit</div>
         </div>
         <div class="table" role="grid" aria-labelledby="view-title">
           <div class="row head" role="row">
@@ -88,7 +88,7 @@
             <button class="cell sort num" data-sort="added" role="columnheader" title="When the reference was imported">Added<span class="arrow"></span></button>
           </div>
           <div id="rows" class="rows"></div>
-          <div id="drop-hint" class="drop-hint" hidden><strong>Drop PDFs or a CSL JSON file to import</strong><span>zotlet reads the DOI inside each PDF; the PDF itself is not kept. CSL JSON comes from Zotero (File → Export Library…).</span></div>
+          <div id="drop-hint" class="drop-hint" hidden><strong>Drop PDFs or reference files to import</strong><span>PDF: zotlet reads the DOI inside; the PDF itself is not kept. Reference files: an export from CNKI (知网), Wanfang or VIP (EndNote, RefWorks, NoteExpress), RIS, BibTeX, or CSL JSON from Zotero.</span></div>
           <div id="empty" class="empty" hidden></div>
         </div>
       </div>
@@ -114,7 +114,7 @@
         <label class="field">
           <span>Identifiers</span>
           <textarea id="import-text" rows="5" spellcheck="false" placeholder="10.1016/j.plaphy.2026.111729&#10;PMID: 31452104&#10;https://doi.org/10.1038/…"></textarea>
-          <small class="muted">Paste any number of DOIs, DOI links, PMIDs or PubMed links — separated by new lines, spaces or commas.</small>
+          <small class="muted">Paste any number of DOIs, DOI links, PMIDs or PubMed links — separated by new lines, spaces or commas. Chinese literature (知网 CNKI, 万方, 维普): paste the GB/T 7714 reference text or an EndNote / RefWorks / NoteExpress export, or drop the exported file on the list.</small>
         </label>
         <p id="import-target" class="note" hidden></p>
         <ul id="import-results" class="results" hidden></ul>
@@ -180,7 +180,7 @@
       </button>
     </header>
     <div class="dialog-body">
-      <p id="pdf-note" class="muted">PDF: zotlet reads its DOI and imports the reference (the PDF itself is not kept). CSL JSON: every reference in the file is imported.</p>
+      <p id="pdf-note" class="muted">PDF: zotlet reads its DOI and imports the reference (the PDF itself is not kept). Reference files (CNKI / EndNote / RIS / BibTeX export, CSL JSON): every reference in the file is imported.</p>
       <ul id="pdf-results" class="pdf-results"></ul>
     </div>
     <footer class="dialog-foot">

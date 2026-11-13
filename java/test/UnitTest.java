@@ -79,6 +79,19 @@ public class UnitTest {
         eq(sm.result(null, true), Json.obj("style", "nature", "bookmarks", true), "style answer");
         eq(Picker.mode(), System.getenv("ZOTLET_PICKER") == null ? "auto" : Picker.mode(), "picker mode");
 
+        // Chinese references: names whole and "\u7b49" in the picker, surnames in pinyin for ids, names split, language.
+        List<Object> zh = Json.list(Json.parse("[{\"id\":\"wang2021\",\"title\":\"\u82f9\u679c\",\"author\":[{\"family\":\"\u738b\",\"given\":\"\u5c0f\u660e\"},{\"family\":\"\u8d75\",\"given\":\"\u56db\"},{\"family\":\"\u5b59\",\"given\":\"\u4e94\"}],\"issued\":{\"date-parts\":[[2021]]}}]"));
+        eq(Json.map(Json.list(Picker.nativeSpec(Json.obj("mode", "cite", "items", zh), styles, null).get("items")).get(0)).get("detail"), "\u738b\u5c0f\u660e \u7b49 2021", "Chinese authors in the picker");
+        eq(Metadata.citationKey(Json.map(zh.get(0)), new java.util.HashSet<>()), "wang2021", "pinyin key");
+        eq(Metadata.citationKey(Json.obj("author", Json.arr(Json.obj("literal", "\u6b27\u9633\u4fee")), "issued", Json.obj("date-parts", Json.arr(Json.arr(1050.0)))), new java.util.HashSet<>()), "ouyang1050", "compound surname");
+        eq(Metadata.hanName("\u6b27\u9633\u5c0f\u660e"), Json.obj("family", "\u6b27\u9633", "given", "\u5c0f\u660e"), "compound surname split");
+        eq(Metadata.hanName("\u5f20\u4e09"), Json.obj("family", "\u5f20", "given", "\u4e09"), "name split");
+        check(Metadata.hanName("\u4e2d\u56fd\u79d1\u5b66\u6280\u672f\u534f\u4f1a") == null && Metadata.hanName("Smith") == null, "organisations and Latin names are left alone");
+        eq(Metadata.languageOf("\u82f9\u679c\u6297\u65f1"), "zh-CN", "Chinese title");
+        eq(Metadata.languageOf("\u30ea\u30f3\u30b4\u306e\u7814\u7a76"), "ja", "Japanese title");
+        check(Metadata.languageOf("Apple") == null, "other titles: unknown");
+        check(Refs.detect("10.1016/j.plaphy.2026.111729\nPMID: 31452104") == null, "identifiers are not a reference list");
+
         // LibreOffice is recognised from lsof output (macOS).
         String lsof = "p101\ncsoffice\nn127.0.0.1:50000->127.0.0.1:23116\np7\nczotlet\nn127.0.0.1:23116->127.0.0.1:50000\n";
         Integration.Owner owner = Integration.lsofClient(lsof, new Integration.Ends("127.0.0.1", 50000, "127.0.0.1", 23116));

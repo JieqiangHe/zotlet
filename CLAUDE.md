@@ -21,9 +21,14 @@ Focus: compact UI, project-centric organization, reliable DOI import, and clean 
   Paste one or more DOIs or PMIDs and import.
   Must correctly normalize author objects (drop `sequence`, `affiliation`, `role`, etc.) so validation never fails on extra fields.
 
+- **Chinese literature** (13 Nov 2026, the user: what Zotero needs the Jasminum / 茉莉花 plugin for should
+  be built in, "nobody needs a plugin"): import what CNKI (知网), Wanfang and VIP export, Chinese names,
+  the language field, GB/T 7714 with 等 / et al. See "Chinese literature" below.
+
 - **Citations**:
   Generate in-text citations and bibliographies using citeproc-js.
-  Built in: Nature, Science and Cell only. Every other style is downloaded under Styles.
+  Built in: Nature, Science and Cell, plus the two bilingual GB/T 7714—2015 styles (13 Nov 2026, for Chinese
+  literature). Every other style is downloaded under Styles.
 
 - **Word processor citations**:
   Insert and refresh live citations and bibliographies in GenOffice and LibreOffice through the
@@ -142,6 +147,7 @@ java/src/zotlet/   the app (Java 11, java.base + java.desktop only):
   Export.java        CSL JSON, BibTeX, RIS writers and the zip.
   Integration.java   GenOffice/LibreOffice: Zotero plugin protocol on TCP 23116 + HTTP 23119, document session.
   StyleRepo.java     "Get more styles": Zotero's style index, download/install, add .csl file, remove.
+  Refs.java          reference files and text → CSL records: EndNote, RefWorks, NoteExpress (CNKI exports), RIS, BibTeX, GB/T 7714 text.
   Pdf.java           extractDOI(): the article DOI from PDF bytes (for PDFs dropped on the list).
   Picker.java        native macOS picker (runs java/quickformat.jxa.js), browser-picker window, frontApp/activateApp.
   QuickPick.java     the pop-up drawn by Java (Swing): Windows, Linux, and macOS when the native one fails.
@@ -155,8 +161,10 @@ java/plugin/       the TBtools plugin shell (Plugin/PluginInject.java); java/plu
 .claude/skills/zotlet-package/  how to set up a machine, build, test, package and release (SKILL.md, check-env.sh).
 public/            index.html, app.js (single ES module), style.css, theme.js (pre-paint theme),
                    pick.html + pick.js (citation/style picker opened by the word processor integration).
-styles/            the built-in styles: nature, science, cell (official CSL repo, CC BY-SA 3.0).
-locales/           locales-en-US.xml (every style is rendered with en-US).
+styles/            the built-in styles: nature, science, cell (official CSL repo) and gb-t-7714-2015-{numeric,author-date}-bilingual
+                   (zotero-chinese/styles, unchanged); all CC BY-SA 3.0.
+locales/           locales-en-US.xml (every style is rendered with en-US) and locales-zh-CN.xml (for styles with
+                   default-locale="zh-CN").
 test/              app.test.js (end to end against golden.json), ui.test.js (Playwright), unit.test.js,
                    word.test.js + fake-word.mjs, plugin.test.js, zotlet.js (starts the jar, fake internet,
                    fake word processor), helpers.js, fixtures/.
@@ -226,7 +234,14 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   only be run on a Mac (tests syntax-check it).
   **Windows, Linux, and macOS when the Cocoa one fails** (13 Nov 2026, the user: "a real pop-up, not back to
   the browser", in Word, LibreOffice and GenOffice): `QuickPick.java`, a Swing window in zotlet's own JVM
-  (undecorated, always on top, same request / answer / keys; `Picker.windowPick`). `QuickPick.Model` holds
+  (undecorated, always on top, same request / answer / keys; `Picker.windowPick`). Its look (the user:
+  "prettier, like Raycast"): a rounded card, a large search line without a box, chips for the chosen
+  references (click removes), rows with a rounded highlight (mark, title, journal, authors + year), a bottom
+  bar with the keys as clickable hints; light or dark like the system (`systemDark()`: defaults / reg /
+  gsettings; `ZOTLET_PICKER_THEME`), fonts with Chinese glyphs (PingFang SC, Microsoft YaHei UI, else Sans
+  Serif; `fit()` falls back per string). With a translucent window it draws a soft shadow (`glass`; never
+  seen: Xvfb has no translucency, there the corners are cut with `setShape`). The macOS Cocoa pop-up was
+  not restyled (it cannot be run here). `QuickPick.Model` holds
   the behaviour without AWT (UnitTest.java); `test/popup.test.js` opens the real window on Xvfb
   (`java/test/PickWindowTest.java`, screenshots with `ZOTLET_SCREENSHOTS`) and answers a TCP citation
   through it (`ZOTLET_PICK_KEYS="type:…;enter;enter"` presses keys in the window). It has only run on
@@ -280,6 +295,36 @@ How Zotero's Word plugins reach Zotero, read from zotero-word-for-mac-integratio
   only on real machines: PowerShell 7 parses the script and compiles its C#, and its JSON shapes were
   checked with fake COM objects; nothing here has run against Word yet. `~/.zotlet/word.log`
   (`ZOTLET_WORD_LOG`) records the Mac helper's AppleScript errors with the failing snippet.
+
+## Chinese literature
+
+What Jasminum does for Zotero, as far as citing needs it; no CNKI scraping (no public interface, captchas;
+the sandbox could not test it either), so references come in through what CNKI / Wanfang / VIP export.
+
+- `Refs.java`: `detect()` + `parse()` for EndNote tagged (`%0`), RefWorks (`RT`; CNKI writes some tags in
+  lower case), NoteExpress (`{Reference Type}:`), RIS, BibTeX and GB/T 7714 reference lines
+  (`[1]张三,李四.题名[J].刊名,2020,47(3):12-18.`; J, D, M, N and the other type letters). Every record then
+  goes through `normalizeItem`. Details: several authors in one field split at `;`, issue "03" → "3", the
+  database's own page (cnki.net, wanfangdata, cqvip) is not kept as URL (GB/T would print `[J/OL]` + link),
+  thesis degree → `genre` (博士学位论文). The samples in `test/fixtures/cnki/` were written from the formats
+  as remembered, not downloaded from CNKI: check against a real export when the user reports one.
+- `POST /api/import-refs` `{ text, name?, projectId? }` → `{ format, added, duplicates, skipped, ids, results }`;
+  `POST /api/import` (the paste box) hands text that `Refs.detect` recognises to the same code. A record
+  without DOI/PMID is a duplicate of a library item with the same title + year (only on this path; DOI/PMID
+  matching in `Store.findDuplicate` is unchanged). The page reads dropped `.txt/.enw/.net/.ris/.bib` files as
+  UTF-8, else GB18030 (`readText` in app.js).
+- Names: `Metadata.hanName` splits 张三 / 欧阳修 / 王小明 (2–4 Han characters, compound surnames) into family +
+  given; longer Han strings stay literal (organisations). Only `Refs` uses it; `cleanName` is unchanged.
+  The list, the pickers (app.js, pick.js, `Picker.java`) show 张三、李四 / 张三 等.
+- `normalizeItem` sets `language` to `zh-CN` (kana: `ja`) when the title has Han characters and none is
+  given. At render time `engine.js` gives items without a language one (Han title → zh-CN, else en-US) on
+  the copy it renders, never in the library or in a document's embedded data.
+- Citation keys / ids: `Metadata.surnamePinyin` (a table of common surnames) → `zhang2020`; unknown → `ref2020`.
+- Styles: a style with `default-locale="zh-CN"` is built with `locales-zh-CN.xml` (`zlNew` in engine.js);
+  every other style still gets en-US whatever its default-locale (the recorded answers depend on that).
+  The built-in GB/T 7714 styles are CSL-M (`<layout locale="en">` next to the default layout), which
+  citeproc-js handles: English items get et al., Chinese ones 等. Their ids in documents are their
+  zotero-chinese.com URIs, so Zotero with the same style installed opens the document.
 
 ## PDFs dropped on the list
 
@@ -358,13 +403,15 @@ How Zotero's Word plugins reach Zotero, read from zotero-word-for-mac-integratio
     is missing) against a real zotlet process; every answer and document, after normalizing random ids,
     times and paths, must equal `test/fixtures/golden.json`. That file was recorded from the Node
     implementation the user had used with GenOffice, before it was removed. When behaviour changes on
-    purpose, update the golden entries by hand (or record them again from the jar) and say so in the commit.
+    purpose, update the golden entries by hand (or record them again from the jar: `ZOTLET_RECORD=1 node --test
+    test/app.test.js`, then read `git diff test/fixtures/golden.json`) and say so in the commit.
     It also checks data-file invariants and the PubMed fallback directly.
   - `test/ui.test.js`: the page in Chromium against the jar (pickers are opened through a TCP command).
   - `test/unit.test.js`: `java/test/UnitTest.java` (picker request/answer, lsof parsing, JSON numbers)
     and a syntax check of `java/quickformat.jxa.js`.
   - `test/word.test.js`: Microsoft Word (see that section).
   - `test/popup.test.js`: Java's own citation pop-up on a virtual screen (skipped without Xvfb).
+  - `test/chinese.test.js`: CNKI-style files and GB/T 7714 text in, names / language / ids, the GB/T 7714 styles out.
   - `test/plugin.test.js`: packages the plugin and loads it as TBtools does (`java/test/VerifyPlugin.java`,
     TBtools stand-ins in `java/test/tbtools/`): start, closed class loader, second tab, reinstall, the
     Intel-build licence work-around, the fallback panel; with `TBTOOLS_JAR`, TBtools' own loader too.

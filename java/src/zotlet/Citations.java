@@ -32,11 +32,12 @@ public final class Citations {
     }
 
     // Order of the style menu; anything else follows alphabetically.
-    private static final List<String> PREFERRED = Arrays.asList("nature", "science", "cell", "pnas", "the-lancet", "plos", "apa", "chicago-author-date",
+    private static final List<String> PREFERRED = Arrays.asList("nature", "science", "cell", "gb-t-7714-2015-numeric-bilingual", "gb-t-7714-2015-author-date-bilingual", "pnas", "the-lancet", "plos", "apa", "chicago-author-date",
         "harvard-cite-them-right", "elsevier-harvard", "american-medical-association", "nlm-citation-sequence", "ieee");
     private static final Map<String, String> LABELS = new HashMap<>();
     static {
-        String[] a = {"nature", "Nature", "science", "Science", "cell", "Cell", "pnas", "PNAS", "the-lancet", "The Lancet", "plos", "PLOS",
+        String[] a = {"nature", "Nature", "science", "Science", "cell", "Cell",
+            "gb-t-7714-2015-numeric-bilingual", "GB/T 7714 (\u987a\u5e8f\u7f16\u7801)", "gb-t-7714-2015-author-date-bilingual", "GB/T 7714 (\u8457\u8005-\u51fa\u7248\u5e74)", "pnas", "PNAS", "the-lancet", "The Lancet", "plos", "PLOS",
             "apa", "APA 7th", "chicago-author-date", "Chicago (author-date)", "harvard-cite-them-right", "Harvard",
             "elsevier-harvard", "Elsevier Harvard", "american-medical-association", "AMA", "nlm-citation-sequence", "Vancouver", "ieee", "IEEE"};
         for (int k = 0; k < a.length; k += 2) LABELS.put(a[k], a[k + 1]);

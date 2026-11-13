@@ -53,18 +53,26 @@ public final class Picker {
         Map<String, Object> n = map(o);
         if (n == null) return "";
         if (Json.truthy(n.get("literal"))) return Json.jsString(n.get("literal"));
+        // Chinese names are written whole: 张三, not 张.
+        if (hanOnly(n.get("family")) && hanOnly(n.get("given"))) return Json.jsString(n.get("family")) + Json.jsString(n.get("given"));
         List<String> parts = new ArrayList<>();
         for (String k : new String[]{"non-dropping-particle", "family"}) if (Json.truthy(n.get(k))) parts.add(Json.jsString(n.get(k)));
         return String.join(" ", parts);
+    }
+
+    private static boolean hanOnly(Object o) {
+        return o instanceof String && !((String) o).isEmpty() && ((String) o).codePoints().allMatch(Metadata::isHan);
     }
 
     private static String authorsShort(Map<String, Object> item) {
         List<Object> a = list(item.get("author"));
         if (a == null || a.isEmpty()) a = list(item.get("editor"));
         if (a == null || a.isEmpty()) return "";
-        if (a.size() == 1) return nameOf(a.get(0));
-        if (a.size() == 2) return nameOf(a.get(0)) + " & " + nameOf(a.get(1));
-        return nameOf(a.get(0)) + " et al.";
+        String first = nameOf(a.get(0));
+        boolean han = Metadata.hasHan(first);
+        if (a.size() == 1) return first;
+        if (a.size() == 2) return first + (han ? "\u3001" : " & ") + nameOf(a.get(1));
+        return first + (han ? " \u7b49" : " et al.");
     }
 
     private static String joinTruthy(String sep, List<Object> parts) {
@@ -110,6 +118,7 @@ public final class Picker {
             String shortWho = who.isEmpty() ? (title.length() > 24 ? title.substring(0, 24) : title) : who;
             outItems.add(obj("id", id, "title", title.isEmpty() ? "(untitled)" : title,
                 "detail", joinTruthy(" ", Arrays.asList(who, year)),
+                "journal", journal,
                 "short", joinTruthy(" ", Arrays.asList(shortWho, year)),
                 "search", Text.lower(joinTruthy(" ", search))));
         }

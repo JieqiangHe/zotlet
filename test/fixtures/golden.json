@@ -35,6 +35,22 @@
      "format": "numeric"
     },
     {
+     "id": "gb-t-7714-2015-numeric-bilingual",
+     "title": "GB/T 7714—2015（顺序编码，双语）",
+     "label": "GB/T 7714 (顺序编码)",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "gb-t-7714-2015-author-date-bilingual",
+     "title": "GB/T 7714—2015（著者-出版年，双语）",
+     "label": "GB/T 7714 (著者-出版年)",
+     "builtin": true,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
      "id": "apa",
      "title": "APA Style 7th edition",
      "label": "APA 7th",
@@ -340,6 +356,22 @@
      "format": "numeric"
     },
     {
+     "id": "gb-t-7714-2015-numeric-bilingual",
+     "title": "GB/T 7714—2015（顺序编码，双语）",
+     "label": "GB/T 7714 (顺序编码)",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "gb-t-7714-2015-author-date-bilingual",
+     "title": "GB/T 7714—2015（著者-出版年，双语）",
+     "label": "GB/T 7714 (著者-出版年)",
+     "builtin": true,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
      "id": "apa",
      "title": "APA Style 7th edition",
      "label": "APA 7th",
@@ -516,6 +548,22 @@
      "builtin": true,
      "parent": null,
      "format": "numeric"
+    },
+    {
+     "id": "gb-t-7714-2015-numeric-bilingual",
+     "title": "GB/T 7714—2015（顺序编码，双语）",
+     "label": "GB/T 7714 (顺序编码)",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "gb-t-7714-2015-author-date-bilingual",
+     "title": "GB/T 7714—2015（著者-出版年，双语）",
+     "label": "GB/T 7714 (著者-出版年)",
+     "builtin": true,
+     "parent": null,
+     "format": "author-date"
     },
     {
      "id": "apa",
@@ -887,6 +935,22 @@
      "format": "numeric"
     },
     {
+     "id": "gb-t-7714-2015-numeric-bilingual",
+     "title": "GB/T 7714—2015（顺序编码，双语）",
+     "label": "GB/T 7714 (顺序编码)",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "gb-t-7714-2015-author-date-bilingual",
+     "title": "GB/T 7714—2015（著者-出版年，双语）",
+     "label": "GB/T 7714 (著者-出版年)",
+     "builtin": true,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
      "id": "apa",
      "title": "APA Style 7th edition",
      "label": "APA 7th",
@@ -1148,6 +1212,22 @@
      "format": "numeric"
     },
     {
+     "id": "gb-t-7714-2015-numeric-bilingual",
+     "title": "GB/T 7714—2015（顺序编码，双语）",
+     "label": "GB/T 7714 (顺序编码)",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "gb-t-7714-2015-author-date-bilingual",
+     "title": "GB/T 7714—2015（著者-出版年，双语）",
+     "label": "GB/T 7714 (著者-出版年)",
+     "builtin": true,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
      "id": "apa",
      "title": "APA Style 7th edition",
      "label": "APA 7th",
@@ -1238,6 +1318,22 @@
      "format": "numeric"
     },
     {
+     "id": "gb-t-7714-2015-numeric-bilingual",
+     "title": "GB/T 7714—2015（顺序编码，双语）",
+     "label": "GB/T 7714 (顺序编码)",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "gb-t-7714-2015-author-date-bilingual",
+     "title": "GB/T 7714—2015（著者-出版年，双语）",
+     "label": "GB/T 7714 (著者-出版年)",
+     "builtin": true,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
      "id": "apa",
      "title": "APA Style 7th edition",
      "label": "APA 7th",
@@ -1314,6 +1410,22 @@
      "builtin": true,
      "parent": null,
      "format": "numeric"
+    },
+    {
+     "id": "gb-t-7714-2015-numeric-bilingual",
+     "title": "GB/T 7714—2015（顺序编码，双语）",
+     "label": "GB/T 7714 (顺序编码)",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "gb-t-7714-2015-author-date-bilingual",
+     "title": "GB/T 7714—2015（著者-出版年，双语）",
+     "label": "GB/T 7714 (著者-出版年)",
+     "builtin": true,
+     "parent": null,
+     "format": "author-date"
     },
     {
      "id": "apa",
@@ -1531,6 +1643,22 @@
      "format": "numeric"
     },
     {
+     "id": "gb-t-7714-2015-numeric-bilingual",
+     "title": "GB/T 7714—2015（顺序编码，双语）",
+     "label": "GB/T 7714 (顺序编码)",
+     "builtin": true,
+     "parent": null,
+     "format": "numeric"
+    },
+    {
+     "id": "gb-t-7714-2015-author-date-bilingual",
+     "title": "GB/T 7714—2015（著者-出版年，双语）",
+     "label": "GB/T 7714 (著者-出版年)",
+     "builtin": true,
+     "parent": null,
+     "format": "author-date"
+    },
+    {
      "id": "apa",
      "title": "APA Style 7th edition",
      "label": "APA 7th",
@@ -1641,6 +1769,8 @@
     "nature",
     "science",
     "cell",
+    "gb-t-7714-2015-numeric-bilingual",
+    "gb-t-7714-2015-author-date-bilingual",
     "apa"
    ]
   }
@@ -1758,6 +1888,8 @@
     "nature",
     "science",
     "cell",
+    "gb-t-7714-2015-numeric-bilingual",
+    "gb-t-7714-2015-author-date-bilingual",
     "apa"
    ]
   }
@@ -1859,6 +1991,8 @@
     "nature",
     "science",
     "cell",
+    "gb-t-7714-2015-numeric-bilingual",
+    "gb-t-7714-2015-author-date-bilingual",
     "apa"
    ]
   }
@@ -1898,6 +2032,8 @@
     "nature",
     "science",
     "cell",
+    "gb-t-7714-2015-numeric-bilingual",
+    "gb-t-7714-2015-author-date-bilingual",
     "apa"
    ]
   }
@@ -2020,6 +2156,8 @@
     "nature",
     "science",
     "cell",
+    "gb-t-7714-2015-numeric-bilingual",
+    "gb-t-7714-2015-author-date-bilingual",
     "apa"
    ]
   }
@@ -2096,6 +2234,8 @@
     "nature",
     "science",
     "cell",
+    "gb-t-7714-2015-numeric-bilingual",
+    "gb-t-7714-2015-author-date-bilingual",
     "apa"
    ]
   }
@@ -2184,6 +2324,8 @@
     "nature",
     "science",
     "cell",
+    "gb-t-7714-2015-numeric-bilingual",
+    "gb-t-7714-2015-author-date-bilingual",
     "apa"
    ]
   }
@@ -2253,6 +2395,8 @@
     "nature",
     "science",
     "cell",
+    "gb-t-7714-2015-numeric-bilingual",
+    "gb-t-7714-2015-author-date-bilingual",
     "apa"
    ]
   }
@@ -2404,6 +2548,8 @@
     "nature",
     "science",
     "cell",
+    "gb-t-7714-2015-numeric-bilingual",
+    "gb-t-7714-2015-author-date-bilingual",
     "apa"
    ]
   }
@@ -2511,6 +2657,8 @@
     "nature",
     "science",
     "cell",
+    "gb-t-7714-2015-numeric-bilingual",
+    "gb-t-7714-2015-author-date-bilingual",
     "apa",
     "elsevier-harvard"
    ]
@@ -2610,6 +2758,8 @@
     "nature",
     "science",
     "cell",
+    "gb-t-7714-2015-numeric-bilingual",
+    "gb-t-7714-2015-author-date-bilingual",
     "apa"
    ]
   }
@@ -2678,6 +2828,8 @@
     "nature",
     "science",
     "cell",
+    "gb-t-7714-2015-numeric-bilingual",
+    "gb-t-7714-2015-author-date-bilingual",
     "apa"
    ]
   }
