@@ -58,6 +58,7 @@ export function javaServer(dir, { libreOffice = false, fetchBase, env = {} } = {
         if ((m = /zotlet . (http:\/\/127\.0\.0\.1:\d+\/)/.exec(line))) info.url = m[1]
         if ((m = /citations: on \(ports (\d+), (\d+)\)/.exec(line))) {
           info.tcp = Number(m[1]); info.http = Number(m[2])
+          clearTimeout(startTimer)
           fetch(info.url).then((r) => r.text()).then((html) => {
             resolve({ name: 'java', ...info, opened, token: /name="zotlet-token" content="([0-9a-f]+)"/.exec(html)[1], close: () => child.kill(),
               // (for failure messages: did the process stop, and what did it print?)
@@ -67,7 +68,9 @@ export function javaServer(dir, { libreOffice = false, fetchBase, env = {} } = {
       }
     })
     child.on('exit', (code) => reject(new Error(`java exited (${code}): ${err}`)))
-    setTimeout(() => { child.kill(); reject(new Error(`zotlet did not start within 60 s: ${err}`)) }, 60000).unref()
+    // Only while starting: a started server must live until the test closes it.
+    const startTimer = setTimeout(() => { if (!info.http) { child.kill(); reject(new Error(`zotlet did not start within 60 s: ${err}`)) } }, 60000)
+    startTimer.unref()
   })
 }
 
