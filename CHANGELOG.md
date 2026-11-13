@@ -2,7 +2,7 @@
 
 The release workflow publishes the section of the released version as its GitHub release notes.
 
-## Unreleased
+## 0.4.0 — 2026-11-13
 
 - **Chinese literature without a plugin** (what Zotero needs Jasminum / 茉莉花 for): paste the GB/T 7714
   reference text that CNKI (知网), Wanfang or VIP show, or drop their EndNote / RefWorks / NoteExpress export
@@ -14,9 +14,11 @@ The release workflow publishes the section of the released version as its GitHub
   macOS one cannot start): a launcher-style window over Word, LibreOffice or GenOffice, light or dark like
   the system, with the same keys as on the Mac, instead of a browser window. The browser picker is only used
   when no window can be shown.
-
 - Word on a Mac: when a button cannot be carried out, zotlet now says so in a message (before, nothing
   happened), and explains what to do when it runs inside TBtools, which macOS does not let control Word.
+- New and not yet in daily use: the pop-up was checked on Linux only (on Windows it may need one click before
+  it takes the keyboard), and the CNKI formats were checked against samples written by hand. If an export
+  of yours is not read correctly, please send the file with a report.
 
 ## 0.3.0 — 2026-11-12
 
