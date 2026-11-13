@@ -144,6 +144,7 @@ java/src/zotlet/   the app (Java 11, java.base + java.desktop only):
   StyleRepo.java     "Get more styles": Zotero's style index, download/install, add .csl file, remove.
   Pdf.java           extractDOI(): the article DOI from PDF bytes (for PDFs dropped on the list).
   Picker.java        native macOS picker (runs java/quickformat.jxa.js), browser-picker window, frontApp/activateApp.
+  QuickPick.java     the pop-up drawn by Java (Swing): Windows, Linux, and macOS when the native one fails.
   Json.java, Text.java  JSON and string handling with JavaScript semantics; Home.java finds the app's files.
 java/quickformat.jxa.js  the native macOS citation picker (Zotero-style quick format bar), run by osascript.
 java/word/         Microsoft Word: Zotero's templates (mac/, win/), word-mac.js and word-win.ps1 helpers, NOTICE.md;
@@ -222,7 +223,17 @@ plugins, ported from the pre-rebuild `session.js` / `tcp.js` / `http.js`, which 
   (or ⌘Enter) inserts, ⌫ on an empty search removes the last one, Esc cancels; a style menu only for
   a new document's first citation; style mode lists styles (+ the bookmarks checkbox). The request /
   answer is JSON (`Picker.nativeSpec`, `Picker.parseResult`, both in java/test/UnitTest.java); the Cocoa part can
-  only be run on a Mac (tests syntax-check it). Any failure falls back to the browser picker
+  only be run on a Mac (tests syntax-check it).
+  **Windows, Linux, and macOS when the Cocoa one fails** (13 Nov 2026, the user: "a real pop-up, not back to
+  the browser", in Word, LibreOffice and GenOffice): `QuickPick.java`, a Swing window in zotlet's own JVM
+  (undecorated, always on top, same request / answer / keys; `Picker.windowPick`). `QuickPick.Model` holds
+  the behaviour without AWT (UnitTest.java); `test/popup.test.js` opens the real window on Xvfb
+  (`java/test/PickWindowTest.java`, screenshots with `ZOTLET_SCREENSHOTS`) and answers a TCP citation
+  through it (`ZOTLET_PICK_KEYS="type:…;enter;enter"` presses keys in the window). It has only run on
+  Linux/Xvfb: keyboard focus on Windows (a background program may be refused it; a WScript `AppActivate`
+  is tried once) and on macOS (`Desktop.requestForeground`; `apple.awt.UIElement` keeps the stand-alone
+  JVM out of the Dock) is unverified. `ZOTLET_PICKER=window` forces it on a Mac.
+  Only when no window can be shown (headless) or it throws, zotlet falls back to the browser picker
   (`/pick.html?id=…`, answered by `POST /api/pick/done`, closing it cancels, 30 min timeout), which
   `Picker.openPicker` shows as a Chromium `--app` window when possible, else a tab.
   `ZOTLET_PICKER=web` forces the browser picker. Before picking, `frontApp()` records the app in front
@@ -353,6 +364,7 @@ How Zotero's Word plugins reach Zotero, read from zotero-word-for-mac-integratio
   - `test/unit.test.js`: `java/test/UnitTest.java` (picker request/answer, lsof parsing, JSON numbers)
     and a syntax check of `java/quickformat.jxa.js`.
   - `test/word.test.js`: Microsoft Word (see that section).
+  - `test/popup.test.js`: Java's own citation pop-up on a virtual screen (skipped without Xvfb).
   - `test/plugin.test.js`: packages the plugin and loads it as TBtools does (`java/test/VerifyPlugin.java`,
     TBtools stand-ins in `java/test/tbtools/`): start, closed class loader, second tab, reinstall, the
     Intel-build licence work-around, the fallback panel; with `TBTOOLS_JAR`, TBtools' own loader too.

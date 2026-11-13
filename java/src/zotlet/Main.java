@@ -98,6 +98,8 @@ public final class Main {
             // Tests: report the picker URL instead of opening a browser.
             o.openUrl = (url) -> { System.out.println("open: " + url); System.out.flush(); };
         }
+        // macOS: the citation pop-up is a window of this process; keep it out of the Dock.
+        if (Picker.MAC && System.getProperty("apple.awt.UIElement") == null) System.setProperty("apple.awt.UIElement", "true");
         Server server;
         try {
             server = Server.start(o);

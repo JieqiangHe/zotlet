@@ -2,6 +2,12 @@
 
 The release workflow publishes the section of the released version as its GitHub release notes.
 
+## Unreleased
+
+- **A real pop-up for choosing references on Windows and Linux** (and as the second choice on macOS, if the
+  macOS one cannot start): a small window over Word, LibreOffice or GenOffice, with the same keys as on the
+  Mac, instead of a browser window. The browser picker is only used when no window can be shown.
+
 ## 0.3.0 — 2026-11-12
 
 - **Microsoft Word** (macOS and Windows) without Zotero: zotlet puts Zotero's Word template into Word and

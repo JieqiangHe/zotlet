@@ -66,7 +66,7 @@ public final class Server {
         public Integration.Detector detectClient = null;
         public Consumer<String> openUrl = Picker::openPicker;
         public Consumer<String> log = System.out::println;
-        public boolean nativePicker = Picker.nativeAvailable();
+        public String picker = Picker.mode();
     }
 
     public final Options options;
@@ -154,20 +154,31 @@ public final class Server {
     private final Map<String, Pick> picks = new ConcurrentHashMap<>();
 
     /**
-     * The citation / style picker. On macOS a native pop-up (like Zotero's quick format bar);
-     * elsewhere, or if that fails, the browser picker (public/pick.html). Blocks until answered.
+     * The citation / style picker: a pop-up over the word processor, like Zotero's quick format bar
+     * (macOS: the Cocoa one, else or if that fails Java's own window, QuickPick). Only when no window
+     * can be shown (no screen), the browser picker (public/pick.html). Blocks until answered.
      */
     public Map<String, Object> pick(Map<String, Object> spec) throws Exception {
         // Remember the word processor in front, to switch back to it when the picker is done.
         CompletableFuture<String> front = CompletableFuture.supplyAsync(Picker::frontApp, Proc.POOL);
         Runnable back = () -> front.thenAccept(app -> { if (app != null) Picker.activateApp(app); });
-        if (options.nativePicker) {
+        String mode = options.picker;
+        if ("auto".equals(mode) && Picker.MAC) {
             try {
                 Map<String, Object> result = Picker.nativePick(options.home.quickformat, spec, citations.listStyles(), list(store.snapshot().get("projects")));
                 back.run();
                 return result;
             } catch (Exception e) {
-                if (!options.quiet) options.log.accept("Native picker unavailable (" + e.getMessage() + "); using the browser picker.");
+                if (!options.quiet) options.log.accept("The macOS pop-up could not be shown (" + e.getMessage() + "); using Java's own pop-up.");
+            }
+        }
+        if (!"web".equals(mode) && QuickPick.available()) {
+            try {
+                Map<String, Object> result = Picker.windowPick(spec, citations.listStyles(), list(store.snapshot().get("projects")));
+                back.run();
+                return result;
+            } catch (Exception e) {
+                if (!options.quiet) options.log.accept("The pop-up could not be shown (" + e.getMessage() + "); using the browser picker.");
             }
         }
         byte[] r = new byte[12];

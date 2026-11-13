@@ -97,9 +97,12 @@ citations as bookmarks, which both Word and LibreOffice-style editors accept.
   Apple-silicon Mac, the Apple-silicon build of TBtools avoids it.
 - **A DOI cannot be imported.** zotlet asks doi.org first, then Crossref and PubMed. If all three fail,
   check your connection and try again; the error message names the problem.
-- **The citation picker opens in the browser instead of as a pop-up.** The pop-up is native on macOS;
-  if it cannot start, zotlet falls back to the browser (the log says why). Set `ZOTLET_PICKER=web`
-  to always use the browser picker.
+- **Choosing references: the pop-up.** Add/Edit Citation opens a small window over your word processor
+  (Word, LibreOffice, GenOffice; macOS, Windows and Linux): type to search, Enter adds the highlighted
+  reference, Enter again inserts, ⌫ removes the last one, Esc cancels. On Windows, click the pop-up once if
+  it does not take the keyboard by itself. Only when no window can be shown (a computer without a screen)
+  zotlet opens the picker in the browser; the log says why. `ZOTLET_PICKER=window` uses Java's own pop-up
+  on a Mac too, `ZOTLET_PICKER=web` always uses the browser picker.
 
 ## Command line
 

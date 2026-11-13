@@ -22,9 +22,9 @@ import static zotlet.Json.map;
 import static zotlet.Json.obj;
 
 /**
- * The citation / style picker outside the page: the native macOS pop-up (src/quickformat.jxa.js,
- * like Zotero's quick format bar; port of src/quickformat.js), and the browser picker opened as a
- * pop-up app window (port of src/popup.js and src/open.js).
+ * The citation / style picker outside the page: the native macOS pop-up (java/quickformat.jxa.js,
+ * like Zotero's quick format bar), Java's own pop-up window for Windows and Linux (QuickPick.java),
+ * and, when no window can be shown, the browser picker.
  */
 public final class Picker {
     private Picker() {}
@@ -140,9 +140,23 @@ public final class Picker {
         return style != null ? obj("ids", ids, "style", style) : obj("ids", ids);
     }
 
-    /** The native picker is used on macOS unless ZOTLET_PICKER=web. */
-    public static boolean nativeAvailable() {
-        return MAC && !"web".equals(System.getenv("ZOTLET_PICKER"));
+    /**
+     * Which picker to use, from ZOTLET_PICKER: "auto" (the macOS pop-up on a Mac, else Java's own
+     * pop-up window, the browser only when neither can be shown), "window" (Java's pop-up, also on
+     * a Mac) or "web" (always the browser picker).
+     */
+    public static String mode() {
+        String m = System.getenv("ZOTLET_PICKER");
+        return "web".equals(m) ? "web" : "window".equals(m) || "swing".equals(m) ? "window" : "auto";
+    }
+
+    /** Java's own pop-up window (QuickPick). The choice, or null if cancelled; throws if no window can be shown. */
+    public static Map<String, Object> windowPick(Map<String, Object> spec, List<Citations.Style> styles, List<Object> projects) throws Exception {
+        Map<String, Object> answer = QuickPick.show(nativeSpec(spec, styles, projects));
+        if (answer == null) return null;
+        List<String> ids = new ArrayList<>();
+        for (Citations.Style s : styles) ids.add(s.id);
+        return parseResult(Json.stringify(answer), spec, ids);
     }
 
     private static final SecureRandom RANDOM = new SecureRandom();

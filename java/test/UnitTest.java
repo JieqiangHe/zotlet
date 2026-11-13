@@ -54,6 +54,31 @@ public class UnitTest {
         try { Picker.parseResult("execution error: -1743", cite, new ArrayList<>()); check(false, "garbage must throw"); }
         catch (RuntimeException e) { check(e.getMessage().contains("unexpected"), "garbage message"); }
 
+        // Java's own pop-up (QuickPick): what the keys do, without a window.
+        QuickPick.Model m = new QuickPick.Model(spec);
+        eq(m.chosen, Arrays.asList("he2023"), "the citation being edited is preselected");
+        check(m.rows.size() == 2 && m.cursor == 0, "all rows, first highlighted");
+        m.filter("plant  CELL");
+        check(m.rows.size() == 1 && "zhi2025".equals(m.highlighted().get("id")), "every word must match");
+        eq(m.enter("plant cell", false), "add", "Enter with a search adds");
+        m.add(); m.add();
+        eq(m.chosen, Arrays.asList("he2023", "zhi2025"), "added once");
+        m.filter("");
+        eq(m.enter("", false), "finish", "Enter on an empty search inserts");
+        eq(m.enter("apple", true), "finish", "Ctrl/Cmd Enter inserts");
+        check(m.status().startsWith("Citing: He et al. 2023; Zhi 2025"), "status names the citation: " + m.status());
+        eq(m.result("cell", null), Json.obj("ids", Json.arr("he2023", "zhi2025"), "style", "cell"), "answer");
+        check(m.removeLast() && m.removeLast() && !m.removeLast(), "backspace removes the last, then nothing");
+        m.filter("nothing matches this");
+        check(m.highlighted() == null && m.result(null, null) == null, "nothing to insert");
+        m.filter("4-mu"); m.move(5); m.move(-9);
+        eq(m.result(null, null), Json.obj("ids", Json.arr("he2023")), "Enter with nothing chosen takes the highlighted reference");
+        QuickPick.Model sm = new QuickPick.Model(Picker.nativeSpec(Json.obj("mode", "style", "style", "cell", "bookmarks", false), styles, null));
+        check("cell".equals(sm.highlighted().get("id")), "the document's style is highlighted");
+        sm.filter("nat");
+        eq(sm.result(null, true), Json.obj("style", "nature", "bookmarks", true), "style answer");
+        eq(Picker.mode(), System.getenv("ZOTLET_PICKER") == null ? "auto" : Picker.mode(), "picker mode");
+
         // LibreOffice is recognised from lsof output (macOS).
         String lsof = "p101\ncsoffice\nn127.0.0.1:50000->127.0.0.1:23116\np7\nczotlet\nn127.0.0.1:23116->127.0.0.1:50000\n";
         Integration.Owner owner = Integration.lsofClient(lsof, new Integration.Ends("127.0.0.1", 50000, "127.0.0.1", 23116));
