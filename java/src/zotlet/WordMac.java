@@ -63,7 +63,7 @@ final class WordMac implements AutoCloseable {
             return parseResult(script.run(source + "\nwith timeout of 600 seconds\nreturn " + call + "\nend timeout\n"));
         } catch (Exception e) {
             // Do not write document contents, clipboard data or field codes into the log.
-            log(handler + " failed: " + e.getMessage());
+            log(handler + " failed: " + (e instanceof ScriptFailure ? ((ScriptFailure) e).details : e.getMessage()));
             throw new IOException("Word AppleScript (" + handler + "): " + e.getMessage(), e);
         }
     }
@@ -408,6 +408,34 @@ final class WordMac implements AutoCloseable {
         }, Proc.POOL);
     }
 
+    /** Keep native diagnostics in word.log; show the actual AppleScript error in the alert.
+     * Clipboard image warnings can precede it and are not the cause of a later -1700 error. */
+    static final class ScriptFailure extends IOException {
+        final String details;
+        ScriptFailure(int exit, String stderr, String source) {
+            super(scriptFailureMessage(exit, stderr, source));
+            details = "osascript exited " + exit + (stderr.trim().isEmpty() ? "" : ": " + stderr.trim());
+        }
+    }
+
+    private static String scriptFailureMessage(int exit, String stderr, String source) {
+        String prefix = "osascript exited " + exit;
+        Matcher error = Pattern.compile("(?m)^(?:(\\d+):(\\d+):\\s*)?((?:execution|syntax) error:.*)$").matcher(stderr);
+        if (error.find()) {
+            String location = "";
+            if (error.group(1) != null) try {
+                int offset = Integer.parseInt(error.group(1));
+                if (offset >= 0 && offset <= source.length()) {
+                    int line = 1;
+                    for (int i = 0; i < offset; i++) if (source.charAt(i) == '\n') line++;
+                    location = " (AppleScript line " + line + ")";
+                }
+            } catch (NumberFormatException e) { /* still show the native error */ }
+            return prefix + ": " + error.group(3).trim() + location;
+        }
+        return prefix + (stderr.trim().isEmpty() ? "" : ": " + stderr.trim());
+    }
+
     private static String osascript(String source) throws Exception {
         // An executable override lets the tests exercise this path without a Mac or Word.
         String executable = System.getenv("ZOTLET_WORD_OSASCRIPT");
@@ -415,10 +443,13 @@ final class WordMac implements AutoCloseable {
         Process process = new ProcessBuilder(executable, "-l", "AppleScript", "-s", "s", "-").start();
         CompletableFuture<String> out = drain(process.getInputStream()), err = drain(process.getErrorStream());
         try {
+            IOException inputFailure = null;
             try (java.io.OutputStream input = process.getOutputStream()) { input.write(source.getBytes(StandardCharsets.UTF_8)); }
+            catch (IOException e) { inputFailure = e; }
             if (!process.waitFor(610, TimeUnit.SECONDS)) throw new IOException("osascript timed out; click the Word button to retry");
             String stdout = out.get(), stderr = err.get().trim();
-            if (process.exitValue() != 0) throw new IOException("osascript exited " + process.exitValue() + (stderr.isEmpty() ? "" : ": " + stderr));
+            if (process.exitValue() != 0) throw new ScriptFailure(process.exitValue(), stderr, source);
+            if (inputFailure != null) throw inputFailure;
             return stdout;
         } finally {
             if (process.isAlive()) process.destroyForcibly();

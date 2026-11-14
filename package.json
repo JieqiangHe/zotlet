@@ -1,6 +1,6 @@
 {
   "name": "zotlet",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "A minimal, personal reference manager (Java; also a TBtools plugin). This file only holds the version and the test script.",
   "license": "MIT",
   "private": true,

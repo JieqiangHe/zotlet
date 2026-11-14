@@ -116,21 +116,21 @@ on zStoryKind(zType)
   error "Place the cursor in the document text, a footnote, or an endnote."
 end zStoryKind
 
-on zStory(zDoc, zKind)
+on zGetStory(zDoc, zKind)
   tell application id "com.microsoft.Word"
     if zKind is 0 then return zDoc
     if zKind is 1 then return get story range zDoc story type footnotes story
     if zKind is 2 then return get story range zDoc story type endnotes story
     error "Unknown Word story"
   end tell
-end zStory
+end zGetStory
 
 on zStoryFields(zName, zPath, zKind)
   tell application id "com.microsoft.Word"
     set zDoc to my zDocument(zName, zPath)
     set zOut to {}
     try
-      set zStory to my zStory(zDoc, zKind)
+      set zStory to my zGetStory(zDoc, zKind)
       set zCount to count of fields of zStory
     on error zError number zNumber
       if zKind is not 0 and zNumber is -1728 then return zOut
@@ -172,7 +172,7 @@ on zSelectOriginal(zDoc, zKind, zStart, zEnd)
     if zKind is 0 then
       set zRange to create range zDoc start zStart end zEnd
     else
-      set zRange to my zStory(zDoc, zKind)
+      set zRange to my zGetStory(zDoc, zKind)
       -- Word's start/end of content properties are read-only. Selection endpoints are writable.
       select zRange
       set selection start of selection to zStart
@@ -187,7 +187,7 @@ end zSelectOriginal
 on zCursor(zName, zPath, zKind, zStart, zEnd)
   tell application id "com.microsoft.Word"
     set zDoc to my zDocument(zName, zPath)
-    set zStory to my zStory(zDoc, zKind)
+    set zStory to my zGetStory(zDoc, zKind)
     repeat with zIndex from 1 to (count of fields of zStory)
       set zField to field zIndex of zStory
       set zCodeStart to (start of content of field code of zField) - 1
@@ -218,7 +218,7 @@ on zInsert(zName, zPath, zKind, zStart, zEnd)
     set zDoc to my zDocument(zName, zPath)
     set zWhere to my zSelectOriginal(zDoc, zKind, zStart, zEnd)
     make new field at zWhere with properties {field type:field print date}
-    set zStory to my zStory(zDoc, zKind)
+    set zStory to my zGetStory(zDoc, zKind)
     set zBest to 0
     set zBestDistance to 1000000
     repeat with zIndex from 1 to (count of fields of zStory)
@@ -249,23 +249,23 @@ on zInsertBookmark(zName, zPath, zMarkName, zStart, zEnd)
   return missing value
 end zInsertBookmark
 
-on zField(zDoc, zKind, zIndex)
+on zGetField(zDoc, zKind, zIndex)
   tell application id "com.microsoft.Word"
-    return field zIndex of (my zStory(zDoc, zKind))
+    return field zIndex of (my zGetStory(zDoc, zKind))
   end tell
-end zField
+end zGetField
 
-on zRange(zDoc, zKind, zIndex, zMarkName)
+on zGetRange(zDoc, zKind, zIndex, zMarkName)
   tell application id "com.microsoft.Word"
     if zMarkName is not "" then return text object of bookmark zMarkName of zDoc
-    return result range of (my zField(zDoc, zKind, zIndex))
+    return result range of (my zGetField(zDoc, zKind, zIndex))
   end tell
-end zRange
+end zGetRange
 
 on zSetCode(zName, zPath, zKind, zIndex, zCode)
   tell application id "com.microsoft.Word"
     set zDoc to my zDocument(zName, zPath)
-    set content of field code of (my zField(zDoc, zKind, zIndex)) to zCode
+    set content of field code of (my zGetField(zDoc, zKind, zIndex)) to zCode
   end tell
   return missing value
 end zSetCode
@@ -277,7 +277,7 @@ on zRemove(zName, zPath, zKind, zIndex, zMarkName, zDelete)
       if zDelete then set content of text object of bookmark zMarkName of zDoc to ""
       if exists bookmark zMarkName of zDoc then delete bookmark zMarkName of zDoc
     else
-      set zField to my zField(zDoc, zKind, zIndex)
+      set zField to my zGetField(zDoc, zKind, zIndex)
       if zDelete then
         delete zField
       else
@@ -291,7 +291,7 @@ end zRemove
 on zGetText(zName, zPath, zKind, zIndex, zMarkName)
   tell application id "com.microsoft.Word"
     set zDoc to my zDocument(zName, zPath)
-    return content of (my zRange(zDoc, zKind, zIndex, zMarkName))
+    return content of (my zGetRange(zDoc, zKind, zIndex, zMarkName))
   end tell
 end zGetText
 
@@ -299,7 +299,7 @@ on zSelect(zName, zPath, zKind, zIndex, zMarkName)
   tell application id "com.microsoft.Word"
     set zDoc to my zDocument(zName, zPath)
     activate object zDoc
-    select (my zRange(zDoc, zKind, zIndex, zMarkName))
+    select (my zGetRange(zDoc, zKind, zIndex, zMarkName))
   end tell
   return missing value
 end zSelect
@@ -309,7 +309,7 @@ end zSelect
 on zSetText(zName, zPath, zKind, zIndex, zMarkName, zText, zRich, zBibliography)
   tell application id "com.microsoft.Word"
     set zDoc to my zDocument(zName, zPath)
-    set zRange to my zRange(zDoc, zKind, zIndex, zMarkName)
+    set zRange to my zGetRange(zDoc, zKind, zIndex, zMarkName)
     if zMarkName is not "" then
       set zStart to start of bookmark of bookmark zMarkName of zDoc
       set zEnd to end of bookmark of bookmark zMarkName of zDoc
@@ -368,7 +368,7 @@ on zSetText(zName, zPath, zKind, zIndex, zMarkName, zText, zRich, zBibliography)
       set zRange to create range zDoc start zStart end zNewEnd
       make new bookmark at zRange with properties {name:zMarkName}
     else
-      set zRange to my zRange(zDoc, zKind, zIndex, zMarkName)
+      set zRange to my zGetRange(zDoc, zKind, zIndex, zMarkName)
     end if
     if zRich then
       if zBibliography then

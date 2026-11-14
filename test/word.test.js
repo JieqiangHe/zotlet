@@ -145,6 +145,21 @@ test('Mac native osascript startup failure is visible and logged with its exit c
   assert.match(fs.readFileSync(path.join(dir, 'word.log'), 'utf8'), /zInit failed: osascript exited 139/)
 })
 
+test('Mac AppleScript error alert keeps -1700 readable while word.log retains clipboard image diagnostics', { skip }, async () => {
+  const dir = path.join(tempDir(), '.zotlet')
+  const diagnostic = '*** Error creating a JP2 color space: falling back to sRGB\n'
+    + '13903:13941: execution error: Can’t make document "Document1" of application "Microsoft Word" into the expected type. (-1700)\n'
+  const server = await javaServer(dir, { env: { ZOTLET_WORD_MODE: 'mac', ZOTLET_WORD_HELPER: '',
+    ZOTLET_WORD_OSASCRIPT: path.join(ROOT, 'test/fake-osascript.mjs'), ZOTLET_FAKE_OSA_STDERR: diagnostic } })
+  servers.push(server)
+  await macButton({ server }, 'addEditCitation')
+  await until(() => server.alerts.length, 'AppleScript type error alert')
+  assert.match(server.alerts[0], /expected type\. \(-1700\)/)
+  assert.match(server.alerts[0], /AppleScript line \d+/)
+  assert.doesNotMatch(server.alerts[0], /JP2|sRGB/)
+  assert.match(fs.readFileSync(path.join(dir, 'word.log'), 'utf8'), /JP2[\s\S]*expected type\. \(-1700\)/)
+})
+
 test('Word for Windows: commands from the ZoteroMessageWindow run in the same way', { skip }, async () => {
   const w = await start('windows')
   const press = (command) => fs.appendFileSync(`${w.docFile}.trigger`, command + '\n')

@@ -297,6 +297,14 @@ How Zotero's Word plugins reach Zotero, read from zotero-word-for-mac-integratio
   adapter at its script boundary; `test/fake-osascript.mjs` tests the production process path with the
   HTTP toolbar flow. These tests do not execute Word's dictionary or the native clipboard: Mac validation
   is still required. `ZOTLET_WORD_OSASCRIPT` is an executable-path override for process-boundary tests.
+  **0.6.0:** handlers must have names distinct from every variable and parameter. In 0.5.0,
+  `zRange` named both a handler and the variable holding its result; the second lookup in `zSetText`
+  failed with -1700 (reported source span 13903:13941). Lookup handlers are now `zGetRange`,
+  `zGetField`, `zGetStory`; `test/applescript.test.js` guards against binding collisions and runs a
+  native AppleScript range-binding probe on macOS without Word. The release workflow requires it
+  before publishing. This language test still does not validate actual Word Apple events/clipboard.
+  Native stderr is kept in `word.log`; the alert extracts the actual execution/syntax error and maps
+  its source offset to a line, keeping unrelated JP2 clipboard warnings out of the alert.
 - **Windows**: `Zotero.dotm` (in `%APPDATA%\Microsoft\Word\STARTUP`) looks for a window of class
   `ZoteroMessageWindow` and sends `zotero.exe … -ZoteroIntegrationCommand X -ZoteroIntegrationDocument "path"`
   as WM_COPYDATA (UTF-8, dwData 1). `java/word/word-win.ps1` (Windows PowerShell 5.1, always present;

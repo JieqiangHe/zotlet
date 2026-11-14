@@ -50,6 +50,16 @@ public class WordMacTest {
         eq(WordMac.stripFieldCode(" PAGE "), null);
         eq(WordMac.stripBookmarkCode("CSL_BIBL X "), "BIBL X");
 
+        // Keep noisy clipboard image diagnostics in the log, and expose the actual native error.
+        String diagnostic = "*** Error creating a JP2 color space: falling back to sRGB\n"
+            + "10:20: execution error: Can't make document \"Document1\" into the expected type. (-1700)\n";
+        WordMac.ScriptFailure failure = new WordMac.ScriptFailure(1, diagnostic, "on test()\nreturn 1\nend test\n");
+        check(failure.getMessage().contains("expected type. (-1700)"), "the actual AppleScript error is retained");
+        check(failure.getMessage().contains("AppleScript line 2"), "source offset mapped to a line");
+        check(!failure.getMessage().contains("JP2") && failure.details.contains("JP2"), "clipboard warning kept in diagnostics, not the alert");
+        eq(new WordMac.ScriptFailure(139, "", "").getMessage(), "osascript exited 139");
+        check(new WordMac.ScriptFailure(1, "Not authorized (-1743)", "").getMessage().contains("-1743"), "unstructured permission errors retained");
+
         Fake f = new Fake();
         try (WordMac mac = f.mac(source)) {
             eq(mac.call("init", arr()), "Paper \"中\".docx");

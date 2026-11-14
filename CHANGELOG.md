@@ -2,6 +2,21 @@
 
 The release workflow publishes the section of the released version as its GitHub release notes.
 
+## 0.6.0 — 2026-11-14
+
+- Fix the Mac Word `zSetText` error “Can't make document … into the expected type. (-1700)”
+  reported in 0.5.0. The text-range handler and the variable holding its result had the same name;
+  the second lookup after inserting text could no longer call the handler. Range, field and story
+  lookup handlers now have distinct names from all variables and parameters.
+- Word error messages show the actual AppleScript error and its source line. Clipboard image warnings
+  such as “Error creating a JP2 color space: falling back to sRGB” stay in `word.log`, alongside the
+  complete error, instead of obscuring it in the alert.
+- Releases now run the range-binding regression with the real AppleScript interpreter on macOS,
+  as well as the Java, document-protocol and package checks. The interpreter check uses stand-in
+  document/range values; real Word Apple events and clipboard operations still need a Mac with Word.
+- Windows keeps its PowerShell/COM Word backend. GenOffice and LibreOffice keep their existing
+  Zotero protocol integration; both paths are covered by the regression suite.
+
 ## 0.5.0 — 2026-11-14
 
 - Word on a Mac now uses plain AppleScript, with the document session handled in Java. It no longer

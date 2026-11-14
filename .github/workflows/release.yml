@@ -10,7 +10,17 @@ on:
 permissions:
   contents: write
 jobs:
+  applescript:
+    name: AppleScript runtime regression
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --test test/applescript.test.js
   release:
+    needs: applescript
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

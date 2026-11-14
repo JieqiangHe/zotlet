@@ -8,6 +8,10 @@ assert.deepEqual(process.argv.slice(2), ['-l', 'AppleScript', '-s', 's', '-'])
 if (process.env.ZOTLET_FAKE_OSA_EXIT) process.exit(Number(process.env.ZOTLET_FAKE_OSA_EXIT))
 let source = ''
 for await (const chunk of process.stdin) source += chunk
+if (process.env.ZOTLET_FAKE_OSA_STDERR) {
+  process.stderr.write(process.env.ZOTLET_FAKE_OSA_STDERR)
+  process.exit(1)
+}
 const match = /\nreturn (z\w+)\(([\s\S]*)\)\nend timeout\s*$/.exec(source)
 assert.ok(match, 'one AppleScript handler call')
 assert.doesNotMatch(source, /ObjC\.import|use framework/)

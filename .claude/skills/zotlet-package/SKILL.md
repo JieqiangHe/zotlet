@@ -59,6 +59,9 @@ npm test                      # everything below; about 3 minutes
   With `TBTOOLS_JAR` set it also loads the plugin through TBtools' own loader.
 - `test/ui.test.js` — the page in Chromium (skipped without Playwright).
 - `test/unit.test.js` — `java/test/UnitTest.java` and syntax checks.
+- `test/applescript.test.js` — handler/variable binding checks, plus the range-binding probe in the
+  real AppleScript interpreter on macOS. The release workflow runs it on a Mac before publishing;
+  it does not exercise actual Word or the clipboard.
 
 Run the plugin checks alone, several times when touching the plugin: `node --test test/plugin.test.js`.
 All tests must pass before packaging for release. The Mac AppleScript (`java/word/word-mac.applescript`)
