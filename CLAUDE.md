@@ -153,8 +153,8 @@ java/src/zotlet/   the app (Java 11, java.base + java.desktop only):
   QuickPick.java     the pop-up drawn by Java (Swing): Windows, Linux, and macOS when the native one fails.
   Json.java, Text.java  JSON and string handling with JavaScript semantics; Home.java finds the app's files.
 java/quickformat.jxa.js  the native macOS citation picker (Zotero-style quick format bar), run by osascript.
-java/word/         Microsoft Word: Zotero's templates (mac/, win/), word-mac.js and word-win.ps1 helpers, NOTICE.md;
-                   Word.java runs them.
+java/word/         Microsoft Word: Zotero's templates (mac/, win/), word-mac.applescript and word-win.ps1, NOTICE.md;
+                   Word.java routes the sessions; WordMac.java runs the Mac AppleScript.
 java/plugin/       the TBtools plugin shell (Plugin/PluginInject.java); java/plugin-stub/ a compile stub of
                    TBtools' WebGuiJPanel; java/test/UnitTest.java unit checks, VerifyPlugin.java + tbtools/
                    (TBtools stand-ins) for the plugin test; java/build/ is generated.
@@ -278,12 +278,25 @@ How Zotero's Word plugins reach Zotero, read from zotero-word-for-mac-integratio
   button, `curl http://127.0.0.1:23119/integration/macWordCommand?agent=MacWord16&command=…&document=<Word.app>`
   (through `~/Library/Application Scripts/com.microsoft.Word/Zotero.scpt` when needed) and expects 200
   within 2 s. Zotero then drives Word with Apple Events (its ObjC dylib). zotlet answers that URL on its
-  HTTP integration port (`Integration.HttpIntegration`) and starts `java/word/word-mac.js` with
-  `osascript -l JavaScript`: JavaScript for the protocol, AppleScript snippets (variables start with
-  `z` so they never clash with Word's terms) for Word, ported from Zotero's `build/src/*.m`: fields are
+  HTTP integration port (`Integration.HttpIntegration`). Since 0.5.0, `WordMac.java` handles the
+  document RPCs in Java and runs `java/word/word-mac.applescript` handlers with ordinary
+  `osascript -l AppleScript -s s` (source on stdin). The JXA helper was removed after the user's Mac
+  reported exit 139 before it wrote anything. No Foundation/AppKit bridge is used in the Word path;
+  the optional Cocoa picker is separate and remains opt-in. AppleScript variables start with `z`
+  so they never clash with Word's terms. The operations follow Zotero's `build/src/*.m`: fields are
   PRINTDATE fields re-found by position, codes ` ADDIN ZOTERO_<code> `, rich text pasted from the
   clipboard (Word is sandboxed), clipboard restored, document data in custom properties `ZOTERO_PREF_n`
-  (255-char chunks), unlink = raw event `«event sWRD2489»`, Track Changes off during a command.
+  (255-unit chunks, never split a surrogate pair), unlink = raw event `«event sWRD2489»`, Track Changes off
+  during a command. `zInit` captures the document name/full path, view settings and selection before the
+  picker; every handler checks that same document (no active-document fallback), and insertion uses the
+  original story/start/end. Closed/renamed/ambiguous documents fail safely. Java parses osascript's
+  source-form strings/lists as data, never evaluates them. Rich paste saves the clipboard as an AppleScript
+  record and restores it plus smart-paste settings within the same invocation, including on Word errors.
+  Completion/close restores Track Changes and view settings, even when initialization partially fails.
+  After unlink/delete, session handles account for shifted field indices. `WordMacTest.java` tests the
+  adapter at its script boundary; `test/fake-osascript.mjs` tests the production process path with the
+  HTTP toolbar flow. These tests do not execute Word's dictionary or the native clipboard: Mac validation
+  is still required. `ZOTLET_WORD_OSASCRIPT` is an executable-path override for process-boundary tests.
 - **Windows**: `Zotero.dotm` (in `%APPDATA%\Microsoft\Word\STARTUP`) looks for a window of class
   `ZoteroMessageWindow` and sends `zotero.exe … -ZoteroIntegrationCommand X -ZoteroIntegrationDocument "path"`
   as WM_COPYDATA (UTF-8, dwData 1). `java/word/word-win.ps1` (Windows PowerShell 5.1, always present;

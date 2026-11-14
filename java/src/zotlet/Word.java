@@ -35,8 +35,8 @@ import static zotlet.Json.obj;
  * Windows — WM_COPYDATA to a window of class "ZoteroMessageWindow", opened by the PowerShell helper.
  *
  * zotlet then runs the same document session as for LibreOffice / GenOffice (Integration.runSession),
- * with the document RPCs carried out in Word by a helper process: java/word/word-mac.js (osascript,
- * AppleScript) or java/word/word-win.ps1 (PowerShell, COM). The helper speaks one JSON line per
+ * with the document RPCs carried out by WordMac (ordinary AppleScript on macOS),
+ * or java/word/word-win.ps1 (PowerShell, COM). The Windows helper speaks one JSON line per
  * request/answer over stdin/stdout. ZOTLET_WORD_HELPER (a command) and ZOTLET_WORD_MODE (mac|windows)
  * replace the helper and the platform in tests.
  */
@@ -159,7 +159,7 @@ public final class Word {
         if (mode().equals("windows")) {
             return Arrays.asList("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", wordDir.resolve("word-win.ps1").toString());
         }
-        return Arrays.asList("/usr/bin/osascript", "-l", "JavaScript", wordDir.resolve("word-mac.js").toString());
+        throw new IllegalStateException("Word for Mac uses WordMac, not a helper process");
     }
 
     static Map<String, String> helperEnv(Path dataDir) {
@@ -198,16 +198,16 @@ public final class Word {
         });
     }
 
-    /** Run one button press against Word through `helper`. Returns the note for the log. */
-    static String run(String command, String documentHint, Helper helper, Integration.Ctx ctx) throws Exception {
+    /** Run one button press against Word through its document backend. Returns the note for the log. */
+    static String run(String command, String documentHint, Integration.Rpc backend, Integration.Ctx ctx) throws Exception {
         String session = sessionCommand(command);
         Integration.Rpc call = (method, args) -> {
             if (method.equals("Application.getActiveDocument")) {
-                Object name = helper.call("init", arr(documentHint == null ? "" : documentHint));
+                Object name = backend.call("init", arr(documentHint == null ? "" : documentHint));
                 return arr(3L, name, obj("outputFormat", "rtf", "supportedNotes", arr("footnotes", "endnotes")));
             }
             List<Object> rest = args.isEmpty() ? new ArrayList<>() : new ArrayList<>(args.subList(1, args.size()));
-            return helper.call(method, rest);
+            return backend.call(method, rest);
         };
         if (session == null) {
             call.call("Application.getActiveDocument", arr(3L));
@@ -218,13 +218,23 @@ public final class Word {
         return Integration.runSession(session, call, sessionOptions(), ctx);
     }
 
-    /** macOS: one helper per button press (started when Word calls /integration/macWordCommand). */
+    /** macOS: a document-bound AppleScript session per button press. Tests can still supply a helper. */
     static void runMac(String command, String wordPath, Path wordDir, Path dataDir, Integration.Ctx ctx, Consumer<String> log) {
         enqueue(command, log, () -> {
             Helper helper = null;
             try {
-                helper = new Helper(helperCommand(wordDir), helperEnv(dataDir), null, log);
-                log.accept(Text.padEnd("Word " + command, 20) + " " + run(command, null, helper, ctx));
+                String custom = System.getenv("ZOTLET_WORD_HELPER");
+                String result;
+                if (custom != null && !custom.trim().isEmpty()) {
+                    helper = new Helper(helperCommand(wordDir), helperEnv(dataDir), null, log);
+                    result = run(command, null, helper::call, ctx);
+                } else {
+                    try (WordMac mac = new WordMac(wordDir, dataDir)) {
+                        result = run(command, null, mac::call, ctx);
+                    }
+                }
+                log.accept(Text.padEnd("Word " + command, 20) + " " + result);
+                if (result.startsWith("error:")) appendLog(dataDir, "zotlet: " + command + " " + result);
             } catch (Throwable e) {
                 log.accept("Word error: " + e.getMessage());
                 // Without this the button seems to do nothing (in TBtools nobody sees the log).
@@ -278,7 +288,7 @@ public final class Word {
                 String command = Json.jsString(event.get("command"));
                 String document = event.get("document") == null ? "" : Json.jsString(event.get("document"));
                 enqueue(command, log, () -> {
-                    try { log.accept(Text.padEnd("Word " + command, 20) + " " + run(command, document, holder[0], ctx)); }
+                    try { log.accept(Text.padEnd("Word " + command, 20) + " " + run(command, document, holder[0]::call, ctx)); }
                     catch (Throwable e) { log.accept("Word error: " + e.getMessage()); }
                 });
             }, log);

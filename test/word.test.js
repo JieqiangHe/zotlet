@@ -1,6 +1,6 @@
 // Microsoft Word without Zotero: Word's Zotero tab reaches zotlet (macOS: HTTP macWordCommand;
 // Windows: the helper's ZoteroMessageWindow), zotlet runs the citation session and the helper edits
-// the document. The real helpers (java/word/word-mac.js, word-win.ps1) need Word; here
+// the document. WordMac + word-mac.applescript and word-win.ps1 need Word; here
 // test/fake-word.mjs stands in for them with the same protocol, so everything else is real.
 import { test, after } from 'node:test'
 import assert from 'node:assert/strict'
@@ -94,6 +94,57 @@ test('Word for Mac refused by macOS: the user is told, also what to do when zotl
   }
 })
 
+test('Mac native route: plain osascript, frozen document/selection, citations, bibliography, cancel, unlink', { skip }, async () => {
+  const home = tempDir(), dir = path.join(home, '.zotlet'), docFile = path.join(home, 'native-word.json')
+  fs.mkdirSync(dir)
+  fs.writeFileSync(path.join(dir, 'library.json'), JSON.stringify(ITEMS))
+  const server = await javaServer(dir, { env: { ZOTLET_WORD_MODE: 'mac', ZOTLET_WORD_HELPER: '',
+    ZOTLET_WORD_OSASCRIPT: path.join(ROOT, 'test/fake-osascript.mjs'), ZOTLET_FAKE_WORD_DOCUMENT: docFile } })
+  servers.push(server)
+  const doc = () => JSON.parse(fs.readFileSync(docFile, 'utf8'))
+  const completed = (n) => until(() => fs.existsSync(docFile) && doc().completed >= n, `${n} native commands`)
+  await macButton({ server }, 'addEditCitation', () => {
+    const d = doc()
+    d.activeName = 'Another.docx'; d.start = 800; d.end = 900
+    fs.writeFileSync(docFile, JSON.stringify(d))
+    return { ids: ['lovelace2020', 'hopper2019'], style: 'nature' }
+  })
+  await completed(1)
+  let d = doc()
+  assert.equal(d.fields.length, 1)
+  assert.match(d.fields[0].code, /^ITEM CSL_CITATION /)
+  assert.equal(d.fields[0].pos, 12, 'the position before the picker, even after switching documents')
+  assert.equal(d.fields[0].insertedIn, d.name)
+  assert.match(d.fields[0].text, /^\{\\rtf /)
+  assert.ok(d.track && d.showCodes && d.revisions && !d.formats, 'all original revision/view settings restored')
+  assert.ok(d.calls.some((c) => c.handler === 'zStoryFields'), 'real WordMac field enumeration executed')
+  await macButton({ server }, 'addBibliography')
+  await completed(2)
+  d = doc()
+  const bib = d.fields.find((f) => f.code.startsWith('BIBL'))
+  assert.ok(bib.bibliography)
+  assert.match(bib.text, /Lovelace/)
+  assert.ok(d.bibliographyStyle)
+  await macButton({ server }, 'addEditCitation', () => null)
+  await completed(3)
+  assert.equal(doc().fields.length, 2, 'cancel adds nothing')
+  await macButton({ server }, 'removeCodes')
+  await completed(4)
+  assert.ok(doc().fields.every((f) => f.code === null), 'both fields unlinked after the first changed the ordinals')
+  assert.match(fs.readFileSync(path.join(dir, 'word.log'), 'utf8'), /init Word document \(AppleScript\)/)
+})
+
+test('Mac native osascript startup failure is visible and logged with its exit code', { skip }, async () => {
+  const dir = path.join(tempDir(), '.zotlet')
+  const server = await javaServer(dir, { env: { ZOTLET_WORD_MODE: 'mac', ZOTLET_WORD_HELPER: '',
+    ZOTLET_WORD_OSASCRIPT: path.join(ROOT, 'test/fake-osascript.mjs'), ZOTLET_FAKE_OSA_EXIT: '139' } })
+  servers.push(server)
+  await macButton({ server }, 'addEditCitation')
+  await until(() => server.alerts.length, 'native failure alert')
+  assert.match(server.alerts[0], /osascript exited 139/)
+  assert.match(fs.readFileSync(path.join(dir, 'word.log'), 'utf8'), /zInit failed: osascript exited 139/)
+})
+
 test('Word for Windows: commands from the ZoteroMessageWindow run in the same way', { skip }, async () => {
   const w = await start('windows')
   const press = (command) => fs.appendFileSync(`${w.docFile}.trigger`, command + '\n')
@@ -134,8 +185,29 @@ test('zotlet word-install puts the Zotero tab into Word (and leaves an existing 
   assert.ok(fs.existsSync(path.join(home, 'Library', 'Application Scripts', 'com.microsoft.Word', 'Zotero.scpt')))
 })
 
-test('the Word helpers are well-formed (the AppleScript/COM parts only run with Word)', () => {
-  const r = spawnSync(process.execPath, ['--check', path.join(ROOT, 'java', 'word', 'word-mac.js')], { encoding: 'utf8' })
+test('Mac AppleScript adapter: result parsing, document/selection binding, fields, bookmarks, state recovery', { skip }, () => {
+  // Compile into the same class loader/package as the adapter, without exposing test-only APIs.
+  const classes = tempDir(), jar = path.join(ROOT, 'java/build/lib/zotlet.jar')
+  const built = spawnSync('javac', ['--release', '11', '-cp', jar, '-d', classes, path.join(ROOT, 'java/test/WordMacTest.java')], { encoding: 'utf8' })
+  assert.equal(built.status, 0, built.stdout + built.stderr)
+  const r = spawnSync('java', ['-cp', `${classes}${path.delimiter}${jar}`, 'zotlet.WordMacTest',
+    path.join(ROOT, 'java/word/word-mac.applescript')], { encoding: 'utf8' })
+  assert.equal(r.status, 0, r.stdout + r.stderr)
+  assert.match(r.stdout, /^ok$/m)
+})
+
+test('Word backends are packaged without the old JXA Word helper (AppleScript/COM need real Word)', () => {
+  assert.equal(fs.existsSync(path.join(ROOT, 'java/word/word-mac.js')), false)
+  const script = fs.readFileSync(path.join(ROOT, 'java/word/word-mac.applescript'), 'utf8')
+  assert.match(script, /using terms from application "Microsoft Word"/)
+  assert.doesNotMatch(script, /ObjC\.import|NSAppleScript|use framework/)
+  // Clipboard save/restore and smart-paste cleanup must be inside one native invocation.
+  assert.match(script, /set zSavedClipboard to the clipboard as record/)
+  assert.match(script, /on error zError number zNumber[\s\S]*?set the clipboard to zSavedClipboard[\s\S]*?error zError number zNumber/)
+  assert.match(script, /set paste adjust word spacing of settings to zAdjust/)
+  assert.match(script, /set the clipboard to \{«class RTF »:zText\}/)
+  assert.doesNotMatch(script, /set (?:start|end) of content of .* to /, 'Word range endpoints are read-only; use its selection endpoints')
+  const r = spawnSync(process.execPath, ['--check', path.join(ROOT, 'test/fake-osascript.mjs')], { encoding: 'utf8' })
   assert.equal(r.status, 0, r.stderr)
   const ps = fs.readFileSync(path.join(ROOT, 'java', 'word', 'word-win.ps1'), 'utf8')
   for (const method of ['init', 'Document.getFields', 'Document.insertField', 'Document.cursorInField', 'Field.setText', 'Field.setCode', 'Field.removeCode', 'Document.setBibliographyStyle', 'Document.displayAlert', 'Document.complete']) {

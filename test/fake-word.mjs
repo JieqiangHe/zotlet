@@ -1,4 +1,4 @@
-// A stand-in for java/word/word-mac.js / word-win.ps1 in tests: the same JSON-lines protocol on
+// A stand-in for Word's document backend (word-win.ps1's JSON-lines protocol) in tests: requests on
 // stdin/stdout, over an in-memory Word document kept in a JSON file (argv[2]) between processes.
 // Windows mode: commands written to <file>.trigger (one per line) are sent as Word button events.
 import fs from 'node:fs'

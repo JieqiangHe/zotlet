@@ -1,4 +1,4 @@
-// A Word helper that is refused by macOS: every request fails the way word-mac.js reports error -1743.
+// A Word helper that is refused by macOS: every request fails with error -1743.
 import readline from 'node:readline'
 for await (const line of readline.createInterface({ input: process.stdin })) {
   let id = null

@@ -47,8 +47,10 @@ npm test                      # everything below; about 3 minutes
 
 - `test/app.test.js` — API, exports, PDFs, styles, GenOffice / LibreOffice / HTTP / Zotero-Word document
   sessions, compared with `test/fixtures/golden.json` (recorded from the original implementation).
-- `test/word.test.js` — Microsoft Word: the Mac template's HTTP call and the Windows window event, through
-  `test/fake-word.mjs` standing in for the Word helpers; `zotlet word-install`.
+- `test/word.test.js` — Microsoft Word: the Mac template's HTTP call and the Windows window event through
+  `test/fake-word.mjs`; the real Mac adapter/process route through `test/fake-osascript.mjs`; parsing,
+  document/selection binding, fields/bookmarks and error recovery in `java/test/WordMacTest.java`;
+  `zotlet word-install`. The stand-ins do not validate real Word or the native clipboard.
 - `test/plugin.test.js` — **packages the plugin** (`package-java.sh --no-repo-copy`), unpacks it like
   *Install Plugin*, and loads it as TBtools does (`java/test/VerifyPlugin.java` with stand-ins for
   TBtools in `java/test/tbtools/`): one top-level jar; zotlet starts and keeps working after TBtools
@@ -59,7 +61,7 @@ npm test                      # everything below; about 3 minutes
 - `test/unit.test.js` — `java/test/UnitTest.java` and syntax checks.
 
 Run the plugin checks alone, several times when touching the plugin: `node --test test/plugin.test.js`.
-All tests must pass before packaging for release. The Word helpers' AppleScript (`java/word/word-mac.js`)
+All tests must pass before packaging for release. The Mac AppleScript (`java/word/word-mac.applescript`)
 and COM (`java/word/word-win.ps1`) parts only run with Word: on a machine with PowerShell 7
 (`dotnet tool install -g PowerShell`), the parse + C# compile check in "Word helpers" below still applies.
 
@@ -133,8 +135,8 @@ behave the same.
 - `java/word/mac/Zotero.dotm`, `mac/Zotero.scpt`, `win/Zotero.dotm` are Zotero's templates, unchanged
   (GPL 3+, see `java/word/NOTICE.md`). To update them, copy from zotero/zotero-word-for-mac-integration
   and …-for-windows-integration (`install/`) and record the commits in NOTICE.md.
-- `word-mac.js` (osascript JavaScript + AppleScript) and `word-win.ps1` (Windows PowerShell 5.1 + C# via
-  Add-Type, COM) are zotlet's. Check the PowerShell one where PowerShell 7 is available:
+- `WordMac.java` + `word-mac.applescript` (plain osascript AppleScript; no JXA) and `word-win.ps1`
+  (Windows PowerShell 5.1 + C# via Add-Type, COM) are zotlet's. Check the PowerShell one where PowerShell 7 is available:
 
 ```bash
 pwsh -NoProfile -Command '$t=$null;$e=$null;$a=[System.Management.Automation.Language.Parser]::ParseFile("java/word/word-win.ps1",[ref]$t,[ref]$e);$e;

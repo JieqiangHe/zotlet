@@ -50,9 +50,10 @@ test('the plugin package has one top-level jar, zotlet in lib/, and everything z
   assert.deepEqual(list.filter((f) => /^zotlet\/[^/]+\.jar$/.test(f)), ['zotlet/zotlet-plugin.jar'])
   for (const f of ['zotlet/lib/zotlet.jar', 'zotlet/citeproc/citeproc_commonjs.js', 'zotlet/public/index.html', 'zotlet/styles/nature.csl',
     'zotlet/locales/locales-en-US.xml', 'zotlet/quickformat.jxa.js', 'zotlet/word/mac/Zotero.dotm', 'zotlet/word/mac/Zotero.scpt',
-    'zotlet/word/win/Zotero.dotm', 'zotlet/word/word-mac.js', 'zotlet/word/word-win.ps1', 'zotlet/THIRD-PARTY.txt', 'zotlet/LICENSE']) {
+    'zotlet/word/win/Zotero.dotm', 'zotlet/word/word-mac.applescript', 'zotlet/word/word-win.ps1', 'zotlet/THIRD-PARTY.txt', 'zotlet/LICENSE']) {
     assert.ok(list.includes(f), f)
   }
+  assert.ok(!list.includes('zotlet/word/word-mac.js'), 'obsolete JXA Word helper is not shipped')
   assert.ok(list.some((f) => /^zotlet\/lib\/rhino-[\d.]+\.jar$/.test(f)))
   assert.ok(list.every((f) => f.startsWith('zotlet/')), 'one folder, named like the plugin')
 })

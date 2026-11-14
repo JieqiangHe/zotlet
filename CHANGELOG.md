@@ -2,6 +2,21 @@
 
 The release workflow publishes the section of the released version as its GitHub release notes.
 
+## 0.5.0 — 2026-11-14
+
+- Word on a Mac now uses plain AppleScript, with the document session handled in Java. It no longer
+  starts the JavaScript for Automation (JXA) Word helper that stopped with `exit 139` on the reported Mac.
+  Windows continues to use its PowerShell helper; Zotero's Word templates and document format are unchanged.
+- Each Mac command keeps the document and insertion position chosen before the citation pop-up opens.
+  Switching to another document while choosing references cannot redirect the insertion there. If the
+  original document is closed or renamed, the command stops and asks you to click the Word button again.
+- Rich-text paste saves the clipboard first and restores it on both success and a Word error, along with
+  Word's smart-paste setting. Track Changes and field/revision display settings are restored when a command
+  finishes or fails. Unlinking several citations keeps the remaining field positions correct.
+- The Mac adapter has automated checks for AppleScript result parsing, fields/bookmarks, document binding,
+  state recovery, and the Word toolbar's complete citation/bibliography flow through a stand-in for osascript.
+  These checks ran on Linux; the new AppleScript still needs verification with Word on a Mac.
+
 ## 0.4.1 — 2026-11-13
 
 - The citation pop-up: no grey see-through frame around it, no bottom bar (an Insert button next to the chosen references), more compact, and references can be chosen with
