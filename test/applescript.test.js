@@ -45,12 +45,20 @@ return zProbe("Document1", "Document1", 0, 1, "")
 }
 
 test('macOS AppleScript: both production range bindings remain callable after the first assignment', { skip: process.platform !== 'darwin' && 'requires the macOS AppleScript runtime' }, () => {
-  const run = (script) => spawnSync('/usr/bin/osascript', ['-l', 'AppleScript', '-'], { input: rangeProbe(script), encoding: 'utf8', timeout: 30000 })
-  const fixed = run(source)
+  const run = (probe) => spawnSync('/usr/bin/osascript', ['-l', 'AppleScript', '-'], { input: probe, encoding: 'utf8', timeout: 30000 })
+  const fixed = run(rangeProbe(source))
   assert.equal(fixed.status, 0, fixed.stdout + fixed.stderr)
   assert.equal(fixed.stdout.trim(), 'ok')
   // A native negative control makes sure the probe actually detects the reported binding bug.
-  const old = run(source.replace(/\bzGetRange\b/g, 'zRange'))
+  const oldProbe = rangeProbe(source.replace(/\bzGetRange\b/g, 'zRange'))
+  const old = run(oldProbe)
   assert.notEqual(old.status, 0, 'the original same-name handler must fail in this probe')
-  assert.match(old.stderr, /-1700|expected type/i)
+  // Replacing the handler with our list raises -1708 (message not handled); the user's Word
+  // range object raised -1700 (coercion). Both must fail at the second call to that same handler.
+  assert.match(old.stderr, /\(-170(?:0|8)\)/)
+  const location = /^(\d+):(\d+): execution error:/m.exec(old.stderr)
+  assert.ok(location, old.stderr)
+  const call = 'zRange(zDoc, zKind, zIndex, zMarkName)'
+  assert.equal(Number(location[1]), oldProbe.lastIndexOf(call), 'failure is at the second range lookup')
+  assert.equal(oldProbe.slice(Number(location[1]), Number(location[2])), call)
 })
